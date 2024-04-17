@@ -1,0 +1,18 @@
+menubutton arrow {
+    color: magenta;
+    -gtk-icon-source: -gtk-icontheme('format-justify-fill-symbolic');
+  }
+
+tab {
+    background-color: #424242;
+    border-radius: 12px;
+    padding: 5px;
+}
+
+tab-label {
+    margin-bottom: 3px;
+}
+
+tab-button {
+    background-color: transparent;
+}

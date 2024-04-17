@@ -1,0 +1,41 @@
+
+
+Mon Apr 15 21:16:18 2024
+Command line: TestDisk
+
+TestDisk 7.2, Data Recovery Utility, February 2024
+Christophe GRENIER <grenier@cgsecurity.org>
+https://www.cgsecurity.org
+OS: Linux, kernel 6.8.4-arch1-1 (#1 SMP PREEMPT_DYNAMIC Fri, 05 Apr 2024 00:14:23 +0000) x86_64
+Compiler: GCC 13.2
+ext2fs lib: 1.47.0, ntfs lib: libntfs-3g, reiserfs lib: none, ewf lib: none, curses lib: ncurses 6.4
+User is not root!
+Hard disk list
+Disk /dev/sda - 250 GB / 232 GiB - CHS 30401 255 63, sector size=512 - Samsung SSD 850, FW:3B6Q
+Disk /dev/sdb - 500 GB / 465 GiB - CHS 60801 255 63, sector size=512 - TOSHIBA DT01ACA0, FW:A750
+
+Partition table type (auto): EFI GPT
+Disk /dev/sda - 250 GB / 232 GiB - Samsung SSD 850
+Partition table type: EFI GPT
+
+Interface Advanced
+hdr_size=92
+hdr_lba_self=1
+hdr_lba_alt=488397167 (expected 488397167)
+hdr_lba_start=34
+hdr_lba_end=488397134
+hdr_lba_table=2
+hdr_entries=128
+hdr_entsz=128
+check_part_gpt failed for partition
+ 2 P MS Reserved               206848     239615      32768 [Microsoft reserved partition]
+ 1 P EFI System                  2048     206847     204800 [EFI system partition]
+ 2 P MS Reserved               206848     239615      32768 [Microsoft reserved partition]
+ 3 P MS Data                   239616  102402047  102162432 [Basic data partition]
+     NTFS, blocksize=4096, 52 GB / 48 GiB
+ 4 P Linux filesys. data    102402048  225282047  122880000
+ 6 P Linux Swap             225282048  257026047   31744000
+ 7 P EFI System             257026048  258050047    1024000
+ 5 P Linux filesys. data    258050048  488397134  230347087
+SIGHUP detected! PhotoRec has been killed.
+SIGHUP detected! PhotoRec has been killed.
