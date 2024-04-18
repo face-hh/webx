@@ -1,10 +1,8 @@
 mod custom_window;
-
-use std::rc::Rc;
+mod b9;
 
 use custom_window::Window;
 use gtk::gdk::{Cursor, Display};
-use gtk::glib::closure_local;
 use gtk::glib;
 use gtk::{prelude::*, CssProvider};
 
@@ -20,11 +18,9 @@ fn main() -> glib::ExitCode {
 }
 
 fn load_css() {
-    // Load the CSS file and add it to the provider
     let provider = CssProvider::new();
     provider.load_from_string(include_str!("style.css"));
 
-    // Add the provider to the default screen
     gtk::style_context_add_provider_for_display(
         &Display::default().expect("Could not connect to a display."),
         &provider,
@@ -56,6 +52,8 @@ fn build_ui(app: &adw::Application) {
     
     window.set_titlebar(Some(&headerbar));
 
+    let htmlview = b9::build_ui().unwrap();
+
     let nav = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(6)
@@ -67,6 +65,7 @@ fn build_ui(app: &adw::Application) {
 
     nav.append(&separator);
     nav.append(&search);
+    nav.append(&htmlview);
 
     window.set_child(Some(&nav));
     window.present();

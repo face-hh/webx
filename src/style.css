@@ -9,6 +9,14 @@ tab {
     padding: 5px;
 }
 
+a {
+    background-color: none;
+    border: none;
+    color: #67B7D1;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 tab-label {
     margin-bottom: 3px;
 }
