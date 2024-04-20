@@ -1,5 +1,5 @@
-mod custom_window;
 mod b9;
+mod custom_window;
 
 use custom_window::Window;
 use gtk::gdk::{Cursor, Display};
@@ -39,9 +39,24 @@ fn build_ui(app: &adw::Application) {
     let tabs = gtk::Box::builder().css_name("tabs").spacing(6).build();
 
     let tab1 = make_tab(tabs.clone(), "New Tab", "file.png", cursor_pointer.as_ref());
-    let tab2 = make_tab(tabs.clone(), "New Tab 2", "file.png", cursor_pointer.as_ref());
-    let tab3 = make_tab(tabs.clone(), "New Tab 3", "file.png", cursor_pointer.as_ref());
-    let tab4 = make_tab(tabs.clone(), "New Tab 4", "file.png", cursor_pointer.as_ref());
+    let tab2 = make_tab(
+        tabs.clone(),
+        "New Tab 2",
+        "file.png",
+        cursor_pointer.as_ref(),
+    );
+    let tab3 = make_tab(
+        tabs.clone(),
+        "New Tab 3",
+        "file.png",
+        cursor_pointer.as_ref(),
+    );
+    let tab4 = make_tab(
+        tabs.clone(),
+        "New Tab 4",
+        "file.png",
+        cursor_pointer.as_ref(),
+    );
 
     tabs.append(&tab1);
     tabs.append(&tab2);
@@ -49,11 +64,15 @@ fn build_ui(app: &adw::Application) {
     tabs.append(&tab4);
 
     headerbar.set_title_widget(Some(&tabs));
-    
+
     window.set_titlebar(Some(&headerbar));
 
     let htmlview = b9::build_ui().unwrap();
+    let bruh = gtk::ScrolledWindow::builder().build();
 
+    bruh.set_child(Some(&htmlview));
+    bruh.set_vexpand(true);
+    
     let nav = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(6)
@@ -65,7 +84,7 @@ fn build_ui(app: &adw::Application) {
 
     nav.append(&separator);
     nav.append(&search);
-    nav.append(&htmlview);
+    nav.append(&bruh);
 
     window.set_child(Some(&nav));
     window.present();
@@ -80,7 +99,7 @@ fn make_tab(tabs: gtk::Box, label: &str, icon: &str, cursor_pointer: Option<&Cur
         .build();
     let tab_copy = tab.clone();
     let x = gtk::Button::builder().css_name("tab-close").build();
-    
+
     x.set_icon_name("window-close");
     x.connect_clicked(move |_| {
         tabs.remove(&tab_copy);

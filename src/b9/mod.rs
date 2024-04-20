@@ -1,6 +1,12 @@
 extern crate html_parser;
 
-use gtk::prelude::*;
+use std::thread;
+
+use gtk::{
+    gdk_pixbuf, gio,
+    glib::{closure_local, Bytes},
+    prelude::*,
+};
 use html_parser::{Dom, Element, Node, Result};
 
 fn parse_html_from_file() -> Result<(Node, Node)> {
@@ -31,6 +37,9 @@ pub fn build_ui() -> Result<gtk::Box> {
     let html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .halign(gtk::Align::Start)
+        .hexpand(true)
+        .valign(gtk::Align::Start)
+        .spacing(6)
         .css_name("htmlview")
         .build();
 
@@ -46,20 +55,22 @@ pub fn build_ui() -> Result<gtk::Box> {
     Ok(html_view)
 }
 
-fn render_html(element: &Element, contents: Option<&Node>, og_html_view: gtk::Box, recursive: bool) {
+fn render_html(
+    element: &Element,
+    contents: Option<&Node>,
+    og_html_view: gtk::Box,
+    recursive: bool,
+) {
     let mut html_view = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .halign(gtk::Align::Start)
-            .build();
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(6)
+        .build();
 
     if !recursive {
-        html_view = og_html_view;
+        html_view = og_html_view.clone();
     } else {
-        println!("appended new div");
         og_html_view.append(&html_view);
     }
-    
-    println!("{:?}", element);
 
     match element.name.as_str() {
         "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
@@ -71,14 +82,13 @@ fn render_html(element: &Element, contents: Option<&Node>, og_html_view: gtk::Bo
                             .css_name(element.name.as_str())
                             .css_classes(element.classes.clone())
                             .halign(gtk::Align::Start)
+                            .wrap(true)
                             .build();
-                        println!("appended 2");
                         html_view.append(&label);
-                    },
+                    }
                     Node::Element(el) => {
-                        println!("sent it off");
                         render_html(el, el.children.get(0), html_view, true);
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -88,6 +98,8 @@ fn render_html(element: &Element, contents: Option<&Node>, og_html_view: gtk::Bo
                 .orientation(gtk::Orientation::Horizontal)
                 .build();
 
+            html_view.append(&label_box);
+
             for child in element.children.iter() {
                 match child {
                     Node::Text(_) => {
@@ -96,8 +108,8 @@ fn render_html(element: &Element, contents: Option<&Node>, og_html_view: gtk::Bo
                             .css_name(element.name.as_str())
                             .css_classes(element.classes.clone())
                             .halign(gtk::Align::Start)
+                            .wrap(true)
                             .build();
-                        println!("appended 3: {}", child.text().unwrap());
                         label_box.append(&label);
                     }
                     Node::Element(el) => {
@@ -110,7 +122,6 @@ fn render_html(element: &Element, contents: Option<&Node>, og_html_view: gtk::Bo
                                 .css_name("a")
                                 .css_classes(el.classes.clone())
                                 .build();
-                            println!("appended 4");
                             label_box.append(&link_button);
                         } else {
                             render_html(el, el.children.get(0), html_view.clone(), true);
@@ -119,11 +130,157 @@ fn render_html(element: &Element, contents: Option<&Node>, og_html_view: gtk::Bo
                     Node::Comment(_) => {}
                 }
             }
+        }
+        "ul" | "ol" => {
+            let list_box = gtk::Box::builder()
+                .orientation(gtk::Orientation::Vertical)
+                .css_name(element.name.as_str())
+                .build();
 
-            html_view.append(&label_box);
+            html_view.append(&list_box);
+
+            render_list(element, list_box);
+        }
+        "hr" => {
+            let line = gtk::Separator::new(gtk::Orientation::Horizontal);
+            html_view.append(&line);
+        }
+        "img" => {
+            let url = element.attributes.get("src").unwrap().clone().unwrap();
+
+            let handle = thread::spawn(move || {
+                let result = reqwest::blocking::get(url).unwrap().bytes().unwrap();
+                result
+            });
+
+            let img_data = handle.join().unwrap();
+
+            let img_stream = gio::MemoryInputStream::from_bytes(&Bytes::from(&img_data));
+
+            let stream =
+                gdk_pixbuf::Pixbuf::from_stream(&img_stream, Some(&gio::Cancellable::new()))
+                    .unwrap();
+
+            let image = gtk::Picture::builder()
+                .css_name("img")
+                .alternative_text(element.attributes.get("alt").unwrap().clone().unwrap())
+                .css_classes(element.classes.clone())
+                .halign(gtk::Align::Start)
+                .valign(gtk::Align::Start)
+                .can_shrink(false)
+                .build();
+
+            image.set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
+            html_view.append(&image);
+        }
+        "input" => {
+            let input_type = element
+                .attributes
+                .get("type")
+                .unwrap()
+                .clone()
+                .unwrap_or_else(|| "text".to_string());
+
+            if input_type == "text" {
+                let label = gtk::Entry::builder()
+                    .placeholder_text(
+                        element
+                            .attributes
+                            .get("placeholder")
+                            .unwrap()
+                            .clone()
+                            .unwrap(),
+                    )
+                    .css_name("input")
+                    .css_classes(element.classes.clone())
+                    .halign(gtk::Align::Start)
+                    .build();
+                html_view.append(&label);
+            }
+        }
+        "select" => {
+            let mut strings = Vec::new();
+
+            for child in element.children.iter() {
+                match child {
+                    Node::Element(el) => {
+                        if el.name.as_str() == "option" {
+                            // TODO: keep track of value
+                            strings.push(el.children[0].text().unwrap())
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            let dropdown = gtk::DropDown::new(
+                Some(gtk::StringList::new(&strings[..])),
+                gtk::Expression::NONE,
+            );
+            html_view.append(&dropdown);
+        }
+        "textarea" => {
+            let textview = gtk::TextView::builder()
+                .editable(true)
+                .css_name("textarea")
+                .css_classes(element.classes.clone())
+                .halign(gtk::Align::Start)
+                .valign(gtk::Align::Start)
+                .build();
+
+            textview.set_size_request(300, 200);
+            
+            textview
+                .buffer()
+                .set_text(element.children[0].text().unwrap());
+
+                let bruh = gtk::ScrolledWindow::builder().build();
+
+                bruh.set_child(Some(&textview));
+                bruh.set_vexpand(true);
+            html_view.append(&bruh);
         }
         _ => {
-            println!("Unsupported element: {:?}", element.name.as_str());
+            println!("INFO: Unknown element: {}", element.name);
+        }
+    }
+}
+
+fn render_list(element: &Element, list_box: gtk::Box) {
+    for (i, child) in element.children.iter().enumerate() {
+        match child {
+            Node::Element(el) => {
+                if el.name.as_str() == "li" {
+                    let li = gtk::Box::builder().build();
+
+                    let lead = gtk::Label::builder()
+                        .label(match element.name.as_str() {
+                            "ul" => "\t• ".to_string(),
+                            "ol" => format!("\t{}. ", i + 1),
+                            _ => panic!("Unknown list type"),
+                        })
+                        .css_name("li")
+                        .css_classes(vec!["lead"])
+                        .halign(gtk::Align::Start)
+                        .build();
+
+                    let label = gtk::Label::builder()
+                        .label(el.children[0].text().unwrap())
+                        .css_name("li")
+                        .css_classes(el.classes.clone())
+                        .halign(gtk::Align::Start)
+                        .build();
+                    li.append(&lead);
+                    li.append(&label);
+
+                    list_box.append(&li);
+                } else {
+                    println!("INFO: Expected li inside ul/ol, instead got: {:?}", child);
+                }
+            }
+            _ => {
+                println!("INFO: Not an element: {:?}", child);
+            }
         }
     }
 }
