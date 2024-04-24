@@ -1,10 +1,12 @@
+mod css;
+
 extern crate html_parser;
 
 use std::thread;
 
 use gtk::{
     gdk_pixbuf, gio,
-    glib::{closure_local, Bytes},
+    glib::Bytes,
     prelude::*,
 };
 use html_parser::{Dom, Element, Node, Result};
@@ -34,6 +36,8 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
 }
 
 pub fn build_ui() -> Result<gtk::Box> {
+    css::get_css();
+
     let html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .halign(gtk::Align::Start)
@@ -84,6 +88,9 @@ fn render_html(
                             .halign(gtk::Align::Start)
                             .wrap(true)
                             .build();
+                        
+                        css::perform_styling(element, &label);
+
                         html_view.append(&label);
                     }
                     Node::Element(el) => {
@@ -110,6 +117,9 @@ fn render_html(
                             .halign(gtk::Align::Start)
                             .wrap(true)
                             .build();
+
+                        css::perform_styling(element, &label);
+
                         label_box.append(&label);
                     }
                     Node::Element(el) => {
@@ -122,6 +132,9 @@ fn render_html(
                                 .css_name("a")
                                 .css_classes(el.classes.clone())
                                 .build();
+
+                                css::perform_styling(element, &link_button);
+
                             label_box.append(&link_button);
                         } else {
                             render_html(el, el.children.get(0), html_view.clone(), true);
@@ -137,12 +150,16 @@ fn render_html(
                 .css_name(element.name.as_str())
                 .build();
 
+                css::perform_styling(element, &list_box);
+
             html_view.append(&list_box);
 
             render_list(element, list_box);
         }
         "hr" => {
             let line = gtk::Separator::new(gtk::Orientation::Horizontal);
+            css::perform_styling(element, &line);
+
             html_view.append(&line);
         }
         "img" => {
@@ -161,6 +178,8 @@ fn render_html(
                 gdk_pixbuf::Pixbuf::from_stream(&img_stream, Some(&gio::Cancellable::new()))
                     .unwrap();
 
+            let wrapper = gtk::Box::builder().build();
+            
             let image = gtk::Picture::builder()
                 .css_name("img")
                 .alternative_text(element.attributes.get("alt").unwrap().clone().unwrap())
@@ -170,8 +189,12 @@ fn render_html(
                 .can_shrink(false)
                 .build();
 
+                css::perform_styling(element, &image);
+
             image.set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
-            html_view.append(&image);
+            // weird workaround - https://discourse.gnome.org/t/can-shrink-on-picture-creates-empty-occupied-space/20547/2
+            wrapper.append(&image);
+            html_view.append(&wrapper);
         }
         "input" => {
             let input_type = element
@@ -182,7 +205,7 @@ fn render_html(
                 .unwrap_or_else(|| "text".to_string());
 
             if input_type == "text" {
-                let label = gtk::Entry::builder()
+                let entry = gtk::Entry::builder()
                     .placeholder_text(
                         element
                             .attributes
@@ -195,7 +218,10 @@ fn render_html(
                     .css_classes(element.classes.clone())
                     .halign(gtk::Align::Start)
                     .build();
-                html_view.append(&label);
+
+                    css::perform_styling(element, &entry);
+
+                html_view.append(&entry);
             }
         }
         "select" => {
@@ -217,6 +243,8 @@ fn render_html(
                 Some(gtk::StringList::new(&strings[..])),
                 gtk::Expression::NONE,
             );
+            css::perform_styling(element, &dropdown);
+
             html_view.append(&dropdown);
         }
         "textarea" => {
@@ -228,16 +256,18 @@ fn render_html(
                 .valign(gtk::Align::Start)
                 .build();
 
+                css::perform_styling(element, &textview);
+
             textview.set_size_request(300, 200);
-            
+
             textview
                 .buffer()
                 .set_text(element.children[0].text().unwrap());
 
-                let bruh = gtk::ScrolledWindow::builder().build();
+            let bruh = gtk::ScrolledWindow::builder().build();
 
-                bruh.set_child(Some(&textview));
-                bruh.set_vexpand(true);
+            bruh.set_child(Some(&textview));
+            bruh.set_vexpand(true);
             html_view.append(&bruh);
         }
         _ => {
@@ -270,6 +300,9 @@ fn render_list(element: &Element, list_box: gtk::Box) {
                         .css_classes(el.classes.clone())
                         .halign(gtk::Align::Start)
                         .build();
+
+                        css::perform_styling(element, &label);
+
                     li.append(&lead);
                     li.append(&label);
 

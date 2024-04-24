@@ -1,0 +1,62 @@
+body {
+    font-family: Arial, sans-serif;
+    color: #333;
+    margin: 20px;
+    padding: 0;
+    background-color: #f9f9f9;
+}
+
+h1 {
+    color: #444;
+    text-align: center;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+ul, ol {
+    margin-left: 20px;
+}
+
+.omagad {
+    width: 200px;
+    height: 200px;
+    display: block;
+    margin: 20px auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+input[type="text"], textarea {
+    width: 100%;
+    padding: 5px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+}
+
+select {
+    width: 100%;
+    padding: 5px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 20px 0;
+}

@@ -1,5 +1,6 @@
 mod b9;
 mod custom_window;
+mod parser;
 
 use custom_window::Window;
 use gtk::gdk::{Cursor, Display};
@@ -9,6 +10,8 @@ use gtk::{prelude::*, CssProvider};
 const APP_ID: &str = "org.bussin.napture";
 
 fn main() -> glib::ExitCode {
+    gtk::gio::resources_register_include!("icons.gresource").unwrap();
+
     let app = adw::Application::builder().application_id(APP_ID).build();
 
     app.connect_startup(|_| load_css());
@@ -30,6 +33,7 @@ fn load_css() {
 
 fn build_ui(app: &adw::Application) {
     let window = Window::new(app);
+
     let cursor_pointer = Cursor::from_name("pointer", None);
 
     let search = gtk::SearchEntry::builder().build();
@@ -66,13 +70,13 @@ fn build_ui(app: &adw::Application) {
     headerbar.set_title_widget(Some(&tabs));
 
     window.set_titlebar(Some(&headerbar));
-
+    
     let htmlview = b9::build_ui().unwrap();
     let bruh = gtk::ScrolledWindow::builder().build();
 
     bruh.set_child(Some(&htmlview));
     bruh.set_vexpand(true);
-    
+
     let nav = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(6)
@@ -97,10 +101,12 @@ fn make_tab(tabs: gtk::Box, label: &str, icon: &str, cursor_pointer: Option<&Cur
         .spacing(12)
         .css_name("tab")
         .build();
+
     let tab_copy = tab.clone();
     let x = gtk::Button::builder().css_name("tab-close").build();
 
-    x.set_icon_name("window-close");
+    x.set_icon_name("close");
+
     x.connect_clicked(move |_| {
         tabs.remove(&tab_copy);
     });

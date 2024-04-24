@@ -1,0 +1,5 @@
+<gresources>
+  <gresource prefix="/org/bussin/napture/icons/">
+    <file>close.svg</file>
+  </gresource>
+</gresources>
