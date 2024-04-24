@@ -12,12 +12,14 @@ h1 {
 }
 
 p {
+    color:antiquewhite;
     font-size: 16px;
     line-height: 1.5;
 }
 
 a {
     color: #007bff;
+    font-size: 16px;
     text-decoration: none;
 }
 

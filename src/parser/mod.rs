@@ -1,15 +1,13 @@
 // Improvised CSS parser.
 
-#[derive(Debug, PartialEq)]
-pub struct Rule {
-    pub selector: String,
-    pub properties: Vec<(String, String)>,
-}
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct ParseError {
     message: String,
 }
+
+impl std::error::Error for ParseError {}
 
 impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -17,54 +15,39 @@ impl std::fmt::Display for ParseError {
     }
 }
 
-pub fn parse(input: &str) -> Result<Vec<Rule>, ParseError> {
-    let mut output = Vec::new();
+pub fn parse(input: &str) -> Result<HashMap<String, Vec<(String, String)>>, ParseError> {
+    let mut output = HashMap::new();
+    let lines: Vec<&str> = input.lines().collect();
 
-    let mut block = false;
-    let mut property = false;
-    let mut needle = String::from("");
-    let mut properties = Vec::new();
+    let mut selector = String::new();
+    let mut props = Vec::new();
 
-    for char in input.chars() {
-        if !block {
-            if char.is_alphabetic() {
-                needle.push(char);
-            }
+    for (i, line) in lines.iter().enumerate() {
+        let trimmed_line = line.trim();
 
-            if char.is_whitespace() {
-                if !needle.is_empty() {
-                    output.push(Rule {
-                        selector: needle.clone(),
-                        properties,
-                    });
-                    needle.clear();
-                    properties = Vec::new();
-                }
-            }
-        } else {
-            // we're parsing property blocks
-            if char.is_alphabetic() || char == '-' || char == '_' || char.is_numeric() {
-                needle.push(char);
-            }
-            if char == ':' {
-                property = true;
-            }
-            if char.is_whitespace() && property {
-                property = false;
-                properties.push((needle.clone(), String::from("")));
-                needle.clear();
-            }
+        if trimmed_line.is_empty() {
+            continue;
         }
-        match char {
-            '{' => block = true,
-            '}' => {
-                block = false;
-                if !needle.is_empty() {
-                    properties.last_mut().unwrap().1 = needle.clone();
-                    needle.clear();
-                }
+
+        if trimmed_line.ends_with("{") {
+            selector = trimmed_line.trim_end_matches("{").trim().to_string();
+        } else if trimmed_line.ends_with("}") {
+            output.insert(selector.clone(), props.clone());
+
+            selector.clear();
+            props.clear();
+        } else {
+            let parts: Vec<&str> = trimmed_line.split(":").collect();
+            if parts.len() == 2 {
+                let property = parts[0].trim().to_string();
+                let value = parts[1].trim_end_matches(";").trim().to_string();
+
+                props.push((property, value));
+            } else {
+                return Err(ParseError {
+                    message: format!("Invalid property at line #{}, line contents: {}", i, line),
+                });
             }
-            _ => {}
         }
     }
 

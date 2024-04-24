@@ -18,6 +18,8 @@ fn parse_html_from_file() -> Result<(Node, Node)> {
     let head = find_element_by_name(&dom.children, "head").expect("Couldn't find head.");
     let body = find_element_by_name(&dom.children, "body").expect("Couldn't find body.");
 
+    css::load_css();
+
     return Ok((head, body));
 }
 
@@ -36,7 +38,7 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
 }
 
 pub fn build_ui() -> Result<gtk::Box> {
-    css::get_css();
+    css::load_css();
 
     let html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
