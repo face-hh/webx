@@ -16,36 +16,67 @@ impl Styleable for gtk::Label {
         let mut classes = self.css_classes();
 
         classes.push(self.css_name());
+
         self.set_use_markup(true);
 
         for class in classes {
             if let Some(rules) = css.get(&class.to_string()) {
-                let default_color = "#ffffff".to_string();
-                let mut default_fontsize = "".to_string();
+                let mut font_size = "11px".to_string();
 
-                match self.css_name().as_str() { // SHUT THE FUCK UP
-                    "h1" => default_fontsize = "24pt".to_string(),
-                    "h2" => default_fontsize = "22pt".to_string(),
-                    "h3" => default_fontsize = "20pt".to_string(),
-                    "h4" => default_fontsize = "18pt".to_string(),
-                    "h5" => default_fontsize = "16pt".to_string(),
-                    "h6" => default_fontsize = "14pt".to_string(),
-                    _ => default_fontsize = "13pt".to_string(),
+                match self.css_name().as_str() {
+                    // SHUT THE FUCK UP
+                    "h1" => font_size = "24px".to_string(),
+                    "h2" => font_size = "22px".to_string(),
+                    "h3" => font_size = "20px".to_string(),
+                    "h4" => font_size = "18px".to_string(),
+                    "h5" => font_size = "16px".to_string(),
+                    "h6" => font_size = "14px".to_string(),
+                    _ => {}
                 };
 
-                let default_line_height = "1".to_string();
+                // i need a ultrawide monitor to read this shit
+                let line_height = get_rule(&rules, "line-height", &"1");
 
-                let color = get_rule(&rules, "color", &default_color);
-                let font_size =
-                    get_rule(&rules, "font-size", &default_fontsize).replace("px", "pt");
-                let line_height = get_rule(&rules, "line-height", &default_line_height);
+                let color = get_rule(&rules, "color", &"#ffffff");
+                let font_family = get_rule(&rules, "font-family", &"Noto Sans");
+                let font_weight = get_rule(&rules, "font-weight", &"normal");
+                let underline = get_rule(&rules, "underline", &"none");
+                let underline_color = get_rule(&rules, "underline-color", &"black");
+                let overline = get_rule(&rules, "overline", &"none");
+                let overline_color = get_rule(&rules, "overline-color", &"black");
+                let strikethrough = get_rule(&rules, "strikethrough", &"false");
+                let strikethrough_color = get_rule(&rules, "strikethrough-color", &"black");
+
+                font_size = font_size.replace("px", "pt");
+
+                let margin_top = get_rule(&rules, "margin-top", "0").replace("px", "");
+                let margin_bottom = get_rule(&rules, "margin-bottom", "0").replace("px", "");
+                let margin_left = get_rule(&rules, "margin-left", "0").replace("px", "");
+                let margin_right = get_rule(&rules, "margin-right", "0").replace("px", "");
+
+                let border_style = get_rule(&rules, "border-style", "none");
+                let border_color = get_rule(&rules, "border-color", "black");
+                let border_width = get_rule(&rules, "border-width", "0");
+                let border_radius = get_rule(&rules, "border-radius", "0");
+                let padding = get_rule(&rules, "padding", "0");
 
                 let markup = &format!(
-                    "<span foreground=\"{color}\" size=\"{font_size}\" line_height=\"{line_height}\">{}</span>",
+                    "<span foreground=\"{color}\" size=\"{font_size}\" line_height=\"{line_height}\" font_family=\"{font_family}\" font_weight=\"{font_weight}\" underline=\"{underline}\" underline_color=\"{underline_color}\" overline=\"{overline}\" overline_color=\"{overline_color}\" strikethrough=\"{strikethrough}\" strikethrough_color=\"{strikethrough_color}\">{}</span>",
                     self.label()
                 );
 
-                println!("{}: {}", class, markup);
+                self.set_margin_top(margin_top.parse::<i32>().unwrap_or(0));
+                self.set_margin_bottom(margin_bottom.parse::<i32>().unwrap_or(0));
+                self.set_margin_start(margin_left.parse::<i32>().unwrap_or(0));
+                self.set_margin_end(margin_right.parse::<i32>().unwrap_or(0));
+
+                if border_style != "none" {
+                    let frame = gtk::Frame::new(None);
+                    frame.set_label_widget(Some(self));
+
+                    
+                }
+
                 self.set_markup(markup);
             }
         }
@@ -57,7 +88,21 @@ impl Styleable for gtk::DropDown {
 }
 
 impl Styleable for gtk::LinkButton {
-    fn style(&self) {}
+    fn style(&self) {
+        let lbl = gtk::Label::builder()
+            .css_name("a")
+            .label(
+                self.child()
+                    .unwrap()
+                    .downcast::<gtk::Label>()
+                    .unwrap()
+                    .label(),
+            )
+            .build();
+        self.set_child(Some(&lbl));
+
+        Styleable::style(&lbl);
+    }
 }
 
 impl Styleable for gtk::Box {

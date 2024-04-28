@@ -1,7 +1,7 @@
 menubutton arrow {
     color: magenta;
     -gtk-icon-source: -gtk-icontheme('format-justify-fill-symbolic');
-  }
+}
 
 tab {
     background-color: #424242;
@@ -20,15 +20,19 @@ h2 {
 h3 {
     font-size: 20pt;
 }
+
 h4 {
     font-size: 18pt;
 }
+
 h5 {
     font-size: 16pt;
 }
+
 h6 {
     font-size: 14pt;
 }
+
 a {
     border: none;
     color: #67B7D1;
@@ -43,8 +47,9 @@ tab-button {
     background-color: transparent;
 }
 
-input, textarea {
-    border:#424242 1px solid;
+input,
+textarea {
+    border: #424242 1px solid;
     padding: 3px;
     border-radius: 3px;
 }

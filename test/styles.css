@@ -8,51 +8,62 @@ body {
 
 h1 {
     color: #444;
-    text-align: center;
 }
 
 p {
     color:antiquewhite;
     font-size: 16px;
     line-height: 1.5;
+    font-family: Iosevka;
+    font-weight: bold;
 }
 
 a {
     color: #007bff;
     font-size: 16px;
     text-decoration: none;
-}
+    font-weight: ultralight;
+    underline: double;
+    underline-color: #ff0000;
+    overline: single;
+    overline-color: #ff0000;
+    strikethrough: true;
+    strikethrough-color: #ff0000;
 
-a:hover {
-    text-decoration: underline;
+    margin-right: 50px;
+
+    border-style: solid;
+    border-width: 5px;
+    border-color: red;
+
+    border-radius: 12px;
+    padding: 20px;
 }
 
 ul, ol {
     margin-left: 20px;
 }
 
+ok {
+    color: red;
+}
+
 .omagad {
     width: 200px;
     height: 200px;
-    display: block;
-    margin: 20px auto;
+    padding: 20px;
     border: 1px solid #ccc;
     border-radius: 5px;
 }
 
 input[type="text"], textarea {
-    width: 100%;
     padding: 5px;
-    margin: 10px 0;
     border: 1px solid #ccc;
     border-radius: 3px;
-    box-sizing: border-box;
 }
 
 select {
-    width: 100%;
     padding: 5px;
-    margin: 10px 0;
     border: 1px solid #ccc;
     border-radius: 3px;
 }
@@ -60,5 +71,4 @@ select {
 hr {
     border: none;
     border-top: 1px solid #ccc;
-    margin: 20px 0;
 }
