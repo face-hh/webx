@@ -14,21 +14,10 @@ fn main() -> glib::ExitCode {
 
     let app = adw::Application::builder().application_id(APP_ID).build();
 
-    app.connect_startup(|_| load_css());
+    app.connect_startup(|_| b9::css::load_css_into_app(include_str!("style.css")));
     app.connect_activate(build_ui);
 
     app.run()
-}
-
-fn load_css() {
-    let provider = CssProvider::new();
-    provider.load_from_string(include_str!("style.css"));
-
-    gtk::style_context_add_provider_for_display(
-        &Display::default().expect("Could not connect to a display."),
-        &provider,
-        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-    );
 }
 
 fn build_ui(app: &adw::Application) {

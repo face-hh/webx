@@ -16,6 +16,13 @@ p {
     line-height: 1.5;
     font-family: Iosevka;
     font-weight: bold;
+
+
+    border-style: solid;
+    border-width: 5px;
+    border-color: red;
+
+    border-radius: 12px;
 }
 
 a {
@@ -31,13 +38,6 @@ a {
     strikethrough-color: #ff0000;
 
     margin-right: 50px;
-
-    border-style: solid;
-    border-width: 5px;
-    border-color: red;
-
-    border-radius: 12px;
-    padding: 20px;
 }
 
 ul, ol {

@@ -1,4 +1,4 @@
-mod css;
+pub(crate) mod css;
 
 extern crate html_parser;
 
