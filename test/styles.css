@@ -64,8 +64,12 @@ input[type="text"], textarea {
 
 select {
     padding: 5px;
-    border: 1px solid #ccc;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #ccc;
     border-radius: 3px;
+
+    margin-left: 40px;
 }
 
 hr {

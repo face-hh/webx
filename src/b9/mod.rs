@@ -245,6 +245,9 @@ fn render_html(
                 Some(gtk::StringList::new(&strings[..])),
                 gtk::Expression::NONE,
             );
+
+            dropdown.add_css_class("select");
+            
             css::perform_styling(element, &dropdown);
 
             html_view.append(&dropdown);

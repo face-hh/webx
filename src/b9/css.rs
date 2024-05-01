@@ -5,6 +5,31 @@ use gtk::{gdk::Display, prelude::*, CssProvider};
 
 static CSS_RULES: Mutex<Option<HashMap<String, Vec<(String, String)>>>> = Mutex::new(None); // shut the fuck up
 
+struct Properties {
+    line_height: String,
+    color: String,
+    background_color: String,
+    font_family: String,
+    font_weight: String,
+    text_align: String,
+    underline: String,
+    underline_color: String,
+    overline: String,
+    overline_color: String,
+    strikethrough: String,
+    strikethrough_color: String,
+    margin_top: String,
+    margin_bottom: String,
+    margin_left: String,
+    margin_right: String,
+    border_style: String,
+    border_color: String,
+    border_width: String,
+    border_radius: String,
+    padding: String,
+    font_size: String,
+}
+
 pub(crate) trait Styleable {
     fn style(&self);
 }
@@ -15,74 +40,71 @@ impl Styleable for gtk::Label {
         let css = guard.as_ref().unwrap();
         let mut classes = self.css_classes();
         let mut final_css = "".to_string();
-        
+
         classes.push(self.css_name());
 
         self.set_use_markup(true);
 
         for class in classes {
             if let Some(rules) = css.get(&class.to_string()) {
-                let mut font_size = "11px".to_string();
+                let mut properties = get_properties(rules);
 
                 match self.css_name().as_str() {
-                    "h1" => font_size = "24px".to_string(),
-                    "h2" => font_size = "22px".to_string(),
-                    "h3" => font_size = "20px".to_string(),
-                    "h4" => font_size = "18px".to_string(),
-                    "h5" => font_size = "16px".to_string(),
-                    "h6" => font_size = "14px".to_string(),
+                    "h1" => properties.font_size = "24px".to_string(),
+                    "h2" => properties.font_size = "22px".to_string(),
+                    "h3" => properties.font_size = "20px".to_string(),
+                    "h4" => properties.font_size = "18px".to_string(),
+                    "h5" => properties.font_size = "16px".to_string(),
+                    "h6" => properties.font_size = "14px".to_string(),
                     _ => {}
                 };
 
-                // i need a ultrawide monitor to read this shit
-                let line_height = get_rule(&rules, "line-height", &"1");
-
-                let color = get_rule(&rules, "color", &"#ffffff");
-                let font_family = get_rule(&rules, "font-family", &"Noto Sans");
-                let font_weight = get_rule(&rules, "font-weight", &"normal");
-                let underline = get_rule(&rules, "underline", &"none");
-                let underline_color = get_rule(&rules, "underline-color", &"black");
-                let overline = get_rule(&rules, "overline", &"none");
-                let overline_color = get_rule(&rules, "overline-color", &"black");
-                let strikethrough = get_rule(&rules, "strikethrough", &"false");
-                let strikethrough_color = get_rule(&rules, "strikethrough-color", &"black");
-
-                font_size = font_size.replace("px", "pt");
-
-                let margin_top = get_rule(&rules, "margin-top", "0").replace("px", "");
-                let margin_bottom = get_rule(&rules, "margin-bottom", "0").replace("px", "");
-                let margin_left = get_rule(&rules, "margin-left", "0").replace("px", "");
-                let margin_right = get_rule(&rules, "margin-right", "0").replace("px", "");
-
-                let border_style = get_rule(&rules, "border-style", "none");
-                let border_color = get_rule(&rules, "border-color", "black");
-                let border_width = get_rule(&rules, "border-width", "0");
-                let border_radius = get_rule(&rules, "border-radius", "0");
-                let padding = get_rule(&rules, "padding", "0");
+                properties.font_size = properties.font_size.replace("px", "pt");
 
                 let markup = &format!(
-                    "<span foreground=\"{color}\" size=\"{font_size}\" line_height=\"{line_height}\" font_family=\"{font_family}\" font_weight=\"{font_weight}\" underline=\"{underline}\" underline_color=\"{underline_color}\" overline=\"{overline}\" overline_color=\"{overline_color}\" strikethrough=\"{strikethrough}\" strikethrough_color=\"{strikethrough_color}\">{}</span>",
-                    self.label()
+                    "<span foreground=\"{}\" size=\"{}\" line_height=\"{}\" font_family=\"{}\" font_weight=\"{}\" underline=\"{}\" underline_color=\"{}\" overline=\"{}\" overline_color=\"{}\" strikethrough=\"{}\" strikethrough_color=\"{}\">{}</span>",
+                    properties.color,
+                    properties.font_size,
+                    properties.line_height,
+                    properties.font_family,
+                    properties.font_weight,
+                    properties.underline,
+                    properties.underline_color,
+                    properties.overline,
+                    properties.overline_color,
+                    properties.strikethrough,
+                    properties.strikethrough_color,
+                    self.label(),
                 );
-
-                self.set_margin_top(margin_top.parse::<i32>().unwrap_or(0));
-                self.set_margin_bottom(margin_bottom.parse::<i32>().unwrap_or(0));
-                self.set_margin_start(margin_left.parse::<i32>().unwrap_or(0));
-                self.set_margin_end(margin_right.parse::<i32>().unwrap_or(0));
 
                 self.set_markup(markup);
 
-                // would probably want to detect duplicates, though GTK seems to handle them just fine
-                final_css += &format!("
+                final_css += &format!(
+                    "
                 {} {{
-                    border-style: {border_style};
-                    border-color: {border_color};
-                    border-width: {border_width};
-                    border-radius: {border_radius};
-                    padding: {padding};
+                    margin-top: {};
+                    margin-bottom: {};
+                    margin-left: {};
+                    margin-right: {};
+
+                    border-style: {};
+                    border-color: {};
+                    border-width: {};
+                    border-radius: {};
+                    padding: {};
                 }}
-                "
-                , class);
+                ",
+                    class,
+                    properties.margin_top + "px",
+                    properties.margin_bottom + "px",
+                    properties.margin_left + "px",
+                    properties.margin_right + "px",
+                    properties.border_style,
+                    properties.border_color,
+                    properties.border_width,
+                    properties.border_radius,
+                    properties.padding
+                );
             }
 
             load_css_into_app(&final_css);
@@ -91,7 +113,59 @@ impl Styleable for gtk::Label {
 }
 
 impl Styleable for gtk::DropDown {
-    fn style(&self) {}
+    fn style(&self) {
+        let guard = CSS_RULES.lock().unwrap();
+        let css = guard.as_ref().unwrap();
+        let mut classes = self.css_classes();
+        let mut final_css = "".to_string();
+
+        classes.push("select".into());
+
+        for class in classes {
+
+            if let Some(rules) = css.get(&class.to_string()) {
+                let properties: Properties = get_properties(rules);
+
+                final_css += &format!(
+                    "
+                .{} {{
+                    color: {};
+                    background-color: {};
+                    font-size: {};
+                    font-family: {};
+
+                    margin-top: {};
+                    margin-bottom: {};
+                    margin-left: {};
+                    margin-right: {};
+
+                    border-style: {};
+                    border-color: {};
+                    border-width: {};
+                    border-radius: {};
+                    padding: {};
+                }}
+                ",
+                    class,
+                    properties.color,
+                    properties.background_color,
+                    properties.font_size,
+                    properties.font_family,
+                    properties.margin_top + "px",
+                    properties.margin_bottom + "px",
+                    properties.margin_left + "px",
+                    properties.margin_right + "px",
+                    properties.border_style,
+                    properties.border_color,
+                    properties.border_width,
+                    properties.border_radius,
+                    properties.padding
+                );
+            }
+
+            load_css_into_app(&final_css);
+        }
+    }
 }
 
 impl Styleable for gtk::LinkButton {
@@ -161,4 +235,57 @@ pub(crate) fn load_css_into_app(content: &str) {
         &provider,
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
+}
+
+// shithole
+fn get_properties(rules: &Vec<(String, String)>) -> Properties {
+    let line_height = get_rule(&rules, "line-height", &"1");
+    let font_size = get_rule(&rules, "font-size", &"11px");
+    let color = get_rule(&rules, "color", &"#ffffff");
+    let background_color = get_rule(&rules, "background-color", &"#202020");
+    let font_family = get_rule(&rules, "font-family", &"Noto Sans");
+    let font_weight = get_rule(&rules, "font-weight", &"normal");
+    let text_align = get_rule(&rules, "text_align", &"start");
+    let underline = get_rule(&rules, "underline", &"none");
+    let underline_color = get_rule(&rules, "underline-color", &"black");
+    let overline = get_rule(&rules, "overline", &"none");
+    let overline_color = get_rule(&rules, "overline-color", &"black");
+    let strikethrough = get_rule(&rules, "strikethrough", &"false");
+    let strikethrough_color = get_rule(&rules, "strikethrough-color", &"black");
+
+    let margin_top = get_rule(&rules, "margin-top", "0").replace("px", "");
+    let margin_bottom = get_rule(&rules, "margin-bottom", "0").replace("px", "");
+    let margin_left = get_rule(&rules, "margin-left", "0").replace("px", "");
+    let margin_right = get_rule(&rules, "margin-right", "0").replace("px", "");
+
+    let border_style = get_rule(&rules, "border-style", "none");
+    let border_color = get_rule(&rules, "border-color", "black");
+    let border_width = get_rule(&rules, "border-width", "0");
+    let border_radius = get_rule(&rules, "border-radius", "0");
+    let padding = get_rule(&rules, "padding", "0");
+
+    Properties {
+        line_height,
+        color,
+        background_color,
+        font_family,
+        font_weight,
+        text_align,
+        underline,
+        underline_color,
+        overline,
+        overline_color,
+        strikethrough,
+        strikethrough_color,
+        margin_top,
+        margin_bottom,
+        margin_left,
+        margin_right,
+        border_style,
+        border_color,
+        border_width,
+        border_radius,
+        padding,
+        font_size,
+    }
 }
