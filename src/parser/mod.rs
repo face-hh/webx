@@ -19,7 +19,7 @@ pub fn parse(input: &str) -> Result<HashMap<String, Vec<(String, String)>>, Pars
     let mut output = HashMap::new();
     let lines: Vec<&str> = input.lines().collect();
 
-    let mut selector = String::new();
+    let mut selectors = Vec::new();
     let mut props = Vec::new();
 
     for (i, line) in lines.iter().enumerate() {
@@ -30,11 +30,18 @@ pub fn parse(input: &str) -> Result<HashMap<String, Vec<(String, String)>>, Pars
         }
 
         if trimmed_line.ends_with("{") {
-            selector = trimmed_line.trim_end_matches("{").trim().to_string();
+            selectors = trimmed_line
+                .trim_end_matches("{")
+                .trim()
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect();
         } else if trimmed_line.ends_with("}") {
-            output.insert(selector.clone(), props.clone());
+            for selector in selectors.iter() {
+                output.insert(selector.clone(), props.clone());
+            }
 
-            selector.clear();
+            selectors.clear();
             props.clear();
         } else {
             let parts: Vec<&str> = trimmed_line.split(":").collect();
@@ -53,4 +60,6 @@ pub fn parse(input: &str) -> Result<HashMap<String, Vec<(String, String)>>, Pars
 
     Ok(output)
 }
+
+
 

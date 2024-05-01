@@ -56,11 +56,27 @@ ok {
     border-radius: 5px;
 }
 
-input[type="text"], textarea {
+textarea {
     padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    border-color: #616161;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 12px;
+
+    width: 400px;
+    height: 100px;
 }
+
+input {
+    padding: 5px;
+    border-color: #616161;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 12px;
+
+    width: 400px;
+}
+
 
 select {
     padding: 5px;
@@ -73,6 +89,7 @@ select {
 }
 
 hr {
-    border: none;
-    border-top: 1px solid #ccc;
+    border-color: #ccc;
+    border-width: 1px;
+    border-style: solid;
 }

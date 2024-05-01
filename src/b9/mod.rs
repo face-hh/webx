@@ -4,11 +4,7 @@ extern crate html_parser;
 
 use std::thread;
 
-use gtk::{
-    gdk_pixbuf, gio,
-    glib::Bytes,
-    prelude::*,
-};
+use gtk::{gdk_pixbuf, gio, glib::Bytes, prelude::*, Expression};
 use html_parser::{Dom, Element, Node, Result};
 
 fn parse_html_from_file() -> Result<(Node, Node)> {
@@ -90,7 +86,7 @@ fn render_html(
                             .halign(gtk::Align::Start)
                             .wrap(true)
                             .build();
-                        
+
                         css::perform_styling(element, &label);
 
                         html_view.append(&label);
@@ -135,7 +131,7 @@ fn render_html(
                                 .css_classes(el.classes.clone())
                                 .build();
 
-                                css::perform_styling(element, &link_button);
+                            css::perform_styling(element, &link_button);
 
                             label_box.append(&link_button);
                         } else {
@@ -152,14 +148,14 @@ fn render_html(
                 .css_name(element.name.as_str())
                 .build();
 
-                css::perform_styling(element, &list_box);
+            css::perform_styling(element, &list_box);
 
             html_view.append(&list_box);
 
             render_list(element, list_box);
         }
         "hr" => {
-            let line = gtk::Separator::new(gtk::Orientation::Horizontal);
+            let line = gtk::Separator::builder().orientation(gtk::Orientation::Horizontal).css_name("hr").css_classes(element.classes.clone()).build();
             css::perform_styling(element, &line);
 
             html_view.append(&line);
@@ -181,7 +177,7 @@ fn render_html(
                     .unwrap();
 
             let wrapper = gtk::Box::builder().build();
-            
+
             let image = gtk::Picture::builder()
                 .css_name("img")
                 .alternative_text(element.attributes.get("alt").unwrap().clone().unwrap())
@@ -191,7 +187,7 @@ fn render_html(
                 .can_shrink(false)
                 .build();
 
-                css::perform_styling(element, &image);
+            css::perform_styling(element, &image);
 
             image.set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
             // weird workaround - https://discourse.gnome.org/t/can-shrink-on-picture-creates-empty-occupied-space/20547/2
@@ -221,7 +217,7 @@ fn render_html(
                     .halign(gtk::Align::Start)
                     .build();
 
-                    css::perform_styling(element, &entry);
+                css::perform_styling(element, &entry);
 
                 html_view.append(&entry);
             }
@@ -241,13 +237,13 @@ fn render_html(
                 }
             }
 
-            let dropdown = gtk::DropDown::new(
-                Some(gtk::StringList::new(&strings[..])),
-                gtk::Expression::NONE,
-            );
+            let dropdown = gtk::DropDown::builder()
+                .model(&gtk::StringList::new(&strings[..]))
+                .css_name("select")
+                .css_classes(element.classes.clone())
+                .halign(gtk::Align::Start)
+                .build();
 
-            dropdown.add_css_class("select");
-            
             css::perform_styling(element, &dropdown);
 
             html_view.append(&dropdown);
@@ -261,19 +257,13 @@ fn render_html(
                 .valign(gtk::Align::Start)
                 .build();
 
-                css::perform_styling(element, &textview);
-
-            textview.set_size_request(300, 200);
+            css::perform_styling(element, &textview);
 
             textview
                 .buffer()
                 .set_text(element.children[0].text().unwrap());
 
-            let bruh = gtk::ScrolledWindow::builder().build();
-
-            bruh.set_child(Some(&textview));
-            bruh.set_vexpand(true);
-            html_view.append(&bruh);
+            html_view.append(&textview);
         }
         _ => {
             println!("INFO: Unknown element: {}", element.name);
@@ -306,7 +296,7 @@ fn render_list(element: &Element, list_box: gtk::Box) {
                         .halign(gtk::Align::Start)
                         .build();
 
-                        css::perform_styling(element, &label);
+                    css::perform_styling(element, &label);
 
                     li.append(&lead);
                     li.append(&label);
