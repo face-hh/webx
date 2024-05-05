@@ -7,6 +7,9 @@ use gtk::{gdk::Display, prelude::*, CssProvider};
 static CSS_RULES: Mutex<Option<HashMap<String, Vec<(String, String)>>>> = Mutex::new(None); // shut the fuck up
 
 struct Properties {
+    direction: String,
+    align_items: String,
+
     width: i32,
     height: i32,
 
@@ -32,6 +35,7 @@ struct Properties {
     border_radius: String,
     padding: String,
     font_size: String,
+    gap: i32,
 }
 
 pub(crate) trait Styleable {
@@ -201,10 +205,26 @@ impl Styleable for gtk::Box {
         let mut final_css = "".to_string();
 
         classes.push(self.css_name());
-
+        println!("{:?}", classes);
         for class in classes {
             if let Some(rules) = css.get(&class.to_string()) {
                 let properties: Properties = get_properties(rules);
+
+                self.set_spacing(properties.gap);
+                
+                match properties.direction.as_str() {
+                    "column" => self.set_orientation(gtk::Orientation::Vertical),
+                    "row" => self.set_orientation(gtk::Orientation::Horizontal),
+                    _ => {}
+                };
+
+                match properties.align_items.as_str() {
+                    "fill" => self.set_halign(gtk::Align::Fill),
+                    "start" => self.set_halign(gtk::Align::Start),
+                    "end" => self.set_halign(gtk::Align::End),
+                    "center" => self.set_halign(gtk::Align::Center),
+                    _ => {}
+                };
 
                 final_css += &format!(
                     "
@@ -482,9 +502,11 @@ impl Styleable for gtk::Entry {
 
 pub(crate) fn load_css() {
     let stylesheet_utf8_string = fs::read_to_string("test/styles.css").unwrap();
-    let res = parser::parse(&stylesheet_utf8_string).unwrap();
-
-    CSS_RULES.lock().unwrap().replace(res);
+    if let Ok(res) = parser::parse(&stylesheet_utf8_string) {
+        *CSS_RULES.lock().unwrap() = Some(res);
+    } else {
+        eprintln!("Failed to parse CSS!");
+    }
 }
 
 pub(crate) fn perform_styling<T: Styleable>(_element: &html_parser::Element, styleable: &T) {
@@ -513,6 +535,9 @@ pub(crate) fn load_css_into_app(content: &str) {
 
 // shithole
 fn get_properties(rules: &Vec<(String, String)>) -> Properties {
+    let direction = get_rule(&rules, "direction", &"row");
+    let align_items = get_rule(&rules, "align-items", &"fill");
+
     let line_height = get_rule(&rules, "line-height", &"1");
     let font_size = get_rule(&rules, "font-size", &"11px");
     let color = get_rule(&rules, "color", &"#ffffff");
@@ -538,10 +563,14 @@ fn get_properties(rules: &Vec<(String, String)>) -> Properties {
     let border_radius = get_rule(&rules, "border-radius", "0");
     let padding = get_rule(&rules, "padding", "0");
 
+    let gap = get_rule(&rules, "gap", "0").replace("px", "").parse::<i32>().unwrap_or(0);
+
     let width = get_rule(&rules, "width", "auto").replace("px", "").parse::<i32>().unwrap_or(0);
     let height = get_rule(&rules, "height", "auto").replace("px", "").parse::<i32>().unwrap_or(0);
 
     Properties {
+        direction,
+        align_items,
         width,
         height,
         line_height,
@@ -565,6 +594,7 @@ fn get_properties(rules: &Vec<(String, String)>) -> Properties {
         border_width,
         border_radius,
         padding,
+        gap,
         font_size,
     }
 }

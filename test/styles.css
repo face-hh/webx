@@ -1,9 +1,15 @@
-body {
-    font-family: Arial, sans-serif;
-    color: #333;
-    margin: 20px;
-    padding: 0;
-    background-color: #f9f9f9;
+body {}
+
+div {
+    border-color: #616161;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 12px;
+    padding: 10px;
+    direction: row;
+    align-items: center;
+
+    gap: 10;
 }
 
 h1 {
@@ -16,7 +22,6 @@ p {
     line-height: 1.5;
     font-family: Iosevka;
     font-weight: bold;
-
 
     border-style: solid;
     border-width: 5px;
@@ -46,14 +51,6 @@ ul, ol {
 
 ok {
     color: red;
-}
-
-.omagad {
-    width: 200px;
-    height: 200px;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
 }
 
 textarea {

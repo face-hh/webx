@@ -9,6 +9,13 @@ use gtk::{prelude::*, CssProvider};
 
 const APP_ID: &str = "org.bussin.napture";
 
+#[derive(Clone, Debug)]
+struct Tab {
+    name: String,
+    icon: String,
+    widget: gtk::Box,
+}
+
 fn main() -> glib::ExitCode {
     gtk::gio::resources_register_include!("icons.gresource").unwrap();
 
@@ -21,6 +28,8 @@ fn main() -> glib::ExitCode {
 }
 
 fn build_ui(app: &adw::Application) {
+    let tabs: Vec<Tab> = vec![];
+
     let window = Window::new(app);
 
     let cursor_pointer = Cursor::from_name("pointer", None);
@@ -29,37 +38,22 @@ fn build_ui(app: &adw::Application) {
     let separator = gtk::Separator::new(gtk::Orientation::Horizontal);
     let headerbar = gtk::HeaderBar::builder().build();
 
-    let tabs = gtk::Box::builder().css_name("tabs").spacing(6).build();
+    let tabs_w = gtk::Box::builder().css_name("tabs").spacing(6).build();
 
-    let tab1 = make_tab(tabs.clone(), "New Tab", "file.png", cursor_pointer.as_ref());
-    let tab2 = make_tab(
-        tabs.clone(),
-        "New Tab 2",
+    let tab1 = make_tab(
+        tabs_w.clone(),
+        "New Tab",
         "file.png",
         cursor_pointer.as_ref(),
-    );
-    let tab3 = make_tab(
-        tabs.clone(),
-        "New Tab 3",
-        "file.png",
-        cursor_pointer.as_ref(),
-    );
-    let tab4 = make_tab(
-        tabs.clone(),
-        "New Tab 4",
-        "file.png",
-        cursor_pointer.as_ref(),
+        tabs,
     );
 
-    tabs.append(&tab1);
-    tabs.append(&tab2);
-    tabs.append(&tab3);
-    tabs.append(&tab4);
+    tabs_w.append(&tab1.widget);
 
-    headerbar.set_title_widget(Some(&tabs));
+    headerbar.set_title_widget(Some(&tabs_w));
 
     window.set_titlebar(Some(&headerbar));
-    
+
     let htmlview = b9::build_ui().unwrap();
     let bruh = gtk::ScrolledWindow::builder().build();
 
@@ -83,7 +77,13 @@ fn build_ui(app: &adw::Application) {
     window.present();
 }
 
-fn make_tab(tabs: gtk::Box, label: &str, icon: &str, cursor_pointer: Option<&Cursor>) -> gtk::Box {
+fn make_tab(
+    tabs_w: gtk::Box,
+    label: &str,
+    icon: &str,
+    cursor_pointer: Option<&Cursor>,
+    mut tabs: Vec<Tab>,
+) -> Tab {
     let tab = gtk::Box::builder()
         .halign(gtk::Align::Center)
         .valign(gtk::Align::Center)
@@ -91,13 +91,15 @@ fn make_tab(tabs: gtk::Box, label: &str, icon: &str, cursor_pointer: Option<&Cur
         .css_name("tab")
         .build();
 
-    let tab_copy = tab.clone();
+    // let tab_copy = tab.clone();
     let x = gtk::Button::builder().css_name("tab-close").build();
 
     x.set_icon_name("close");
 
+    // let tabs_clone = tabs.clone();
     x.connect_clicked(move |_| {
-        tabs.remove(&tab_copy);
+        //remove_tab(&tab_copy, tabs_w.clone(), tabs_clone.to_vec());
+        todo!("implement proper tabs")
     });
 
     let tabicon = gtk::Image::from_file(icon);
@@ -121,5 +123,20 @@ fn make_tab(tabs: gtk::Box, label: &str, icon: &str, cursor_pointer: Option<&Cur
     tab.append(&tabname);
     tab.append(&x);
 
-    return tab;
+    let res = Tab {
+        name: label.to_string(),
+        icon: icon.to_string(),
+        widget: tab,
+    };
+
+    tabs.push(res.clone());
+
+    res
 }
+
+// fn remove_tab(tab: &gtk::Box, tabs_w: gtk::Box, mut tabs: Vec<Tab>) {
+//     println!("{:?}", tabs);
+//     tabs_w.remove(tab);
+//     let idx = tabs.iter().position(|t| t.widget.eq(tab)).unwrap();
+//     tabs.remove(idx);
+// }

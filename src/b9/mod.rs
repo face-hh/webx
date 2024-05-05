@@ -7,8 +7,10 @@ use std::thread;
 use gtk::{gdk_pixbuf, gio, glib::Bytes, prelude::*, Expression};
 use html_parser::{Dom, Element, Node, Result};
 
+use self::css::Styleable;
+
 fn parse_html_from_file() -> Result<(Node, Node)> {
-    let html = std::fs::read_to_string("test/index.html")?;
+    let html: String = std::fs::read_to_string("test/index.html")?;
     let dom = Dom::parse(&html)?;
 
     let head = find_element_by_name(&dom.children, "head").expect("Couldn't find head.");
@@ -38,23 +40,50 @@ pub fn build_ui() -> Result<gtk::Box> {
 
     let html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
-        .halign(gtk::Align::Start)
+        .halign(gtk::Align::Fill)
         .hexpand(true)
         .valign(gtk::Align::Start)
         .spacing(6)
-        .css_name("htmlview")
+        .css_name("body")
         .build();
 
-    let (_head, body) = parse_html_from_file()?;
+    html_view.style();
+    
+    let (head, body) = parse_html_from_file()?;
 
     for element in body.element().unwrap().children.iter() {
-        let element = element.element().unwrap();
-        let contents = element.children.get(0);
+        if let Some(element) = element.element() {
+            let contents = element.children.get(0);
 
-        render_html(element, contents, html_view.clone(), false);
+            render_html(element, contents, html_view.clone(), false);
+        }
+    }
+
+    for element in head.element().unwrap().children.iter() {
+        if let Some(element) = element.element() {
+            let contents = element.children.get(0);
+
+            render_head(element, contents, html_view.clone());
+        }
     }
 
     Ok(html_view)
+}
+
+fn render_head(element: &Element, contents: Option<&Node>, html_view: gtk::Box) {
+    match element.name.as_str() {
+        "title" => {
+            // set the current `Tab` name to this
+        },
+        "link" => {
+            if let Some(href) = element.attributes.get("href") {
+                if let Some(href) = href.as_ref() {
+                    // got the href here
+                }
+            }
+        }
+        _ => {}
+    }
 }
 
 fn render_html(
@@ -75,6 +104,26 @@ fn render_html(
     }
 
     match element.name.as_str() {
+        "div" => {
+            let div_box = gtk::Box::builder()
+                .orientation(gtk::Orientation::Horizontal)
+                .css_name("div")
+                .css_classes(element.classes.clone())
+                .build();
+
+            div_box.style();
+
+            html_view.append(&div_box);
+
+            for child in element.children.iter() {
+                match child {
+                    Node::Element(el) => {
+                        render_html(el, el.children.get(0), div_box.clone(), true);
+                    }
+                    _ => {}
+                }
+            }
+        }
         "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
             if let Some(text) = contents {
                 match text {
@@ -155,7 +204,11 @@ fn render_html(
             render_list(element, list_box);
         }
         "hr" => {
-            let line = gtk::Separator::builder().orientation(gtk::Orientation::Horizontal).css_name("hr").css_classes(element.classes.clone()).build();
+            let line = gtk::Separator::builder()
+                .orientation(gtk::Orientation::Horizontal)
+                .css_name("hr")
+                .css_classes(element.classes.clone())
+                .build();
             css::perform_styling(element, &line);
 
             html_view.append(&line);
