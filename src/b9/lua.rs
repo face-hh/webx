@@ -1,4 +1,5 @@
-use std::sync::Arc;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use super::html::Tag;
 use mlua::prelude::*;
@@ -10,28 +11,39 @@ use mlua::prelude::*;
 //     Ok(())
 // }
 
-fn get(lua: &'static Lua, class: String, tags: &'static Vec<Tag>) -> LuaResult<LuaTable<'static>> {
-    for tag in tags {
+fn get<'lua>(lua: &'lua Lua, class: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<LuaTable<'lua>> {
+    let tags_ref = tags.borrow();
+
+    for (i, tag) in tags_ref.iter().enumerate() {
         if tag.classes.contains(&class) {
+            let tags1 = Rc::clone(&tags);
+            let tags2= Rc::clone(&tags);
+            let tags3 = Rc::clone(&tags);
+
             let table = lua.create_table()?;
 
-            table.set("name", tag.widget.get_css_name())?;
+            let css_name = tag.widget.get_css_name().clone();
+
+            table.set("name", css_name)?;
 
             table.set(
                 "get_content",
-                lua.create_function(|_, ()| Ok(tag.widget.get_contents()))?,
+                lua.create_function(move |_, ()| {
+                    let ok = tags1.borrow()[i].widget.get_contents().clone();
+                    Ok(ok)  
+                })?,
             )?;
             table.set(
                 "set_content",
-                lua.create_function(|_, label: String| {
-                    tag.widget._set_label(label);
+                lua.create_function(move |_, label: String| {
+                    tags2.borrow()[i].widget._set_label(label.clone());
                     Ok(())
                 })?,
             )?;
             table.set(
                 "on_click",
                 lua.create_function(move |_lua, func: LuaFunction| {
-                    tag.widget._on_click(&func);
+                    tags3.borrow()[i].widget._on_click(Rc::new(RefCell::new(func)));
                     Ok(())
                 })?,
             )?;
@@ -48,17 +60,15 @@ fn print(_lua: &Lua, msg: String) -> LuaResult<()> {
     Ok(())
 }
 
-pub(crate) fn run(tags: Vec<Tag>) -> LuaResult<()> {
+pub(crate) fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     let lua = Lua::new();
     let globals = lua.globals();
-
-    let tags_static: &'static Vec<Tag> = Box::leak(Box::new(tags));
 
     // globals.set("sleep_ms", lua.create_async_function(sleep_ms)?)?;
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
         "get",
-        lua.create_function(move |lua, class: String| get(lua, class, tags_static))?,
+        lua.create_function(move |lua, class: String| get(lua, class, tags))?,
     )?;
 
     let ok = lua
