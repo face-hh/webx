@@ -54,7 +54,7 @@ fn build_ui(app: &adw::Application) {
 
     window.set_titlebar(Some(&headerbar));
 
-    let htmlview = b9::build_ui().unwrap();
+    let htmlview = b9::html::build_ui().unwrap();
     let bruh = gtk::ScrolledWindow::builder().build();
 
     bruh.set_child(Some(&htmlview));
