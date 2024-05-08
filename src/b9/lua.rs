@@ -2,10 +2,45 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
+use super::css::Styleable;
 use super::html::Tag;
 use mlua::prelude::*;
 use mlua::OwnedFunction;
+use gtk::prelude::*;
 
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
+}
+macro_rules! problem {
+    ($type:expr, $s:expr) => {{
+        let problem_type = match ($type) {
+            "error" => "ERROR",
+            "warning" => "WARNING",
+            _ => "UNKNOWN",
+        };
+
+        let log_msg = format!("{}: {}\n", problem_type, $s);
+
+        if let Ok(mut lua_logs) = LUA_LOGS.lock() {
+            lua_logs.push_str(&log_msg);
+        } else {
+            eprintln!("FATAL: failed to lock lua logs mutex!");
+        }
+    }};
+}
+
+pub trait Luable: Styleable {
+    fn get_children(&self) -> Vec<gtk::Widget>;
+    fn get_css_classes(&self) -> Vec<String>;
+    fn get_css_name(&self) -> String;
+    fn get_contents(&self) -> String;
+    fn _set_label(&self, contents: String);
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction);
+    fn _on_submit<'a>(&self, func: &'a LuaOwnedFunction);
+    fn _on_input<'a>(&self, func: &'a LuaOwnedFunction);
+}
 // use tokio::time::{sleep, Duration};
 
 // async fn sleep_ms(_lua: &Lua, ms: u64) -> LuaResult<()> {
@@ -102,5 +137,54 @@ pub(crate) fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
             );
             Err(LuaError::runtime("Failed to run script!"))
         }
+    }
+}
+
+// h1, h2, h3, h4, h5, h6, p
+impl Luable for gtk::Label {
+    fn get_children(&self) -> Vec<gtk::Widget> {
+        Vec::new()
+    }
+
+    fn get_css_classes(&self) -> Vec<String> {
+        self.css_classes().iter().map(|s| s.to_string()).collect()
+    }
+
+    fn get_css_name(&self) -> String {
+        self.css_name().to_string()
+    }
+
+    fn get_contents(&self) -> String {
+        self.text().to_string()
+    }
+
+    fn _set_label(&self, contents: String) {
+        self.set_text(&contents);
+    }
+
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+        let gesture = gtk::GestureClick::new();
+
+        let a = Rc::new(func.clone());
+
+        gesture.connect_released(move |_, _, _, _| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
+
+        self.add_controller(gesture)
+    }
+    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "Text-based components do not support the \"submit\" event. Are you perhaps looking for the \"click\" event?"
+        );
+    }
+    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "Text-based components do not support the \"input\" event."
+        );
     }
 }

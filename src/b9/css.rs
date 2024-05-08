@@ -3,12 +3,7 @@ use crate::parser;
 use std::{collections::HashMap, fs, rc::Rc, sync::Mutex};
 
 use gtk::{gdk::Display, prelude::*, CssProvider};
-use lazy_static::lazy_static;
 use mlua::prelude::*;
-
-lazy_static! {
-    static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
-}
 
 static CSS_RULES: Mutex<Option<HashMap<String, Vec<(String, String)>>>> = Mutex::new(None); // shut the fuck up
 
@@ -44,31 +39,8 @@ struct Properties {
     gap: i32,
 }
 
-macro_rules! problem {
-    ($type:expr, $s:expr) => {{
-        let problem_type = match ($type) {
-            "error" => "ERROR",
-            "warning" => "WARNING",
-            _ => "UNKNOWN",
-        };
-
-        let log_msg = format!("{}: {}\n", problem_type, $s);
-
-        let mut lua_logs = LUA_LOGS.lock().unwrap();
-        lua_logs.push_str(&log_msg);
-    }};
-}
-
 pub(crate) trait Styleable {
     fn style(&self);
-    fn get_children(&self) -> Vec<gtk::Widget>;
-    fn get_css_classes(&self) -> Vec<String>;
-    fn get_css_name(&self) -> String;
-    fn get_contents(&self) -> String;
-    fn _set_label(&self, contents: String);
-    fn _on_click(&self, func: &LuaOwnedFunction);
-    fn _on_submit(&self, func: &LuaOwnedFunction);
-    fn _on_input(&self, func: &LuaOwnedFunction);
 }
 
 // h1, h2, h3, h4, h5, h6, p
