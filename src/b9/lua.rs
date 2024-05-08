@@ -1,8 +1,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use super::html::Tag;
 use mlua::prelude::*;
+use mlua::OwnedFunction;
 
 // use tokio::time::{sleep, Duration};
 
@@ -42,8 +44,8 @@ fn get<'lua>(lua: &'lua Lua, class: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaR
             )?;
             table.set(
                 "on_click",
-                lua.create_function(move |_lua, func: LuaFunction| {
-                    tags3.borrow()[i].widget._on_click(Rc::new(RefCell::new(func)));
+                lua.create_function(move |_lua, func: OwnedFunction| {
+                    tags3.borrow()[i].widget._on_click(&func);
                     Ok(())
                 })?,
             )?;
@@ -68,7 +70,7 @@ pub(crate) fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
         "get",
-        lua.create_function(move |lua, class: String| get(lua, class, tags))?,
+        lua.create_function(move |lua, class: String| get(lua, class, tags.clone()))?,
     )?;
 
     let ok = lua

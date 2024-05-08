@@ -41,7 +41,7 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
 }
 
 pub fn build_ui() -> Result<gtk::Box> {
-    let mut tags = Rc::new(RefCell::new(Vec::new()));
+    let tags = Rc::new(RefCell::new(Vec::new()));
 
     css::load_css();
 
@@ -62,7 +62,7 @@ pub fn build_ui() -> Result<gtk::Box> {
         if let Some(element) = element.element() {
             let contents = element.children.get(0);
 
-            render_html(element, contents, html_view.clone(), false, tags);
+            render_html(element, contents, html_view.clone(), false, tags.clone());
         }
     }
 
@@ -132,7 +132,7 @@ fn render_html(
             for child in element.children.iter() {
                 match child {
                     Node::Element(el) => {
-                        render_html(el, el.children.get(0), div_box.clone(), true, tags);
+                        render_html(el, el.children.get(0), div_box.clone(), true, tags.clone());
                     }
                     _ => {}
                 }
@@ -156,7 +156,7 @@ fn render_html(
                         html_view.append(&label);
                     }
                     Node::Element(el) => {
-                        render_html(el, el.children.get(0), html_view, true, tags);
+                        render_html(el, el.children.get(0), html_view, true, tags.clone());
                     }
                     _ => {}
                 }
@@ -201,7 +201,7 @@ fn render_html(
 
                             label_box.append(&link_button);
                         } else {
-                            render_html(el, el.children.get(0), html_view.clone(), true, tags);
+                            render_html(el, el.children.get(0), html_view.clone(), true, tags.clone());
                         }
                     }
                     Node::Comment(_) => {}

@@ -3,6 +3,7 @@ mod custom_window;
 mod parser;
 
 use custom_window::Window;
+
 use gtk::gdk::{Cursor, Display};
 use gtk::glib;
 use gtk::{prelude::*, CssProvider};
@@ -15,8 +16,8 @@ struct Tab {
     icon: String,
     widget: gtk::Box,
 }
-
 fn main() -> glib::ExitCode {
+    std::env::set_var("RUST_BACKTRACE", "full");
     gtk::gio::resources_register_include!("icons.gresource").unwrap();
 
     let app = adw::Application::builder().application_id(APP_ID).build();

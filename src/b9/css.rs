@@ -1,6 +1,12 @@
 // this code is held together with hopes, dreams and glue
 use crate::parser;
-use std::{cell::RefCell, collections::HashMap, fs, rc::Rc, sync::{Arc, Mutex}};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    fs,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 use glib::{closure_local, RustClosure};
 use gtk::{gdk::Display, prelude::*, CssProvider};
@@ -47,7 +53,7 @@ pub(crate) trait Styleable {
     fn get_css_name(&self) -> String;
     fn get_contents(&self) -> String;
     fn _set_label(&self, contents: String);
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>);
+    fn _on_click(&self, func: &LuaOwnedFunction);
 }
 
 // h1, h2, h3, h4, h5, h6, p
@@ -73,13 +79,18 @@ impl Styleable for gtk::Label {
     }
 
     // TODO: figure out how to connect "clicked" on GtkLabel
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>) {
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
-        let a = Rc::clone(&func.clone()).borrow();
+        
+        let a = Rc::new(func.clone());
 
-        gesture.connect_closure("clicked", false, closure_local!(move || {
-            a.call::<_, ()>(LuaNil);
-        }));
+        gesture.connect_closure(
+            "pressed",
+            false,
+            closure_local!(|| {
+                a.call::<_, String>(123).unwrap();
+            }),
+        );
 
         self.add_controller(gesture)
     }
@@ -178,7 +189,7 @@ impl Styleable for gtk::DropDown {
         "".to_string()
     }
     fn _set_label(&self, contents: String) {}
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
         let css = guard.as_ref().unwrap();
@@ -253,7 +264,7 @@ impl Styleable for gtk::LinkButton {
     fn _set_label(&self, contents: String) {
         self.set_label(&contents);
     }
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
     fn style(&self) {
         let lbl = gtk::Label::builder()
             .css_name("a")
@@ -289,7 +300,7 @@ impl Styleable for gtk::Box {
         "".to_string()
     }
     fn _set_label(&self, contents: String) {}
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -384,7 +395,7 @@ impl Styleable for gtk::TextView {
     fn _set_label(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -462,7 +473,7 @@ impl Styleable for gtk::Separator {
         "".to_string()
     }
     fn _set_label(&self, contents: String) {}
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -535,7 +546,7 @@ impl Styleable for gtk::Picture {
         "".to_string()
     }
     fn _set_label(&self, contents: String) {}
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -611,7 +622,7 @@ impl Styleable for gtk::Entry {
     fn _set_label(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -692,7 +703,7 @@ impl Styleable for gtk::Button {
     fn _set_label(&self, contents: String) {
         self.set_label(&contents);
     }
-    fn _on_click(&self, func: Rc<RefCell<LuaFunction>>) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
