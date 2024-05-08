@@ -1,9 +1,8 @@
 // this code is held together with hopes, dreams and glue
 use crate::parser;
-use std::{collections::HashMap, fs, rc::Rc, sync::Mutex};
+use std::{collections::HashMap, fs, sync::Mutex};
 
 use gtk::{gdk::Display, prelude::*, CssProvider};
-use mlua::prelude::*;
 
 static CSS_RULES: Mutex<Option<HashMap<String, Vec<(String, String)>>>> = Mutex::new(None); // shut the fuck up
 

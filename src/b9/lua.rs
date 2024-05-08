@@ -1,12 +1,12 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use super::css::Styleable;
 use super::html::Tag;
+use gtk::prelude::*;
 use mlua::prelude::*;
 use mlua::OwnedFunction;
-use gtk::prelude::*;
 
 use lazy_static::lazy_static;
 
@@ -32,11 +32,15 @@ macro_rules! problem {
 }
 
 pub trait Luable: Styleable {
-    fn get_children(&self) -> Vec<gtk::Widget>;
     fn get_css_classes(&self) -> Vec<String>;
     fn get_css_name(&self) -> String;
+
     fn get_contents(&self) -> String;
-    fn _set_label(&self, contents: String);
+    fn get_href(&self) -> String;
+
+    fn set_contents(&self, contents: String);
+    fn set_href(&self, href: String);
+
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction);
     fn _on_submit<'a>(&self, func: &'a LuaOwnedFunction);
     fn _on_input<'a>(&self, func: &'a LuaOwnedFunction);
@@ -48,13 +52,17 @@ pub trait Luable: Styleable {
 //     Ok(())
 // }
 
-fn get<'lua>(lua: &'lua Lua, class: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<LuaTable<'lua>> {
+fn get<'lua>(
+    lua: &'lua Lua,
+    class: String,
+    tags: Rc<RefCell<Vec<Tag>>>,
+) -> LuaResult<LuaTable<'lua>> {
     let tags_ref = tags.borrow();
 
     for (i, tag) in tags_ref.iter().enumerate() {
         if tag.classes.contains(&class) {
             let tags1 = Rc::clone(&tags);
-            let tags2= Rc::clone(&tags);
+            let tags2 = Rc::clone(&tags);
             let tags3 = Rc::clone(&tags);
             let tags4 = Rc::clone(&tags);
             let tags5 = Rc::clone(&tags);
@@ -69,13 +77,13 @@ fn get<'lua>(lua: &'lua Lua, class: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaR
                 "get_content",
                 lua.create_function(move |_, ()| {
                     let ok = tags1.borrow()[i].widget.get_contents().clone();
-                    Ok(ok)  
+                    Ok(ok)
                 })?,
             )?;
             table.set(
                 "set_content",
                 lua.create_function(move |_, label: String| {
-                    tags2.borrow()[i].widget._set_label(label.clone());
+                    tags2.borrow()[i].widget.set_contents(label.clone());
                     Ok(())
                 })?,
             )?;
@@ -140,14 +148,16 @@ pub(crate) fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     }
 }
 
+// UTILS
+fn gtk_buffer_to_text(buffer: &gtk::TextBuffer) -> String {
+    let (start, end) = buffer.bounds();
+    let text = buffer.text(&start, &end, true);
+    text.to_string()
+}
 // IMPLEMENTATIONS
 
-// h1, h2, h3, h4, h5, h6, p
+// h1, h2, h3, h4, h5, h6
 impl Luable for gtk::Label {
-    fn get_children(&self) -> Vec<gtk::Widget> {
-        Vec::new()
-    }
-
     fn get_css_classes(&self) -> Vec<String> {
         self.css_classes().iter().map(|s| s.to_string()).collect()
     }
@@ -159,9 +169,22 @@ impl Luable for gtk::Label {
     fn get_contents(&self) -> String {
         self.text().to_string()
     }
+    fn get_href(&self) -> String {
+        problem!(
+            "warning",
+            "Most text-based components do not support the \"get_href\" method. Are you perhaps looking for the \"p\" tag?"
+        );
+        "".to_string()
+    }
 
-    fn _set_label(&self, contents: String) {
+    fn set_contents(&self, contents: String) {
         self.set_text(&contents);
+    }
+    fn set_href(&self, _: String) {
+            problem!(
+            "warning",
+            "Most text-based components do not support the \"set_href\" method. Are you perhaps looking for the \"p\" tag?"
+        );
     }
 
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
@@ -193,10 +216,6 @@ impl Luable for gtk::Label {
 
 // select
 impl Luable for gtk::DropDown {
-    fn get_children(&self) -> Vec<gtk::Widget> {
-        Vec::new()
-    }
-
     fn get_css_classes(&self) -> Vec<String> {
         self.css_classes().iter().map(|s| s.to_string()).collect()
     }
@@ -208,12 +227,27 @@ impl Luable for gtk::DropDown {
     fn get_contents(&self) -> String {
         "".to_string()
     }
-    fn _set_label(&self, _: String) {
+    fn get_href(&self) -> String {
+        problem!(
+            "warning",
+            "\"select\" component does not support the \"get_href\" method."
+        );
+        "".to_string()
+    }
+
+    fn set_contents(&self, _: String) {
         problem!(
             "warning",
             "\"select\" component does not support the \"set_content\" method."
         );
     }
+    fn set_href(&self, _: String) {
+        problem!(
+            "warning",
+            "\"select\" component does not support the \"set_href\" method."
+        );
+    }
+
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -243,10 +277,6 @@ impl Luable for gtk::DropDown {
 
 // a
 impl Luable for gtk::LinkButton {
-    fn get_children(&self) -> Vec<gtk::Widget> {
-        Vec::new()
-    }
-
     fn get_css_classes(&self) -> Vec<String> {
         self.css_classes().iter().map(|s| s.to_string()).collect()
     }
@@ -258,9 +288,17 @@ impl Luable for gtk::LinkButton {
     fn get_contents(&self) -> String {
         self.label().unwrap_or("".into()).to_string()
     }
-    fn _set_label(&self, contents: String) {
+    fn get_href(&self) -> String {
+        self.uri().to_string()
+    }
+
+    fn set_contents(&self, contents: String) {
         self.set_label(&contents);
     }
+    fn set_href(&self, href: String) {
+        self.set_uri(&href);
+    }
+
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -290,10 +328,6 @@ impl Luable for gtk::LinkButton {
 
 // div
 impl Luable for gtk::Box {
-    fn get_children(&self) -> Vec<gtk::Widget> {
-        Vec::new()
-    }
-
     fn get_css_classes(&self) -> Vec<String> {
         self.css_classes().iter().map(|s| s.to_string()).collect()
     }
@@ -305,9 +339,27 @@ impl Luable for gtk::Box {
     fn get_contents(&self) -> String {
         "".to_string()
     }
-    fn _set_label(&self, _: String) {
-        problem!("warning", "\"div\" component does not support the \"set_content\" method.");
+    fn get_href(&self) -> String {
+        problem!(
+            "warning",
+            "\"div\" component does not support the \"get_href\" method."
+        );
+        "".to_string()
     }
+    
+    fn set_contents(&self, _: String) {
+        problem!(
+            "warning",
+            "\"div\" component does not support the \"set_content\" method."
+        );
+    }
+    fn set_href(&self, _: String) {
+        problem!(
+            "warning",
+            "\"div\" component does not support the \"set_href\" method."
+        );
+    }
+
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -337,10 +389,6 @@ impl Luable for gtk::Box {
 
 // textarea
 impl Luable for gtk::TextView {
-    fn get_children(&self) -> Vec<gtk::Widget> {
-        Vec::new()
-    }
-
     fn get_css_classes(&self) -> Vec<String> {
         self.css_classes().iter().map(|s| s.to_string()).collect()
     }
@@ -351,13 +399,26 @@ impl Luable for gtk::TextView {
 
     fn get_contents(&self) -> String {
         let buffer = self.buffer();
-        let (start, end) = buffer.bounds();
-        let text = buffer.text(&start, &end, true);
-        text.to_string()
+        gtk_buffer_to_text(&buffer)
     }
-    fn _set_label(&self, contents: String) {
+    fn get_href(&self) -> String {
+        problem!(
+            "warning",
+            "\"textarea\" component does not support the \"get_href\" method."
+        );
+        "".to_string()
+    }
+    
+    fn set_contents(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
+    fn set_href(&self, _: String) {
+        problem!(
+            "warning",
+            "\"textarea\" component does not support the \"set_href\" method."
+        );
+    }
+    
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -380,8 +441,8 @@ impl Luable for gtk::TextView {
     fn _on_input<'a>(&self, func: &'a LuaOwnedFunction) {
         let a = Rc::new(func.clone());
 
-        self.connect_preedit_changed(move |_, s| {
-            if let Err(e) = a.call::<_, ()>(s) {
+        self.buffer().connect_changed(move |s| {
+            if let Err(e) = a.call::<_, ()>(gtk_buffer_to_text(s)) {
                 problem!("error", e.to_string());
             }
         });
@@ -390,10 +451,6 @@ impl Luable for gtk::TextView {
 
 // hr
 impl Luable for gtk::Separator {
-    fn get_children(&self) -> Vec<gtk::Widget> {
-        Vec::new()
-    }
-
     fn get_css_classes(&self) -> Vec<String> {
         self.css_classes().iter().map(|s| s.to_string()).collect()
     }
@@ -405,9 +462,27 @@ impl Luable for gtk::Separator {
     fn get_contents(&self) -> String {
         "".to_string()
     }
-    fn _set_label(&self, _: String) {
-        problem!("warning", "\"hr\" component does not support the \"set_content\" method.");
+    fn get_href(&self) -> String {
+        problem!(
+            "warning",
+            "\"hr\" component does not support the \"get_href\" method."
+        );
+        "".to_string()
     }
+
+    fn set_contents(&self, _: String) {
+        problem!(
+            "warning",
+            "\"hr\" component does not support the \"set_content\" method."
+        );
+    }
+    fn set_href(&self, _: String) {
+        problem!(
+            "warning",
+            "\"hr\" component does not support the \"set_href\" method."
+        );
+    }
+
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -437,10 +512,6 @@ impl Luable for gtk::Separator {
 
 // img
 impl Luable for gtk::Picture {
-    fn get_children(&self) -> Vec<gtk::Widget> {
-        Vec::new()
-    }
-
     fn get_css_classes(&self) -> Vec<String> {
         self.css_classes().iter().map(|s| s.to_string()).collect()
     }
@@ -452,9 +523,27 @@ impl Luable for gtk::Picture {
     fn get_contents(&self) -> String {
         "".to_string()
     }
-    fn _set_label(&self, _: String) {
-        problem!("warning", "\"img\" component does not support the \"set_content\" method.");
+    fn get_href(&self) -> String {
+        problem!(
+            "warning",
+            "\"img\" component does not support the \"get_href\" method."
+        );
+        "".to_string()
     }
+    
+    fn set_contents(&self, _: String) {
+        problem!(
+            "warning",
+            "\"img\" component does not support the \"set_content\" method."
+        );
+    }
+    fn set_href(&self, _: String) {
+        problem!(
+            "warning",
+            "\"img\" component does not support the \"set_href\" method."
+        );
+    }
+    
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -484,10 +573,6 @@ impl Luable for gtk::Picture {
 
 // input
 impl Luable for gtk::Entry {
-    fn get_children(&self) -> Vec<gtk::Widget> {
-        Vec::new()
-    }
-
     fn get_css_classes(&self) -> Vec<String> {
         self.css_classes().iter().map(|s| s.to_string()).collect()
     }
@@ -499,9 +584,24 @@ impl Luable for gtk::Entry {
     fn get_contents(&self) -> String {
         self.text().to_string()
     }
-    fn _set_label(&self, contents: String) {
+    fn get_href(&self) -> String {
+        problem!(
+            "warning",
+            "\"input\" component does not support the \"get_href\" method."
+        );
+        "".to_string()
+    }
+    
+    fn set_contents(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
+    fn set_href(&self, _: String) {
+        problem!(
+            "warning",
+            "\"input\" component does not support the \"set_href\" method."
+        );
+    }
+    
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -541,10 +641,6 @@ impl Luable for gtk::Entry {
 
 // button
 impl Luable for gtk::Button {
-    fn get_children(&self) -> Vec<gtk::Widget> {
-        Vec::new()
-    }
-
     fn get_css_classes(&self) -> Vec<String> {
         self.css_classes().iter().map(|s| s.to_string()).collect()
     }
@@ -556,9 +652,24 @@ impl Luable for gtk::Button {
     fn get_contents(&self) -> String {
         self.label().unwrap_or("".into()).to_string()
     }
-    fn _set_label(&self, contents: String) {
+    fn get_href(&self) -> String {
+        problem!(
+            "warning",
+            "\"button\" component does not support the \"get_href\" method."
+        );
+        "".to_string()
+    }
+    
+    fn set_contents(&self, contents: String) {
         self.set_label(&contents);
     }
+    fn set_href(&self, _: String) {
+        problem!(
+            "warning",
+            "\"button\" component does not support the \"set_href\" method."
+        );
+    }
+    
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let a = Rc::new(func.clone());
 
