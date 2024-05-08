@@ -21,6 +21,8 @@ fn get<'lua>(lua: &'lua Lua, class: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaR
             let tags1 = Rc::clone(&tags);
             let tags2= Rc::clone(&tags);
             let tags3 = Rc::clone(&tags);
+            let tags4 = Rc::clone(&tags);
+            let tags5 = Rc::clone(&tags);
 
             let table = lua.create_table()?;
 
@@ -46,6 +48,20 @@ fn get<'lua>(lua: &'lua Lua, class: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaR
                 "on_click",
                 lua.create_function(move |_lua, func: OwnedFunction| {
                     tags3.borrow()[i].widget._on_click(&func);
+                    Ok(())
+                })?,
+            )?;
+            table.set(
+                "on_submit",
+                lua.create_function(move |_lua, func: OwnedFunction| {
+                    tags4.borrow()[i].widget._on_submit(&func);
+                    Ok(())
+                })?,
+            )?;
+            table.set(
+                "on_input",
+                lua.create_function(move |_lua, func: OwnedFunction| {
+                    tags5.borrow()[i].widget._on_input(&func);
                     Ok(())
                 })?,
             )?;

@@ -1,9 +1,21 @@
-local btn = get("ok")
+-- local btn = get("ok")
 
-print(btn.get_content())
-btn.set_content("Hello, World!")
-print(btn.get_content())
+-- print(btn.get_content())
+-- btn.set_content("Hello, World!")
+-- print(btn.get_content())
 
-btn.on_click(function(a, b, c, d)
-    print("Clicked!")
+-- btn.on_click(function()
+--     print("Clicked!")
+-- end)
+
+-- get("input").on_submit(function(content)
+--     print(content)
+-- end)
+
+-- get("input").on_input(function(content)
+--     print(content)
+-- end)
+
+get("textarea").on_input(function(content)
+    print(content)
 end)

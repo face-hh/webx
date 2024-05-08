@@ -1,16 +1,14 @@
 // this code is held together with hopes, dreams and glue
 use crate::parser;
-use std::{
-    cell::RefCell,
-    collections::HashMap,
-    fs,
-    rc::Rc,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, fs, rc::Rc, sync::Mutex};
 
-use glib::{closure_local, RustClosure};
 use gtk::{gdk::Display, prelude::*, CssProvider};
+use lazy_static::lazy_static;
 use mlua::prelude::*;
+
+lazy_static! {
+    static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
+}
 
 static CSS_RULES: Mutex<Option<HashMap<String, Vec<(String, String)>>>> = Mutex::new(None); // shut the fuck up
 
@@ -46,6 +44,21 @@ struct Properties {
     gap: i32,
 }
 
+macro_rules! problem {
+    ($type:expr, $s:expr) => {{
+        let problem_type = match ($type) {
+            "error" => "ERROR",
+            "warning" => "WARNING",
+            _ => "UNKNOWN",
+        };
+
+        let log_msg = format!("{}: {}\n", problem_type, $s);
+
+        let mut lua_logs = LUA_LOGS.lock().unwrap();
+        lua_logs.push_str(&log_msg);
+    }};
+}
+
 pub(crate) trait Styleable {
     fn style(&self);
     fn get_children(&self) -> Vec<gtk::Widget>;
@@ -54,6 +67,8 @@ pub(crate) trait Styleable {
     fn get_contents(&self) -> String;
     fn _set_label(&self, contents: String);
     fn _on_click(&self, func: &LuaOwnedFunction);
+    fn _on_submit(&self, func: &LuaOwnedFunction);
+    fn _on_input(&self, func: &LuaOwnedFunction);
 }
 
 // h1, h2, h3, h4, h5, h6, p
@@ -78,22 +93,32 @@ impl Styleable for gtk::Label {
         self.set_text(&contents);
     }
 
-    // TODO: figure out how to connect "clicked" on GtkLabel
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
-        
+
         let a = Rc::new(func.clone());
 
-        gesture.connect_closure(
-            "pressed",
-            false,
-            closure_local!(|| {
-                a.call::<_, String>(123).unwrap();
-            }),
-        );
+        gesture.connect_released(move |_, _, _, _| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
 
         self.add_controller(gesture)
     }
+    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "Text-based components do not support the \"submit\" event. Are you perhaps looking for the \"click\" event?"
+        );
+    }
+    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "Text-based components do not support the \"input\" event."
+        );
+    }
+
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
         let css = guard.as_ref().unwrap();
@@ -188,8 +213,38 @@ impl Styleable for gtk::DropDown {
     fn get_contents(&self) -> String {
         "".to_string()
     }
-    fn _set_label(&self, contents: String) {}
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
+    fn _set_label(&self, _: String) {
+        problem!(
+            "warning",
+            "\"select\" component does not support the \"set_content\" method."
+        );
+    }
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+        let gesture = gtk::GestureClick::new();
+
+        let a = Rc::new(func.clone());
+
+        gesture.connect_released(move |_, _, _, _| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
+
+        self.add_controller(gesture)
+    }
+    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"select\" component does not support the \"submit\" event."
+        );
+    }
+    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"select\" component does not support the \"input\" event."
+        );
+    }
+
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
         let css = guard.as_ref().unwrap();
@@ -264,7 +319,32 @@ impl Styleable for gtk::LinkButton {
     fn _set_label(&self, contents: String) {
         self.set_label(&contents);
     }
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+        let gesture = gtk::GestureClick::new();
+
+        let a = Rc::new(func.clone());
+
+        gesture.connect_released(move |_, _, _, _| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
+
+        self.add_controller(gesture)
+    }
+    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"a\" component does not support the \"submit\" event."
+        );
+    }
+    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"a\" component does not support the \"input\" event."
+        );
+    }
+
     fn style(&self) {
         let lbl = gtk::Label::builder()
             .css_name("a")
@@ -299,8 +379,34 @@ impl Styleable for gtk::Box {
     fn get_contents(&self) -> String {
         "".to_string()
     }
-    fn _set_label(&self, contents: String) {}
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
+    fn _set_label(&self, _: String) {
+        problem!("warning", "\"div\" component does not support the \"set_content\" method.");
+    }
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+        let gesture = gtk::GestureClick::new();
+
+        let a = Rc::new(func.clone());
+
+        gesture.connect_released(move |_, _, _, _| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
+
+        self.add_controller(gesture)
+    }
+    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"div\" component does not support the \"submit\" event."
+        );
+    }
+    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"div\" component does not support the \"input\" event."
+        );
+    }
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -395,7 +501,34 @@ impl Styleable for gtk::TextView {
     fn _set_label(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+        let gesture = gtk::GestureClick::new();
+
+        let a = Rc::new(func.clone());
+
+        gesture.connect_released(move |_, _, _, _| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
+
+        self.add_controller(gesture)
+    }
+    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"textarea\" component does not support the \"submit\" event. Are you perhaps looking for the \"input\" event?"
+        )
+    }
+    fn _on_input<'a>(&self, func: &'a LuaOwnedFunction) {
+        let a = Rc::new(func.clone());
+
+        self.connect_preedit_changed(move |_, s| {
+            if let Err(e) = a.call::<_, ()>(s) {
+                problem!("error", e.to_string());
+            }
+        });
+    }
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -472,8 +605,34 @@ impl Styleable for gtk::Separator {
     fn get_contents(&self) -> String {
         "".to_string()
     }
-    fn _set_label(&self, contents: String) {}
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
+    fn _set_label(&self, _: String) {
+        problem!("warning", "\"hr\" component does not support the \"set_content\" method.");
+    }
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+        let gesture = gtk::GestureClick::new();
+
+        let a = Rc::new(func.clone());
+
+        gesture.connect_released(move |_, _, _, _| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
+
+        self.add_controller(gesture)
+    }
+    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"hr\" component does not support the \"submit\" event."
+        );
+    }
+    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"hr\" component does not support the \"input\" event."
+        );
+    }
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -545,8 +704,34 @@ impl Styleable for gtk::Picture {
     fn get_contents(&self) -> String {
         "".to_string()
     }
-    fn _set_label(&self, contents: String) {}
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
+    fn _set_label(&self, _: String) {
+        problem!("warning", "\"img\" component does not support the \"set_content\" method.");
+    }
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+        let gesture = gtk::GestureClick::new();
+
+        let a = Rc::new(func.clone());
+
+        gesture.connect_released(move |_, _, _, _| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
+
+        self.add_controller(gesture)
+    }
+    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"img\" component does not support the \"submit\" event."
+        );
+    }
+    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"img\" component does not support the \"input\" event."
+        );
+    }
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -622,7 +807,41 @@ impl Styleable for gtk::Entry {
     fn _set_label(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+        let gesture = gtk::GestureClick::new();
+
+        let a = Rc::new(func.clone());
+
+        gesture.connect_released(move |_, _, _, _| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
+
+        self.add_controller(gesture)
+    }
+    fn _on_submit<'a>(&self, func: &'a LuaOwnedFunction) {
+        let a = Rc::new(func.clone());
+
+        self.connect_activate(move |entry| {
+            let content = entry.buffer().text().to_string();
+
+            if let Err(e) = a.call::<_, ()>(content) {
+                problem!("error", e.to_string());
+            }
+        });
+    }
+    fn _on_input<'a>(&self, func: &'a LuaOwnedFunction) {
+        let a = Rc::new(func.clone());
+
+        self.connect_changed(move |entry| {
+            let content = entry.buffer().text().to_string();
+
+            if let Err(e) = a.call::<_, ()>(content) {
+                problem!("error", e.to_string());
+            }
+        });
+    }
 
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
@@ -703,8 +922,27 @@ impl Styleable for gtk::Button {
     fn _set_label(&self, contents: String) {
         self.set_label(&contents);
     }
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {}
+    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+        let a = Rc::new(func.clone());
 
+        self.connect_clicked(move |_| {
+            if let Err(e) = a.call::<_, ()>(LuaNil) {
+                problem!("error", e.to_string());
+            }
+        });
+    }
+    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"button\" component does not support the \"submit\" event."
+        );
+    }
+    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+        problem!(
+            "warning",
+            "\"button\" component does not support the \"input\" event."
+        );
+    }
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
         let css = guard.as_ref().unwrap();
@@ -758,6 +996,7 @@ impl Styleable for gtk::Button {
         }
     }
 }
+
 pub(crate) fn load_css() {
     let stylesheet_utf8_string = fs::read_to_string("test/styles.css").unwrap();
     if let Ok(res) = parser::parse(&stylesheet_utf8_string) {
