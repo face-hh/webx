@@ -1,17 +1,17 @@
 extern crate html_parser;
 
-use super::css;
+use super::{css::{self, Styleable}, lua};
 
 use std::{cell::RefCell, rc::Rc, thread};
 
 use gtk::{gdk_pixbuf, gio, glib::Bytes, prelude::*};
 use html_parser::{Dom, Element, Node, Result};
 
-use css::Styleable;
+use lua::Luable;
 
 pub(crate) struct Tag {
     pub classes: Vec<String>,
-    pub widget: Box<dyn Styleable>,
+    pub widget: Box<dyn Luable>,
 }
 
 fn parse_html_from_file() -> Result<(Node, Node)> {
