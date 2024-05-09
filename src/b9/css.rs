@@ -18,7 +18,6 @@ struct Properties {
     background_color: String,
     font_family: String,
     font_weight: String,
-    text_align: String,
     underline: String,
     underline_color: String,
     overline: String,
@@ -600,7 +599,6 @@ fn get_properties(rules: &Vec<(String, String)>) -> Properties {
     let background_color = get_rule(&rules, "background-color", &"#242424");
     let font_family = get_rule(&rules, "font-family", &"Noto Sans");
     let font_weight = get_rule(&rules, "font-weight", &"normal");
-    let text_align = get_rule(&rules, "text_align", &"start");
     let underline = get_rule(&rules, "underline", &"none");
     let underline_color = get_rule(&rules, "underline-color", &"black");
     let overline = get_rule(&rules, "overline", &"none");
@@ -643,7 +641,6 @@ fn get_properties(rules: &Vec<(String, String)>) -> Properties {
         background_color,
         font_family,
         font_weight,
-        text_align,
         underline,
         underline_color,
         overline,

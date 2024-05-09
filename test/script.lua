@@ -22,13 +22,13 @@
 
 -- get("futurelink").set_href("https://www.duckduckgo.com/")
 
-coroutine.wrap(function()
-	local res = fetch({
-		url = "http://127.0.0.1:3000/",
-		method = "POST",
-		headers = { ["Content-Type"] = "fuck" },
-		body = '{ "test": 3 }',
-	})
+-- coroutine.wrap(function()
+-- 	local res = fetch({
+-- 		url = "http://127.0.0.1:3000/",
+-- 		method = "POST",
+-- 		headers = { ["Content-Type"] = "application/json" },
+-- 		body = '{ "test": 3 }',
+-- 	})
 
-	printf(res)
-end)()
+-- 	printf({ hello = true })
+-- end)()

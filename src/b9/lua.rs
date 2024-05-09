@@ -11,8 +11,7 @@ use mlua::prelude::*;
 use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
 use lazy_static::lazy_static;
-use reqwest::blocking::Response;
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
 lazy_static! {
     static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
@@ -73,7 +72,6 @@ fn get<'lua>(
             let tags5 = Rc::clone(&tags);
             let tags6 = Rc::clone(&tags);
             let tags7 = Rc::clone(&tags);
-            let tags8 = Rc::clone(&tags);
 
             let table = lua.create_table()?;
 
@@ -170,15 +168,16 @@ pub(crate) async fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
 
         let handle = thread::spawn(move || {
             let client = reqwest::blocking::Client::new();
-            println!("{method} {body_str}");
+
             let req = match method.as_str() {
                 "GET" => client.get(uri).headers(headermap),
-                "POST" => client.post(uri).headers(headermap),
+                "POST" => client.post(uri).headers(headermap).body(body_str),
                 _ => return format!("Unsupported method: {}", method).into(),
             };
 
-            let res = req.body(body_str).send().map_err(|e| e.to_string());
-            let body = res.and_then(|r| r.json().map_err(|e| e.to_string()));
+            let res = req.send().unwrap();
+            let body: Result<serde_json::Value, reqwest::Error> = res.json();
+
             let result = match body {
                 Ok(body) => body,
                 Err(e) => {
