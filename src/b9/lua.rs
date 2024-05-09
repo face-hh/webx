@@ -1,13 +1,14 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Mutex;
+use std::thread;
 
 use super::css::Styleable;
 use super::html::Tag;
 use gtk::prelude::*;
 use mlua::prelude::*;
 
-use mlua::{Lua, OwnedFunction};
+use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
 use lazy_static::lazy_static;
 
@@ -140,7 +141,8 @@ fn print(_lua: &Lua, msg: String) -> LuaResult<()> {
     Ok(())
 }
 
-pub(crate) fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
+#[tokio::main(flavor = "current_thread")]
+pub(crate) async fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     let lua = Lua::new();
     let globals = lua.globals();
 
@@ -149,6 +151,33 @@ pub(crate) fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     globals.set(
         "get",
         lua.create_function(move |lua, class: String| get(lua, class, tags.clone()))?,
+    )?;
+    globals.set(
+        "fetch",
+        lua.create_async_function(move |lua, uri: String| {
+            async {
+                let handle = tokio::spawn(async move {
+                    let result: serde_json::Value = reqwest::get(&uri).await.unwrap().json().await.unwrap();
+                    println!("Got the res: {:?}", result);
+                    result
+                });
+            
+                println!("Running the task...");
+                let result = handle.await.unwrap();
+                            
+                println!("Returning value...");
+            
+                lua.to_value(&result)
+            }
+        })?,
+    )?;
+
+    globals.set(
+        "debug",
+        lua.create_function(|_, value: Value| {
+            println!("{value:#?}");
+            Ok(())
+        })?,
     )?;
 
     let ok = lua
@@ -206,7 +235,7 @@ impl Luable for gtk::Label {
         );
     }
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
         let a = Rc::new(func.clone());
@@ -267,7 +296,7 @@ impl Luable for gtk::DropDown {
         );
     }
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
         let a = Rc::new(func.clone());
@@ -318,7 +347,7 @@ impl Luable for gtk::LinkButton {
         self.set_uri(&href);
     }
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
         let a = Rc::new(func.clone());
@@ -379,7 +408,7 @@ impl Luable for gtk::Box {
         );
     }
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
         let a = Rc::new(func.clone());
@@ -438,7 +467,7 @@ impl Luable for gtk::TextView {
         );
     }
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
         let a = Rc::new(func.clone());
@@ -502,7 +531,7 @@ impl Luable for gtk::Separator {
         );
     }
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
         let a = Rc::new(func.clone());
@@ -563,7 +592,7 @@ impl Luable for gtk::Picture {
         );
     }
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
         let a = Rc::new(func.clone());
@@ -621,7 +650,7 @@ impl Luable for gtk::Entry {
         );
     }
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
         let a = Rc::new(func.clone());
@@ -689,7 +718,7 @@ impl Luable for gtk::Button {
         );
     }
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_click(&self, func: &LuaOwnedFunction) {
         let a = Rc::new(func.clone());
 
         self.connect_clicked(move |_| {

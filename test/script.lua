@@ -21,4 +21,10 @@
 -- end)
 
 
-get("futurelink").set_href("https://www.duckduckgo.com/")
+-- get("futurelink").set_href("https://www.duckduckgo.com/")
+
+coroutine.wrap(function()
+    local res = fetch("https://httpbin.org/anything?arg0=val0")
+
+    debug(res)
+end)()
