@@ -11,6 +11,7 @@ use mlua::prelude::*;
 use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
 use lazy_static::lazy_static;
+use reqwest::blocking::Response;
 
 lazy_static! {
     static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
@@ -136,8 +137,8 @@ fn get<'lua>(
     Err(LuaError::RuntimeError("Tag not found".into()))
 }
 
-fn print(_lua: &Lua, msg: String) -> LuaResult<()> {
-    println!("{}", msg);
+fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
+    println!("{:?}", msg);
     Ok(())
 }
 
@@ -146,34 +147,27 @@ pub(crate) async fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     let lua = Lua::new();
     let globals = lua.globals();
 
+    let fetch_json = lua.create_async_function(|lua, uri: String| async move {
+        let handle = thread::spawn(move || {
+            let result: serde_json::Value = reqwest::blocking::get(uri).unwrap().json().unwrap();
+            result
+        });
+
+        let json = handle.join().unwrap();
+
+        lua.to_value(&json)
+    })?;
+
     // globals.set("sleep_ms", lua.create_async_function(sleep_ms)?)?;
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
         "get",
         lua.create_function(move |lua, class: String| get(lua, class, tags.clone()))?,
     )?;
-    globals.set(
-        "fetch",
-        lua.create_async_function(move |lua, uri: String| {
-            async {
-                let handle = tokio::spawn(async move {
-                    let result: serde_json::Value = reqwest::get(&uri).await.unwrap().json().await.unwrap();
-                    println!("Got the res: {:?}", result);
-                    result
-                });
-            
-                println!("Running the task...");
-                let result = handle.await.unwrap();
-                            
-                println!("Returning value...");
-            
-                lua.to_value(&result)
-            }
-        })?,
-    )?;
+    globals.set("fetch", fetch_json)?;
 
     globals.set(
-        "debug",
+        "printf",
         lua.create_function(|_, value: Value| {
             println!("{value:#?}");
             Ok(())

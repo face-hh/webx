@@ -26,5 +26,5 @@
 coroutine.wrap(function()
     local res = fetch("https://httpbin.org/anything?arg0=val0")
 
-    debug(res)
+    printf(res.args)
 end)()

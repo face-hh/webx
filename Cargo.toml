@@ -14,7 +14,7 @@ lazy_static = "1.4.0"
 mlua = { version = "0.9.7", features = ["lua54", "macros", "async", "unstable", "serialize"] }
 reqwest = { version = "0.12.3", features = ["blocking", "json"] }
 serde_json = "1.0.117"
-tokio = { version = "1.37.0", features=["macros", "rt", "time"] }
+tokio = { version = "1.37.0", features=["macros"] }
 
 [build-dependencies]
 glib-build-tools = "0.19.0"
