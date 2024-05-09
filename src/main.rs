@@ -17,7 +17,6 @@ struct Tab {
     widget: gtk::Box,
 }
 fn main() -> glib::ExitCode {
-    std::env::set_var("RUST_BACKTRACE", "full");
     gtk::gio::resources_register_include!("icons.gresource").unwrap();
 
     let app = adw::Application::builder().application_id(APP_ID).build();

@@ -12,6 +12,7 @@ use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
 use lazy_static::lazy_static;
 use reqwest::blocking::Response;
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 
 lazy_static! {
     static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
@@ -142,14 +143,50 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
     Ok(())
 }
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main()]
 pub(crate) async fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     let lua = Lua::new();
     let globals = lua.globals();
 
-    let fetch_json = lua.create_async_function(|lua, uri: String| async move {
+    let fetchtest = lua.create_async_function(|lua, params: LuaTable| async move {
+        let uri = params.get::<_, String>("url").unwrap();
+        let method = params.get::<_, String>("method").unwrap();
+        let headers = params.get::<_, LuaTable>("headers").unwrap();
+        let body_str = match params.get::<_, String>("body") {
+            Ok(body) => body,
+            Err(_) => "{}".to_string(),
+        };
+
+        let mut headermap = HeaderMap::new();
+
+        for header in headers.pairs::<String, String>() {
+            let (key, value) = header.unwrap();
+
+            headermap.insert(
+                HeaderName::from_bytes(key.as_ref()).unwrap(),
+                HeaderValue::from_str(&value).unwrap(),
+            );
+        }
+
         let handle = thread::spawn(move || {
-            let result: serde_json::Value = reqwest::blocking::get(uri).unwrap().json().unwrap();
+            let client = reqwest::blocking::Client::new();
+            println!("{method} {body_str}");
+            let req = match method.as_str() {
+                "GET" => client.get(uri).headers(headermap),
+                "POST" => client.post(uri).headers(headermap),
+                _ => return format!("Unsupported method: {}", method).into(),
+            };
+
+            let res = req.body(body_str).send().map_err(|e| e.to_string());
+            let body = res.and_then(|r| r.json().map_err(|e| e.to_string()));
+            let result = match body {
+                Ok(body) => body,
+                Err(e) => {
+                    println!("{e}");
+                    problem!("error", format!("failed to parse response body: {}", e));
+                    serde_json::Value::Null
+                }
+            };
             result
         });
 
@@ -158,13 +195,12 @@ pub(crate) async fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
         lua.to_value(&json)
     })?;
 
-    // globals.set("sleep_ms", lua.create_async_function(sleep_ms)?)?;
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
         "get",
         lua.create_function(move |lua, class: String| get(lua, class, tags.clone()))?,
     )?;
-    globals.set("fetch", fetch_json)?;
+    globals.set("fetch", fetchtest)?;
 
     globals.set(
         "printf",
