@@ -6,13 +6,15 @@ use super::css::Styleable;
 use super::html::Tag;
 use gtk::prelude::*;
 use mlua::prelude::*;
-use mlua::OwnedFunction;
+
+use mlua::{Lua, OwnedFunction};
 
 use lazy_static::lazy_static;
 
 lazy_static! {
     static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
 }
+
 macro_rules! problem {
     ($type:expr, $s:expr) => {{
         let problem_type = match ($type) {
@@ -66,6 +68,9 @@ fn get<'lua>(
             let tags3 = Rc::clone(&tags);
             let tags4 = Rc::clone(&tags);
             let tags5 = Rc::clone(&tags);
+            let tags6 = Rc::clone(&tags);
+            let tags7 = Rc::clone(&tags);
+            let tags8 = Rc::clone(&tags);
 
             let table = lua.create_table()?;
 
@@ -76,14 +81,14 @@ fn get<'lua>(
             table.set(
                 "get_content",
                 lua.create_function(move |_, ()| {
-                    let ok = tags1.borrow()[i].widget.get_contents().clone();
+                    let ok = tags1.borrow()[i].widget.get_contents();
                     Ok(ok)
                 })?,
             )?;
             table.set(
                 "set_content",
                 lua.create_function(move |_, label: String| {
-                    tags2.borrow()[i].widget.set_contents(label.clone());
+                    tags2.borrow()[i].widget.set_contents(label);
                     Ok(())
                 })?,
             )?;
@@ -105,6 +110,20 @@ fn get<'lua>(
                 "on_input",
                 lua.create_function(move |_lua, func: OwnedFunction| {
                     tags5.borrow()[i].widget._on_input(&func);
+                    Ok(())
+                })?,
+            )?;
+            table.set(
+                "get_href",
+                lua.create_function(move |_, ()| {
+                    let ok = tags6.borrow()[i].widget.get_href();
+                    Ok(ok)
+                })?,
+            )?;
+            table.set(
+                "set_href",
+                lua.create_function(move |_, label: String| {
+                    tags7.borrow()[i].widget.set_href(label);
                     Ok(())
                 })?,
             )?;
@@ -181,7 +200,7 @@ impl Luable for gtk::Label {
         self.set_text(&contents);
     }
     fn set_href(&self, _: String) {
-            problem!(
+        problem!(
             "warning",
             "Most text-based components do not support the \"set_href\" method. Are you perhaps looking for the \"p\" tag?"
         );
@@ -346,7 +365,7 @@ impl Luable for gtk::Box {
         );
         "".to_string()
     }
-    
+
     fn set_contents(&self, _: String) {
         problem!(
             "warning",
@@ -408,7 +427,7 @@ impl Luable for gtk::TextView {
         );
         "".to_string()
     }
-    
+
     fn set_contents(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
@@ -418,7 +437,7 @@ impl Luable for gtk::TextView {
             "\"textarea\" component does not support the \"set_href\" method."
         );
     }
-    
+
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -530,7 +549,7 @@ impl Luable for gtk::Picture {
         );
         "".to_string()
     }
-    
+
     fn set_contents(&self, _: String) {
         problem!(
             "warning",
@@ -543,7 +562,7 @@ impl Luable for gtk::Picture {
             "\"img\" component does not support the \"set_href\" method."
         );
     }
-    
+
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -591,7 +610,7 @@ impl Luable for gtk::Entry {
         );
         "".to_string()
     }
-    
+
     fn set_contents(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
@@ -601,7 +620,7 @@ impl Luable for gtk::Entry {
             "\"input\" component does not support the \"set_href\" method."
         );
     }
-    
+
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -659,7 +678,7 @@ impl Luable for gtk::Button {
         );
         "".to_string()
     }
-    
+
     fn set_contents(&self, contents: String) {
         self.set_label(&contents);
     }
@@ -669,7 +688,7 @@ impl Luable for gtk::Button {
             "\"button\" component does not support the \"set_href\" method."
         );
     }
-    
+
     fn _on_click<'a>(&self, func: &'a LuaOwnedFunction) {
         let a = Rc::new(func.clone());
 

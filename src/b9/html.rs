@@ -1,6 +1,9 @@
 extern crate html_parser;
 
-use super::{css::{self, Styleable}, lua};
+use super::{
+    css::{self, Styleable},
+    lua,
+};
 
 use std::{cell::RefCell, rc::Rc, thread};
 
@@ -9,9 +12,11 @@ use html_parser::{Dom, Element, Node, Result};
 
 use lua::Luable;
 
+
 pub(crate) struct Tag {
     pub classes: Vec<String>,
     pub widget: Box<dyn Luable>,
+    pub tied_variables: Vec<String>,
 }
 
 fn parse_html_from_file() -> Result<(Node, Node)> {
@@ -74,10 +79,35 @@ pub fn build_ui() -> Result<gtk::Box> {
         }
     }
 
+    let tagss = Rc::clone(&tags);
+
+    for tag in tagss.borrow_mut().iter_mut() {
+        let mut tied_variables = Vec::new();
+
+        let text = tag.widget.get_contents();
+
+        let mut inside = false;
+        let mut var = String::new();
+
+        for c in text.chars() {
+            if c == '{' {
+                inside = true;
+            } else if c == '}' {
+                inside = false;
+
+                tied_variables.push(var.trim().to_string());
+                var.clear();
+            } else if inside {
+                var.push(c);
+            }
+        }
+
+        tag.tied_variables = tied_variables;
+    }
+
     if let Err(e) = super::lua::run(tags) {
         println!("ERROR: Failed to run lua: {}", e);
     }
-
 
     Ok(html_view)
 }
@@ -126,7 +156,11 @@ fn render_html(
 
             div_box.style();
 
-            tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(div_box.clone()) } );
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(div_box.clone()),
+                tied_variables: Vec::new(),
+            });
             html_view.append(&div_box);
 
             for child in element.children.iter() {
@@ -151,7 +185,11 @@ fn render_html(
                             .build();
 
                         css::perform_styling(element, &label);
-                        tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(label.clone()) } );
+                        tags.borrow_mut().push(Tag {
+                            classes: element.classes.clone(),
+                            widget: Box::new(label.clone()),
+                            tied_variables: Vec::new(),
+                        });
 
                         html_view.append(&label);
                     }
@@ -179,7 +217,11 @@ fn render_html(
                             .halign(gtk::Align::Start)
                             .wrap(true)
                             .build();
-                        tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(label.clone()) } );
+                        tags.borrow_mut().push(Tag {
+                            classes: element.classes.clone(),
+                            widget: Box::new(label.clone()),
+                            tied_variables: Vec::new(),
+                        });
 
                         css::perform_styling(element, &label);
 
@@ -195,13 +237,24 @@ fn render_html(
                                 .css_name("a")
                                 .css_classes(el.classes.clone())
                                 .build();
-                            tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(link_button.clone()) } );
+
+                            tags.borrow_mut().push(Tag {
+                                classes: el.classes.clone(),
+                                widget: Box::new(link_button.clone()),
+                                tied_variables: Vec::new(),
+                            });
 
                             css::perform_styling(element, &link_button);
 
                             label_box.append(&link_button);
                         } else {
-                            render_html(el, el.children.get(0), html_view.clone(), true, tags.clone());
+                            render_html(
+                                el,
+                                el.children.get(0),
+                                html_view.clone(),
+                                true,
+                                tags.clone(),
+                            );
                         }
                     }
                     Node::Comment(_) => {}
@@ -213,13 +266,17 @@ fn render_html(
                 .orientation(gtk::Orientation::Vertical)
                 .css_name(element.name.as_str())
                 .build();
-            tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(list_box.clone()) } );
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(list_box.clone()),
+                tied_variables: Vec::new(),
+            });
 
             css::perform_styling(element, &list_box);
 
             html_view.append(&list_box);
 
-            render_list(element, list_box);
+            render_list(element, list_box, tags);
         }
         "hr" => {
             let line = gtk::Separator::builder()
@@ -227,7 +284,11 @@ fn render_html(
                 .css_name("hr")
                 .css_classes(element.classes.clone())
                 .build();
-            tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(line.clone()) } );
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(line.clone()),
+                tied_variables: Vec::new(),
+            });
 
             css::perform_styling(element, &line);
 
@@ -259,7 +320,11 @@ fn render_html(
                 .valign(gtk::Align::Start)
                 .can_shrink(false)
                 .build();
-            tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(image.clone()) } );
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(image.clone()),
+                tied_variables: Vec::new(),
+            });
 
             css::perform_styling(element, &image);
 
@@ -291,7 +356,11 @@ fn render_html(
                     .halign(gtk::Align::Start)
                     .build();
 
-                    tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(entry.clone()) } );
+                tags.borrow_mut().push(Tag {
+                    classes: element.classes.clone(),
+                    widget: Box::new(entry.clone()),
+                    tied_variables: Vec::new(),
+                });
 
                 css::perform_styling(element, &entry);
 
@@ -319,7 +388,11 @@ fn render_html(
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
                 .build();
-            tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(dropdown.clone()) } );
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(dropdown.clone()),
+                tied_variables: Vec::new(),
+            });
 
             css::perform_styling(element, &dropdown);
 
@@ -333,7 +406,11 @@ fn render_html(
                 .halign(gtk::Align::Start)
                 .valign(gtk::Align::Start)
                 .build();
-            tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(textview.clone()) } );
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(textview.clone()),
+                tied_variables: Vec::new(),
+            });
 
             css::perform_styling(element, &textview);
 
@@ -351,7 +428,11 @@ fn render_html(
                 .halign(gtk::Align::Start)
                 .valign(gtk::Align::Start)
                 .build();
-            tags.borrow_mut().push( Tag { classes: element.classes.clone(), widget: Box::new(button.clone()) } );
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(button.clone()),
+                tied_variables: Vec::new(),
+            });
 
             css::perform_styling(element, &button);
 
@@ -363,7 +444,7 @@ fn render_html(
     }
 }
 
-fn render_list(element: &Element, list_box: gtk::Box) {
+fn render_list(element: &Element, list_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>) {
     for (i, child) in element.children.iter().enumerate() {
         match child {
             Node::Element(el) => {
@@ -388,6 +469,11 @@ fn render_list(element: &Element, list_box: gtk::Box) {
                         .halign(gtk::Align::Start)
                         .build();
 
+                    tags.borrow_mut().push(Tag {
+                        classes: el.classes.clone(),
+                        widget: Box::new(label.clone()),
+                        tied_variables: Vec::new(),
+                    });
                     css::perform_styling(element, &label);
 
                     li.append(&lead);
