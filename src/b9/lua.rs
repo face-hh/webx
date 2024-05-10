@@ -137,12 +137,23 @@ fn get<'lua>(
 }
 
 fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
-    println!("{:?}", msg);
+    let mut output = String::new();
+    for value in msg.iter() {
+        match value {
+            Value::String(s) => output.push_str(s.to_str().unwrap()),
+            Value::Integer(i) => output.push_str(&i.to_string()),
+            Value::Number(n) => output.push_str(&n.to_string()),
+            Value::Boolean(b) => output.push_str(&b.to_string()),
+            def => output.push_str(&format!("{def:#?}"))
+        }
+    }
+
+    println!("{}", output);
     Ok(())
 }
 
-#[tokio::main()]
-pub(crate) async fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
+// todo: make this async if shit breaks
+pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     let lua = Lua::new();
     let globals = lua.globals();
 
@@ -201,16 +212,8 @@ pub(crate) async fn run(tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     )?;
     globals.set("fetch", fetchtest)?;
 
-    globals.set(
-        "printf",
-        lua.create_function(|_, value: Value| {
-            println!("{value:#?}");
-            Ok(())
-        })?,
-    )?;
-
     let ok = lua
-        .load(include_str!("../../test/script.lua"))
+        .load(luacode)
         .eval::<LuaMultiValue>();
 
     match ok {

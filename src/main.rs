@@ -15,9 +15,10 @@ const APP_ID: &str = "org.bussin.napture";
 
 #[derive(Clone, Debug)]
 struct Tab {
-    name: String,
-    icon: String,
+    url: String,
     widget: gtk::Box,
+    label_widget: gtk::Label,
+    icon_widget: gtk::Image,
     id: String
 }
 
@@ -50,16 +51,18 @@ fn build_ui(app: &adw::Application) {
         "New Tab",
         "file.png",
         cursor_pointer.as_ref(),
-        tabs,
+        tabs.clone(),
     );
 
+    let current_tab = tab1.clone();
+    
     tabs_widget.append(&tab1.widget);
 
     headerbar.set_title_widget(Some(&tabs_widget));
 
     window.set_titlebar(Some(&headerbar));
 
-    let htmlview = b9::html::build_ui().unwrap();
+    let htmlview = b9::html::build_ui(current_tab).unwrap();
     let scroll = gtk::ScrolledWindow::builder().build();
 
     scroll.set_child(Some(&htmlview));
@@ -137,10 +140,11 @@ fn make_tab(
     tab.append(&x);
 
     let res = Tab {
-        name: label.to_string(),
-        icon: icon.to_string(),
+        url: "http://127.0.0.1:3000/".to_string(),
         widget: tab,
         id: tabid,
+        label_widget: tabname,
+        icon_widget: tabicon,
     };
 
     tabs.push(res.clone());
@@ -149,7 +153,6 @@ fn make_tab(
 }
 
 fn remove_tab(tab: Rc<RefCell<gtk::Box>>, tabs_widget: Rc<RefCell<gtk::Box>>, tabs: &mut Vec<Tab>) {
-    println!("{:?}", tabs);
     tabs_widget.borrow_mut().remove(&tab.borrow().clone());
 
     tabs.retain(|potential_tab| tab.borrow().css_classes()[0] != potential_tab.id);
@@ -159,8 +162,4 @@ fn gen_tab_id() -> String {
     use uuid::Uuid;
 
     Uuid::new_v4().to_string()
-}
-
-fn change_tab_name(tab: Rc<RefCell<gtk::Box>>, name: String) {
-    
 }

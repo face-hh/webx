@@ -1,5 +1,7 @@
 extern crate html_parser;
 
+use crate::Tab;
+
 use super::{
     css::{self, Styleable},
     lua,
@@ -12,21 +14,19 @@ use html_parser::{Dom, Element, Node, Result};
 
 use lua::Luable;
 
-
 pub(crate) struct Tag {
     pub classes: Vec<String>,
     pub widget: Box<dyn Luable>,
     pub tied_variables: Vec<String>,
 }
 
-fn parse_html_from_file() -> Result<(Node, Node)> {
-    let html: String = std::fs::read_to_string("test/index.html")?;
+async fn parse_html(url: String) -> Result<(Node, Node)> {
+    let html: String = fetch_file(url + &"index.html").await;
+
     let dom = Dom::parse(&html)?;
 
     let head = find_element_by_name(&dom.children, "head").expect("Couldn't find head.");
     let body = find_element_by_name(&dom.children, "body").expect("Couldn't find body.");
-
-    css::load_css();
 
     return Ok((head, body));
 }
@@ -45,10 +45,9 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
     None
 }
 
-pub fn build_ui() -> Result<gtk::Box> {
+#[tokio::main]
+pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
     let tags = Rc::new(RefCell::new(Vec::new()));
-
-    css::load_css();
 
     let html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -59,9 +58,19 @@ pub fn build_ui() -> Result<gtk::Box> {
         .css_name("body")
         .build();
 
-    html_view.style();
+    let (head, body) = parse_html(tab.url.clone()).await.unwrap();
 
-    let (head, body) = parse_html_from_file()?;
+    for element in head.element().unwrap().children.iter() {
+        if let Some(element) = element.element() {
+            let contents = element.children.get(0);
+            let aa = &Rc::new(RefCell::new(&tab));
+
+            let tabb = Rc::clone(aa);
+            render_head(element, contents, tabb).await;
+        }
+    }
+
+    html_view.style();
 
     for element in body.element().unwrap().children.iter() {
         if let Some(element) = element.element() {
@@ -71,15 +80,25 @@ pub fn build_ui() -> Result<gtk::Box> {
         }
     }
 
+    let mut src = String::new();
     for element in head.element().unwrap().children.iter() {
         if let Some(element) = element.element() {
-            let contents = element.children.get(0);
-
-            render_head(element, contents, html_view.clone());
+            if element.name == "script" {
+                if let Some(src_attr) = element.attributes.get("src") {
+                    src = src_attr.as_ref().unwrap().to_string();
+                    break;
+                }
+            }
         }
     }
 
     let tagss = Rc::clone(&tags);
+    
+    let luacode: String = fetch_file(tab.url.clone() + &src).await;
+
+    if let Err(e) = super::lua::run(luacode, tags).await {
+        println!("ERROR: Failed to run lua: {}", e);
+    }
 
     for tag in tagss.borrow_mut().iter_mut() {
         let mut tied_variables = Vec::new();
@@ -105,26 +124,40 @@ pub fn build_ui() -> Result<gtk::Box> {
         tag.tied_variables = tied_variables;
     }
 
-    if let Err(e) = super::lua::run(tags) {
-        println!("ERROR: Failed to run lua: {}", e);
-    }
-
     Ok(html_view)
 }
 
-fn render_head(element: &Element, contents: Option<&Node>, html_view: gtk::Box) {
+async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell<&Tab>>) {
     match element.name.as_str() {
         "title" => {
-            // set the current `Tab` name to this
+            if let Some(contents) = contents {
+                tab.borrow()
+                    .label_widget
+                    .set_label(contents.text().unwrap())
+            }
         }
         "link" => {
             if let Some(href) = element.attributes.get("href") {
                 if let Some(href) = href.as_ref() {
-                    // got the href here
+                    if href.ends_with(".png") || href.ends_with(".jpg") {
+                        let stream = fetch_image_to_pixbuf(href.clone());
+
+                        tab.borrow()
+                            .icon_widget
+                            .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
+                    } else {
+                        let css = fetch_file(tab.borrow().url.clone() + href).await;
+                        css::load_css(css);
+                    }
                 }
             }
         }
-        _ => {}
+        "script" => {
+            // this is handled later on so that Lua runs after the DOM is rendered
+        }
+        _ => {
+            println!("Unknown head element: {}", element.name);
+        }
     }
 }
 
@@ -297,18 +330,7 @@ fn render_html(
         "img" => {
             let url = element.attributes.get("src").unwrap().clone().unwrap();
 
-            let handle = thread::spawn(move || {
-                let result = reqwest::blocking::get(url).unwrap().bytes().unwrap();
-                result
-            });
-
-            let img_data = handle.join().unwrap();
-
-            let img_stream = gio::MemoryInputStream::from_bytes(&Bytes::from(&img_data));
-
-            let stream =
-                gdk_pixbuf::Pixbuf::from_stream(&img_stream, Some(&gio::Cancellable::new()))
-                    .unwrap();
+            let stream = fetch_image_to_pixbuf(url);
 
             let wrapper = gtk::Box::builder().build();
 
@@ -444,6 +466,7 @@ fn render_html(
     }
 }
 
+
 fn render_list(element: &Element, list_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>) {
     for (i, child) in element.children.iter().enumerate() {
         match child {
@@ -488,5 +511,36 @@ fn render_list(element: &Element, list_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>
                 println!("INFO: Not an element: {:?}", child);
             }
         }
+    }
+}
+
+fn fetch_image_to_pixbuf(url: String) -> gdk_pixbuf::Pixbuf {
+    let handle = thread::spawn(move || {
+        // TODO: erorr handling
+        let result = reqwest::blocking::get(url).unwrap().bytes().unwrap();
+        result
+    });
+
+    let img_data = handle.join().unwrap();
+
+    let img_stream = gio::MemoryInputStream::from_bytes(&Bytes::from(&img_data));
+
+    let stream =
+        gdk_pixbuf::Pixbuf::from_stream(&img_stream, Some(&gio::Cancellable::new())).unwrap();
+
+    stream
+}
+
+async fn fetch_file(url: String) -> String {
+    if let Ok(response) = reqwest::get(url).await {
+        if let Ok(text) = response.text().await {
+            text
+        } else {
+            // TODO: error report
+            String::new()
+        }
+    } else {
+        // TODO: error report
+        String::new()
     }
 }

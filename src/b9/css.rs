@@ -1,6 +1,6 @@
 // this code is held together with hopes, dreams and glue
 use crate::parser;
-use std::{collections::HashMap, fs, sync::Mutex};
+use std::{collections::HashMap, sync::Mutex};
 
 use gtk::{gdk::Display, prelude::*, CssProvider};
 
@@ -555,9 +555,8 @@ impl Styleable for gtk::Button {
     }
 }
 
-pub(crate) fn load_css() {
-    let stylesheet_utf8_string = fs::read_to_string("test/styles.css").unwrap();
-    if let Ok(res) = parser::parse(&stylesheet_utf8_string) {
+pub(crate) fn load_css(css: String) {
+    if let Ok(res) = parser::parse(&css) {
         *CSS_RULES.lock().unwrap() = Some(res);
     } else {
         eprintln!("Failed to parse CSS!");

@@ -1,6 +1,6 @@
--- local btn = get("startbtn")
+local btn = get("startbtn")
 
--- print(btn.get_content())
+print(btn.get_content())
 -- btn.set_content("Hello, World!")
 -- print(btn.get_content())
 
@@ -30,5 +30,5 @@
 -- 		body = '{ "test": 3 }',
 -- 	})
 
--- 	printf({ hello = true })
+-- 	print("hlelo", { hello = true })
 -- end)()
