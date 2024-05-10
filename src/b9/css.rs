@@ -15,6 +15,7 @@ struct Properties {
 
     line_height: String,
     color: String,
+    wrap: String,
     background_color: String,
     font_family: String,
     font_weight: String,
@@ -45,31 +46,35 @@ pub(crate) trait Styleable {
 impl Styleable for gtk::Label {
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
-        let css = guard.as_ref().unwrap();
-        let mut classes = self.css_classes();
-        let mut final_css = "".to_string();
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
 
-        classes.push(self.css_name());
+            classes.push(self.css_name());
 
-        self.set_use_markup(true);
+            self.set_use_markup(true);
 
-        for class in classes {
-            if let Some(rules) = css.get(&class.to_string()) {
-                let mut properties = get_properties(rules);
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let mut properties = get_properties(rules);
 
-                match self.css_name().as_str() {
-                    "h1" => properties.font_size = "24px".to_string(),
-                    "h2" => properties.font_size = "22px".to_string(),
-                    "h3" => properties.font_size = "20px".to_string(),
-                    "h4" => properties.font_size = "18px".to_string(),
-                    "h5" => properties.font_size = "16px".to_string(),
-                    "h6" => properties.font_size = "14px".to_string(),
-                    _ => {}
-                };
+                    if properties.wrap == "wrap" {
+                        self.set_wrap(true)
+                    }
 
-                properties.font_size = properties.font_size.replace("px", "pt");
+                    match self.css_name().as_str() {
+                        "h1" => properties.font_size = "24px".to_string(),
+                        "h2" => properties.font_size = "22px".to_string(),
+                        "h3" => properties.font_size = "20px".to_string(),
+                        "h4" => properties.font_size = "18px".to_string(),
+                        "h5" => properties.font_size = "16px".to_string(),
+                        "h6" => properties.font_size = "14px".to_string(),
+                        _ => {}
+                    };
 
-                let markup = &format!(
+                    properties.font_size = properties.font_size.replace("px", "pt");
+
+                    let markup = &format!(
                     "<span foreground=\"{}\" size=\"{}\" line_height=\"{}\" font_family=\"{}\" font_weight=\"{}\" underline=\"{}\" underline_color=\"{}\" overline=\"{}\" overline_color=\"{}\" strikethrough=\"{}\" strikethrough_color=\"{}\">{}</span>",
                     properties.color,
                     properties.font_size,
@@ -85,10 +90,10 @@ impl Styleable for gtk::Label {
                     self.label(),
                 );
 
-                self.set_markup(markup);
+                    self.set_markup(markup);
 
-                final_css += &format!(
-                    "
+                    final_css += &format!(
+                        "
                 {} {{
                     margin-top: {};
                     margin-bottom: {};
@@ -102,20 +107,21 @@ impl Styleable for gtk::Label {
                     padding: {};
                 }}
                 ",
-                    class,
-                    properties.margin_top + "px",
-                    properties.margin_bottom + "px",
-                    properties.margin_left + "px",
-                    properties.margin_right + "px",
-                    properties.border_style,
-                    properties.border_color,
-                    properties.border_width,
-                    properties.border_radius,
-                    properties.padding
-                );
-            }
+                        class,
+                        properties.margin_top + "px",
+                        properties.margin_bottom + "px",
+                        properties.margin_left + "px",
+                        properties.margin_right + "px",
+                        properties.border_style,
+                        properties.border_color,
+                        properties.border_width,
+                        properties.border_radius,
+                        properties.padding
+                    );
+                }
 
-            load_css_into_app(&final_css);
+                load_css_into_app(&final_css);
+            }
         }
     }
 }
@@ -124,18 +130,18 @@ impl Styleable for gtk::Label {
 impl Styleable for gtk::DropDown {
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
-        let css = guard.as_ref().unwrap();
-        let mut classes = self.css_classes();
-        let mut final_css = "".to_string();
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
 
-        classes.push(self.css_name());
+            classes.push(self.css_name());
 
-        for class in classes {
-            if let Some(rules) = css.get(&class.to_string()) {
-                let properties: Properties = get_properties(rules);
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let properties: Properties = get_properties(rules);
 
-                final_css += &format!(
-                    "
+                    final_css += &format!(
+                        "
                 {} {{
                     color: {};
                     background-color: {};
@@ -154,24 +160,25 @@ impl Styleable for gtk::DropDown {
                     padding: {};
                 }}
                 ",
-                    class,
-                    properties.color,
-                    properties.background_color,
-                    properties.font_size,
-                    properties.font_family,
-                    properties.margin_top + "px",
-                    properties.margin_bottom + "px",
-                    properties.margin_left + "px",
-                    properties.margin_right + "px",
-                    properties.border_style,
-                    properties.border_color,
-                    properties.border_width,
-                    properties.border_radius,
-                    properties.padding
-                );
-            }
+                        class,
+                        properties.color,
+                        properties.background_color,
+                        properties.font_size,
+                        properties.font_family,
+                        properties.margin_top + "px",
+                        properties.margin_bottom + "px",
+                        properties.margin_left + "px",
+                        properties.margin_right + "px",
+                        properties.border_style,
+                        properties.border_color,
+                        properties.border_width,
+                        properties.border_radius,
+                        properties.padding
+                    );
+                }
 
-            load_css_into_app(&final_css);
+                load_css_into_app(&final_css);
+            }
         }
     }
 }
@@ -199,34 +206,35 @@ impl Styleable for gtk::LinkButton {
 impl Styleable for gtk::Box {
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
-        let css = guard.as_ref().unwrap();
-        let mut classes = self.css_classes();
-        let mut final_css = "".to_string();
 
-        classes.push(self.css_name());
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
 
-        for class in classes {
-            if let Some(rules) = css.get(&class.to_string()) {
-                let properties: Properties = get_properties(rules);
+            classes.push(self.css_name());
 
-                self.set_spacing(properties.gap);
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let properties: Properties = get_properties(rules);
 
-                match properties.direction.as_str() {
-                    "column" => self.set_orientation(gtk::Orientation::Vertical),
-                    "row" => self.set_orientation(gtk::Orientation::Horizontal),
-                    _ => {}
-                };
+                    self.set_spacing(properties.gap);
 
-                match properties.align_items.as_str() {
-                    "fill" => self.set_halign(gtk::Align::Fill),
-                    "start" => self.set_halign(gtk::Align::Start),
-                    "end" => self.set_halign(gtk::Align::End),
-                    "center" => self.set_halign(gtk::Align::Center),
-                    _ => {}
-                };
+                    match properties.direction.as_str() {
+                        "column" => self.set_orientation(gtk::Orientation::Vertical),
+                        "row" => self.set_orientation(gtk::Orientation::Horizontal),
+                        _ => {}
+                    };
 
-                final_css += &format!(
-                    "
+                    match properties.align_items.as_str() {
+                        "fill" => self.set_halign(gtk::Align::Fill),
+                        "start" => self.set_halign(gtk::Align::Start),
+                        "end" => self.set_halign(gtk::Align::End),
+                        "center" => self.set_halign(gtk::Align::Center),
+                        _ => {}
+                    };
+
+                    final_css += &format!(
+                        "
                 {} {{
                     color: {};
                     background-color: {};
@@ -245,24 +253,25 @@ impl Styleable for gtk::Box {
                     padding: {};
                 }}
                 ",
-                    class,
-                    properties.color,
-                    properties.background_color,
-                    properties.font_size,
-                    properties.font_family,
-                    properties.margin_top + "px",
-                    properties.margin_bottom + "px",
-                    properties.margin_left + "px",
-                    properties.margin_right + "px",
-                    properties.border_style,
-                    properties.border_color,
-                    properties.border_width,
-                    properties.border_radius,
-                    properties.padding
-                );
-            }
+                        class,
+                        properties.color,
+                        properties.background_color,
+                        properties.font_size,
+                        properties.font_family,
+                        properties.margin_top + "px",
+                        properties.margin_bottom + "px",
+                        properties.margin_left + "px",
+                        properties.margin_right + "px",
+                        properties.border_style,
+                        properties.border_color,
+                        properties.border_width,
+                        properties.border_radius,
+                        properties.padding
+                    );
+                }
 
-            load_css_into_app(&final_css);
+                load_css_into_app(&final_css);
+            }
         }
     }
 }
@@ -271,22 +280,22 @@ impl Styleable for gtk::Box {
 impl Styleable for gtk::TextView {
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
-        let css = guard.as_ref().unwrap();
-        let mut classes = self.css_classes();
-        let mut final_css = "".to_string();
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
 
-        classes.push(self.css_name());
+            classes.push(self.css_name());
 
-        for class in classes {
-            if let Some(rules) = css.get(&class.to_string()) {
-                let properties: Properties = get_properties(rules);
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let properties: Properties = get_properties(rules);
 
-                let width = properties.width;
-                let height = properties.height;
+                    let width = properties.width;
+                    let height = properties.height;
 
-                self.set_size_request(width, height);
-                final_css += &format!(
-                    "
+                    self.set_size_request(width, height);
+                    final_css += &format!(
+                        "
                 {} {{
                     color: {};
                     background-color: {};
@@ -305,24 +314,25 @@ impl Styleable for gtk::TextView {
                     padding: {};
                 }}
                 ",
-                    class,
-                    properties.color,
-                    properties.background_color,
-                    properties.font_size,
-                    properties.font_family,
-                    properties.margin_top + "px",
-                    properties.margin_bottom + "px",
-                    properties.margin_left + "px",
-                    properties.margin_right + "px",
-                    properties.border_style,
-                    properties.border_color,
-                    properties.border_width,
-                    properties.border_radius,
-                    properties.padding
-                );
-            }
+                        class,
+                        properties.color,
+                        properties.background_color,
+                        properties.font_size,
+                        properties.font_family,
+                        properties.margin_top + "px",
+                        properties.margin_bottom + "px",
+                        properties.margin_left + "px",
+                        properties.margin_right + "px",
+                        properties.border_style,
+                        properties.border_color,
+                        properties.border_width,
+                        properties.border_radius,
+                        properties.padding
+                    );
+                }
 
-            load_css_into_app(&final_css);
+                load_css_into_app(&final_css);
+            }
         }
     }
 }
@@ -331,17 +341,17 @@ impl Styleable for gtk::TextView {
 impl Styleable for gtk::Separator {
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
-        let css = guard.as_ref().unwrap();
-        let mut classes = self.css_classes();
-        let mut final_css = "".to_string();
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
 
-        classes.push(self.css_name());
-        for class in classes {
-            if let Some(rules) = css.get(&class.to_string()) {
-                let properties: Properties = get_properties(rules);
+            classes.push(self.css_name());
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let properties: Properties = get_properties(rules);
 
-                final_css += &format!(
-                    "
+                    final_css += &format!(
+                        "
                 {} {{
                     color: {};
                     background-color: {};
@@ -360,24 +370,25 @@ impl Styleable for gtk::Separator {
                     padding: {};
                 }}
                 ",
-                    class,
-                    properties.color,
-                    properties.background_color,
-                    properties.font_size,
-                    properties.font_family,
-                    properties.margin_top + "px",
-                    properties.margin_bottom + "px",
-                    properties.margin_left + "px",
-                    properties.margin_right + "px",
-                    properties.border_style,
-                    properties.border_color,
-                    properties.border_width,
-                    properties.border_radius,
-                    properties.padding
-                );
-            }
+                        class,
+                        properties.color,
+                        properties.background_color,
+                        properties.font_size,
+                        properties.font_family,
+                        properties.margin_top + "px",
+                        properties.margin_bottom + "px",
+                        properties.margin_left + "px",
+                        properties.margin_right + "px",
+                        properties.border_style,
+                        properties.border_color,
+                        properties.border_width,
+                        properties.border_radius,
+                        properties.padding
+                    );
+                }
 
-            load_css_into_app(&final_css);
+                load_css_into_app(&final_css);
+            }
         }
     }
 }
@@ -386,18 +397,18 @@ impl Styleable for gtk::Separator {
 impl Styleable for gtk::Picture {
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
-        let css = guard.as_ref().unwrap();
-        let mut classes = self.css_classes();
-        let mut final_css = "".to_string();
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
 
-        classes.push(self.css_name());
+            classes.push(self.css_name());
 
-        for class in classes {
-            if let Some(rules) = css.get(&class.to_string()) {
-                let properties: Properties = get_properties(rules);
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let properties: Properties = get_properties(rules);
 
-                final_css += &format!(
-                    "
+                    final_css += &format!(
+                        "
                 {} {{
                     color: {};
                     background-color: {};
@@ -416,24 +427,25 @@ impl Styleable for gtk::Picture {
                     padding: {};
                 }}
                 ",
-                    class,
-                    properties.color,
-                    properties.background_color,
-                    properties.font_size,
-                    properties.font_family,
-                    properties.margin_top + "px",
-                    properties.margin_bottom + "px",
-                    properties.margin_left + "px",
-                    properties.margin_right + "px",
-                    properties.border_style,
-                    properties.border_color,
-                    properties.border_width,
-                    properties.border_radius,
-                    properties.padding
-                );
-            }
+                        class,
+                        properties.color,
+                        properties.background_color,
+                        properties.font_size,
+                        properties.font_family,
+                        properties.margin_top + "px",
+                        properties.margin_bottom + "px",
+                        properties.margin_left + "px",
+                        properties.margin_right + "px",
+                        properties.border_style,
+                        properties.border_color,
+                        properties.border_width,
+                        properties.border_radius,
+                        properties.padding
+                    );
+                }
 
-            load_css_into_app(&final_css);
+                load_css_into_app(&final_css);
+            }
         }
     }
 }
@@ -442,23 +454,23 @@ impl Styleable for gtk::Picture {
 impl Styleable for gtk::Entry {
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
-        let css = guard.as_ref().unwrap();
-        let mut classes = self.css_classes();
-        let mut final_css = "".to_string();
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
 
-        classes.push(self.css_name());
+            classes.push(self.css_name());
 
-        for class in classes {
-            if let Some(rules) = css.get(&class.to_string()) {
-                let properties: Properties = get_properties(rules);
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let properties: Properties = get_properties(rules);
 
-                let width = properties.width;
-                let height = properties.height;
+                    let width = properties.width;
+                    let height = properties.height;
 
-                self.set_size_request(width, height);
+                    self.set_size_request(width, height);
 
-                final_css += &format!(
-                    "
+                    final_css += &format!(
+                        "
                 {} {{
                     color: {};
                     background-color: {};
@@ -477,24 +489,25 @@ impl Styleable for gtk::Entry {
                     padding: {};
                 }}
                 ",
-                    class,
-                    properties.color,
-                    properties.background_color,
-                    properties.font_size,
-                    properties.font_family,
-                    properties.margin_top + "px",
-                    properties.margin_bottom + "px",
-                    properties.margin_left + "px",
-                    properties.margin_right + "px",
-                    properties.border_style,
-                    properties.border_color,
-                    properties.border_width,
-                    properties.border_radius,
-                    properties.padding
-                );
-            }
+                        class,
+                        properties.color,
+                        properties.background_color,
+                        properties.font_size,
+                        properties.font_family,
+                        properties.margin_top + "px",
+                        properties.margin_bottom + "px",
+                        properties.margin_left + "px",
+                        properties.margin_right + "px",
+                        properties.border_style,
+                        properties.border_color,
+                        properties.border_width,
+                        properties.border_radius,
+                        properties.padding
+                    );
+                }
 
-            load_css_into_app(&final_css);
+                load_css_into_app(&final_css);
+            }
         }
     }
 }
@@ -503,18 +516,18 @@ impl Styleable for gtk::Entry {
 impl Styleable for gtk::Button {
     fn style(&self) {
         let guard = CSS_RULES.lock().unwrap();
-        let css = guard.as_ref().unwrap();
-        let mut classes = self.css_classes();
-        let mut final_css = "".to_string();
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
 
-        classes.push(self.css_name());
+            classes.push(self.css_name());
 
-        for class in classes {
-            if let Some(rules) = css.get(&class.to_string()) {
-                let properties: Properties = get_properties(rules);
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let properties: Properties = get_properties(rules);
 
-                final_css += &format!(
-                    "
+                    final_css += &format!(
+                        "
                 {} {{
                     color: {};
                     background-color: {};
@@ -533,24 +546,25 @@ impl Styleable for gtk::Button {
                     padding: {};
                 }}
                 ",
-                    class,
-                    properties.color,
-                    properties.background_color,
-                    properties.font_size,
-                    properties.font_family,
-                    properties.margin_top + "px",
-                    properties.margin_bottom + "px",
-                    properties.margin_left + "px",
-                    properties.margin_right + "px",
-                    properties.border_style,
-                    properties.border_color,
-                    properties.border_width,
-                    properties.border_radius,
-                    properties.padding
-                );
-            }
+                        class,
+                        properties.color,
+                        properties.background_color,
+                        properties.font_size,
+                        properties.font_family,
+                        properties.margin_top + "px",
+                        properties.margin_bottom + "px",
+                        properties.margin_left + "px",
+                        properties.margin_right + "px",
+                        properties.border_style,
+                        properties.border_color,
+                        properties.border_width,
+                        properties.border_radius,
+                        properties.padding
+                    );
+                }
 
-            load_css_into_app(&final_css);
+                load_css_into_app(&final_css);
+            }
         }
     }
 }
@@ -563,6 +577,9 @@ pub(crate) fn load_css(css: String) {
     }
 }
 
+pub(crate) fn reset_css() {
+    *CSS_RULES.lock().unwrap() = None;
+}
 pub(crate) fn perform_styling<T: Styleable>(_element: &html_parser::Element, styleable: &T) {
     styleable.style();
 }
@@ -591,6 +608,8 @@ pub(crate) fn load_css_into_app(content: &str) {
 fn get_properties(rules: &Vec<(String, String)>) -> Properties {
     let direction = get_rule(&rules, "direction", &"row");
     let align_items = get_rule(&rules, "align-items", &"fill");
+
+    let wrap = get_rule(&rules, "wrap", &"nowrap");
 
     let line_height = get_rule(&rules, "line-height", &"1");
     let font_size = get_rule(&rules, "font-size", &"11px");
@@ -636,6 +655,7 @@ fn get_properties(rules: &Vec<(String, String)>) -> Properties {
         width,
         height,
         line_height,
+        wrap,
         color,
         background_color,
         font_family,

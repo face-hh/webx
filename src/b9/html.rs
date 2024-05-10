@@ -21,9 +21,12 @@ pub(crate) struct Tag {
 }
 
 async fn parse_html(url: String) -> Result<(Node, Node)> {
-    let html: String = fetch_file(url + &"index.html").await;
+    let html: String = fetch_file(url + &"/index.html").await;
 
-    let dom = Dom::parse(&html)?;
+    let dom = match !html.is_empty() {
+        true => Dom::parse(&html),
+        false => Dom::parse(&include_str!("../resources/not_found.html")),
+    }?;
 
     let head = find_element_by_name(&dom.children, "head").expect("Couldn't find head.");
     let body = find_element_by_name(&dom.children, "body").expect("Couldn't find body.");
@@ -47,6 +50,8 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
 
 #[tokio::main]
 pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
+    css::reset_css();
+
     let tags = Rc::new(RefCell::new(Vec::new()));
 
     let html_view = gtk::Box::builder()
@@ -94,7 +99,7 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
 
     let tagss = Rc::clone(&tags);
     
-    let luacode: String = fetch_file(tab.url.clone() + &src).await;
+    let luacode: String = fetch_file(tab.url.clone() + "/" + &src).await;
 
     if let Err(e) = super::lua::run(luacode, tags).await {
         println!("ERROR: Failed to run lua: {}", e);
@@ -146,7 +151,8 @@ async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell
                             .icon_widget
                             .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
                     } else {
-                        let css = fetch_file(tab.borrow().url.clone() + href).await;
+                        let css = fetch_file(tab.borrow().url.clone() + "/" + href).await;
+
                         css::load_css(css);
                     }
                 }
@@ -214,7 +220,6 @@ fn render_html(
                             .css_name(element.name.as_str())
                             .css_classes(element.classes.clone())
                             .halign(gtk::Align::Start)
-                            .wrap(true)
                             .build();
 
                         css::perform_styling(element, &label);
@@ -336,7 +341,7 @@ fn render_html(
 
             let image = gtk::Picture::builder()
                 .css_name("img")
-                .alternative_text(element.attributes.get("alt").unwrap().clone().unwrap())
+                .alternative_text(element.attributes.get("alt").unwrap_or(&Some(String::new())).clone().unwrap())
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
                 .valign(gtk::Align::Start)

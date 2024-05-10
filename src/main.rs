@@ -2,9 +2,6 @@ mod b9;
 mod custom_window;
 mod parser;
 
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use custom_window::Window;
 
 use gtk::gdk::Cursor;
@@ -19,7 +16,7 @@ struct Tab {
     widget: gtk::Box,
     label_widget: gtk::Label,
     icon_widget: gtk::Image,
-    id: String
+    // id: String,
 }
 
 fn main() -> glib::ExitCode {
@@ -47,7 +44,7 @@ fn build_ui(app: &adw::Application) {
     let tabs_widget = gtk::Box::builder().css_name("tabs").spacing(6).build();
 
     let tab1 = make_tab(
-        tabs_widget.clone(),
+        // tabs_widget.clone(),
         "New Tab",
         "file.png",
         cursor_pointer.as_ref(),
@@ -55,17 +52,38 @@ fn build_ui(app: &adw::Application) {
     );
 
     let current_tab = tab1.clone();
-    
+
     tabs_widget.append(&tab1.widget);
+    tabs_widget.append(&search);
 
     headerbar.set_title_widget(Some(&tabs_widget));
 
     window.set_titlebar(Some(&headerbar));
 
-    let htmlview = b9::html::build_ui(current_tab).unwrap();
     let scroll = gtk::ScrolledWindow::builder().build();
 
-    scroll.set_child(Some(&htmlview));
+    let scroll_clone = scroll.clone();
+
+    search.connect_activate(move |query| {
+        let mut tab_in_closure = current_tab.clone();
+
+        // TODO: set tab_in_closure's URL to be the DNS'd URL
+        tab_in_closure.url = query.text().to_string();
+
+        query.set_text(&tab_in_closure.url.replace("buss://", ""));
+        query.set_position(-1);
+        query
+            .root()
+            .unwrap()
+            .set_focus(None as Option<&gtk::Widget>);
+
+        if let Ok(htmlview) = b9::html::build_ui(tab_in_closure.clone()) {
+            scroll_clone.set_child(Some(&htmlview));
+        } else {
+            tab_in_closure.label_widget.set_label("HTML engine failed.");
+        }
+    });
+
     scroll.set_vexpand(true);
 
     let nav = gtk::Box::builder()
@@ -78,45 +96,42 @@ fn build_ui(app: &adw::Application) {
         .build();
 
     nav.append(&separator);
-    nav.append(&search);
     nav.append(&scroll);
 
     window.set_child(Some(&nav));
     window.present();
 }
 
+// commented code here was an attempt at implementing multiple tabs.
+// it will be kept here in case I decide to implement multiple tabs again
 fn make_tab(
-    tabs_widget: gtk::Box,
+    // tabs_widget: gtk::Box,
     label: &str,
     icon: &str,
     cursor_pointer: Option<&Cursor>,
     mut tabs: Vec<Tab>,
 ) -> Tab {
-    let tabid = gen_tab_id();
+    // let tabid = gen_tab_id();
 
     let tab = gtk::Box::builder()
         .halign(gtk::Align::Center)
         .valign(gtk::Align::Center)
         .spacing(12)
         .css_name("tab")
-        .css_classes(vec![tabid.clone()])
+        // .css_classes(vec![tabid.clone()])
         .build();
 
-    let x = gtk::Button::builder().css_name("tab-close").build();
+    // let tabs_widgett = Rc::new(RefCell::new(tabs_widget));
+    // let tabb = Rc::new(RefCell::new(tab.clone()));
+    // let tabss = Rc::new(RefCell::new(tabs.clone()));
 
-    x.set_icon_name("close");
+    // x.connect_clicked(move |_| {
+    //     let tabs_widgett = Rc::clone(&tabs_widgett);
+    //     let tabbb = Rc::clone(&tabb);
+    //     let tabsss = Rc::clone(&tabss);
 
-    let tabs_widgett = Rc::new(RefCell::new(tabs_widget));
-    let tabb = Rc::new(RefCell::new(tab.clone()));
-    let tabss = Rc::new(RefCell::new(tabs.clone()));
-
-    x.connect_clicked(move |_| {
-        let tabs_widgett = Rc::clone(&tabs_widgett);
-        let tabbb = Rc::clone(&tabb);
-        let tabsss = Rc::clone(&tabss);
-
-        remove_tab(tabbb, tabs_widgett, &mut tabsss.borrow_mut());
-    });
+    //     remove_tab(tabbb, tabs_widgett, &mut tabsss.borrow_mut());
+    // });
 
     let tabicon = gtk::Image::from_file(icon);
 
@@ -133,16 +148,14 @@ fn make_tab(
     tabname.add_controller(gesture);
 
     tabname.set_cursor(cursor_pointer);
-    x.set_cursor(cursor_pointer);
 
     tab.append(&tabicon);
     tab.append(&tabname);
-    tab.append(&x);
 
     let res = Tab {
-        url: "http://127.0.0.1:3000/".to_string(),
+        url: "".to_string(),
         widget: tab,
-        id: tabid,
+        // id: tabid,
         label_widget: tabname,
         icon_widget: tabicon,
     };
@@ -152,14 +165,14 @@ fn make_tab(
     res
 }
 
-fn remove_tab(tab: Rc<RefCell<gtk::Box>>, tabs_widget: Rc<RefCell<gtk::Box>>, tabs: &mut Vec<Tab>) {
-    tabs_widget.borrow_mut().remove(&tab.borrow().clone());
+// fn remove_tab(tab: Rc<RefCell<gtk::Box>>, tabs_widget: Rc<RefCell<gtk::Box>>, tabs: &mut Vec<Tab>) {
+//     tabs_widget.borrow_mut().remove(&tab.borrow().clone());
 
-    tabs.retain(|potential_tab| tab.borrow().css_classes()[0] != potential_tab.id);
-}
+//     tabs.retain(|potential_tab| tab.borrow().css_classes()[0] != potential_tab.id);
+// }
 
-fn gen_tab_id() -> String {
-    use uuid::Uuid;
+// fn gen_tab_id() -> String {
+//     use uuid::Uuid;
 
-    Uuid::new_v4().to_string()
-}
+//     Uuid::new_v4().to_string()
+// }
