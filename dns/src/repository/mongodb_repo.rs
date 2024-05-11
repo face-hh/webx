@@ -18,7 +18,7 @@ impl MongoRepo {
         dotenv().ok();
         let uri = match env::var("MONGOURI") {
             Ok(v) => v.to_string(),
-            Err(_) => format!("Error loading env variable"),
+            Err(_) => "Error loading env variable".to_string(),
         };
         let client = Client::with_uri_str(uri).unwrap();
         let db = client.database("rustDB");
@@ -26,28 +26,37 @@ impl MongoRepo {
         MongoRepo { col }
     }
 
-    pub fn create_domain(&self, new: Domain) -> Result<InsertOneResult, Error> {
-        let new_doc = Domain {
-            id: None,
-            domain: new.domain,
-            name: new.name,
-            ip: new.ip,
-            secret_key: new.secret_key,
-        };
-        let user = self
-            .col
-            .insert_one(new_doc, None)
-            .ok()
-            .expect("Error creating domain");
-        Ok(user)
+    pub fn create_domain(&self, new: Domain) -> Result<InsertOneResult, String> {
+        let dup = self.get_domain_by_domain(&new.name, &new.domain);
+
+        match dup {
+            Err(_) => Err(
+                "Domain and name already exist, cannot create duplicate".to_owned(),
+            ),
+            Ok(_) => {
+                let new_doc = Domain {
+                    id: None,
+                    domain: new.domain,
+                    name: new.name,
+                    ip: new.ip,
+                    secret_key: new.secret_key,
+                };
+                
+                let user = self
+                    .col
+                    .insert_one(new_doc, None)
+                    .expect("Error creating domain");
+                Ok(user)
+            }
+        }
     }
+
 
     pub fn get_domain(&self, key: &String) -> Result<Domain, Error> {
         let filter = doc! {"secret_key": key};
         let user_detail = self
             .col
             .find_one(filter, None)
-            .ok()
             .expect("Error getting domain's detail");
 
         let result = user_detail.unwrap();
@@ -60,7 +69,6 @@ impl MongoRepo {
         let user_detail = self
             .col
             .find_one(filter, None)
-            .ok()
             .expect("Error getting domain's detail through name and domain");
 
         let result = user_detail;
@@ -84,7 +92,6 @@ impl MongoRepo {
         let updated_doc = self
             .col
             .update_one(filter, new_doc, None)
-            .ok()
             .expect("Error updating domain");
         Ok(updated_doc)
     }
@@ -95,7 +102,6 @@ impl MongoRepo {
         let user_detail = self
             .col
             .delete_one(filter, None)
-            .ok()
             .expect("Error deleting domain");
         Ok(user_detail)
     }
@@ -104,7 +110,6 @@ impl MongoRepo {
         let cursors = self
             .col
             .find(None, None)
-            .ok()
             .expect("Error getting list of domains");
         let domains = cursors.map(|doc| doc.unwrap()).collect();
         Ok(domains)

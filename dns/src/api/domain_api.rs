@@ -1,14 +1,16 @@
-use crate::{models::user_model::{Domain, DomainInput}, repository::mongodb_repo::MongoRepo};
+use crate::{models::user_model::{Domain, DomainInput}, repository::mongodb_repo::MongoRepo, RateLimitGuard};
 use rand::Rng;
 use rocket::{http::Status, serde::json::Json, State};
+use rocket_governor::RocketGovernor;
 
 #[post("/domain", data = "<new>")]
 pub fn create_domain(
+    _limitguard: RocketGovernor<RateLimitGuard>,
     db: &State<MongoRepo>,
     new: Json<DomainInput>,
 ) -> Result<Json<Domain>, Status> {
     let secret_key = generate_api_key(24);
-    println!("{secret_key}");
+
     let data = Domain {
         id: None,
         domain: new.domain.to_owned(),
@@ -18,14 +20,15 @@ pub fn create_domain(
     };
 
     let res = db.create_domain(data.clone());
+    
     match res {
         Ok(_) => Ok(Json(data)),
-        Err(_) => Err(Status::InternalServerError),
+        Err(_) => Err(rocket::http::Status { code: 409 }),
     }
 }
 
 #[get("/domain/<name>/<domain>")]
-pub fn get_domain(db: &State<MongoRepo>, name: String, domain: String) -> Result<Json<DomainInput>, Status> {
+pub fn get_domain(_limitguard: RocketGovernor<RateLimitGuard>, db: &State<MongoRepo>, name: String, domain: String) -> Result<Json<DomainInput>, Status> {
     if name.is_empty() || domain.is_empty() {
         return Err(Status::BadRequest);
     };
@@ -47,6 +50,7 @@ pub fn get_domain(db: &State<MongoRepo>, name: String, domain: String) -> Result
 
 #[put("/domain/<key>", data = "<new>")]
 pub fn update_domain(
+    _limitguard: RocketGovernor<RateLimitGuard>,
     db: &State<MongoRepo>,
     key: String,
     new: Json<DomainInput>,
@@ -88,18 +92,19 @@ pub fn update_domain(
 }
 
 #[delete("/domain/<path>")]
-pub fn delete_domain(db: &State<MongoRepo>, path: String) -> Result<Json<&str>, Status> {
+pub fn delete_domain<'a>(_limitguard: RocketGovernor<'a, RateLimitGuard>, db: &'a State<MongoRepo>, path: String) -> Result<Json<&'a str>, Status> {
     let id = path;
     if id.is_empty() {
         return Err(Status::BadRequest);
     };
+    
     let result = db.delete_domain(&id);
     match result {
         Ok(res) => {
             if res.deleted_count == 1 {
-                return Ok(Json("Domain successfully deleted!"));
+                Ok(Json("Domain successfully deleted!"))
             } else {
-                return Err(Status::NotFound);
+                Err(Status::NotFound)
             }
         }
         Err(_) => Err(Status::InternalServerError),
@@ -107,7 +112,7 @@ pub fn delete_domain(db: &State<MongoRepo>, path: String) -> Result<Json<&str>, 
 }
 
 #[get("/domains")]
-pub fn get_all_domains(db: &State<MongoRepo>) -> Result<Json<Vec<DomainInput>>, Status> {
+pub fn get_all_domains(_limitguard: RocketGovernor<RateLimitGuard>, db: &State<MongoRepo>) -> Result<Json<Vec<DomainInput>>, Status> {
     let domains = db.get_all_domains();
     match domains {
         Ok(mut domains) => {
