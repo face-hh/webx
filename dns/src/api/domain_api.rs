@@ -11,6 +11,10 @@ pub fn create_domain(
 ) -> Result<Json<Domain>, Status> {
     let secret_key = generate_api_key(24);
 
+    if !new.domain.chars().all(|c| c.is_ascii_alphabetic() || c == '-') {
+        return Err(Status::BadRequest);
+    }
+
     let data = Domain {
         id: None,
         domain: new.domain.to_owned(),
