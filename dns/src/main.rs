@@ -20,7 +20,7 @@ impl<'r> RocketGovernable<'r> for RateLimitGuard {
             "delete_domain" => Quota::per_second(Self::nonzero(1u32)),
             "update_domain" => Quota::per_minute(Self::nonzero(30u32)),
             "create_domain" => Quota::per_hour(Self::nonzero(1u32)),
-            "get_domains" => Quota::per_hour(Self::nonzero(1u32)),
+            "get_all_domains" => Quota::per_hour(Self::nonzero(1u32)),
             _ => Quota::per_second(Self::nonzero(1u32)),
         }
     }
