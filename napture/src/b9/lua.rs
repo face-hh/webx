@@ -186,13 +186,18 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
                 _ => return format!("Unsupported method: {}", method).into(),
             };
 
-            let res = req.send().unwrap();
+            let res = match req.send() {
+                Ok(res) => res,
+                Err(e) => {
+                    return format!("Failed to send request: {}", e).into();
+                }
+            };
+
             let body: Result<serde_json::Value, reqwest::Error> = res.json();
 
             let result = match body {
                 Ok(body) => body,
                 Err(e) => {
-                    println!("{e}");
                     problem!("error", format!("failed to parse response body: {}", e));
                     serde_json::Value::Null
                 }

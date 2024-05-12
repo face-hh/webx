@@ -140,15 +140,6 @@ fn make_tab(
         .label(label)
         .build();
 
-    let gesture = gtk::GestureClick::new();
-    gesture.connect_pressed(|_gesture, _, _, _| {
-        println!("I've been clicked! By tabname");
-    });
-
-    tabname.add_controller(gesture);
-
-    tabname.set_cursor(cursor_pointer);
-
     tab.append(&tabicon);
     tab.append(&tabname);
 

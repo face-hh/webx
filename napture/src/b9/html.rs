@@ -9,6 +9,7 @@ use super::{
 
 use std::{cell::RefCell, rc::Rc, thread};
 
+use base64::prelude::*;
 use gtk::{gdk_pixbuf, gio, glib::Bytes, prelude::*};
 use html_parser::{Dom, Element, Node, Result};
 
@@ -98,11 +99,13 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
     }
 
     let tagss = Rc::clone(&tags);
-    
-    let luacode: String = fetch_file(tab.url.clone() + "/" + &src).await;
 
-    if let Err(e) = super::lua::run(luacode, tags).await {
-        println!("ERROR: Failed to run lua: {}", e);
+    if !src.is_empty() {
+        let luacode: String = fetch_file(tab.url.clone() + "/" + &src).await;
+
+        if let Err(e) = super::lua::run(luacode, tags).await {
+            println!("ERROR: Failed to run lua: {}", e);
+        }
     }
 
     for tag in tagss.borrow_mut().iter_mut() {
@@ -267,24 +270,7 @@ fn render_html(
                     }
                     Node::Element(el) => {
                         if el.name.as_str() == "a" {
-                            let uri = el.attributes.get("href").unwrap().clone().unwrap();
-
-                            let link_button = gtk::LinkButton::builder()
-                                .label(el.children[0].text().unwrap())
-                                .uri(uri)
-                                .css_name("a")
-                                .css_classes(el.classes.clone())
-                                .build();
-
-                            tags.borrow_mut().push(Tag {
-                                classes: el.classes.clone(),
-                                widget: Box::new(link_button.clone()),
-                                tied_variables: Vec::new(),
-                            });
-
-                            css::perform_styling(element, &link_button);
-
-                            label_box.append(&link_button);
+                            render_a(el, element, label_box.clone(), tags.clone());
                         } else {
                             render_html(
                                 el,
@@ -298,6 +284,9 @@ fn render_html(
                     Node::Comment(_) => {}
                 }
             }
+        }
+        "a" => {
+            render_a(element, element, html_view.clone(), tags.clone());
         }
         "ul" | "ol" => {
             let list_box = gtk::Box::builder()
@@ -341,7 +330,14 @@ fn render_html(
 
             let image = gtk::Picture::builder()
                 .css_name("img")
-                .alternative_text(element.attributes.get("alt").unwrap_or(&Some(String::new())).clone().unwrap())
+                .alternative_text(
+                    element
+                        .attributes
+                        .get("alt")
+                        .unwrap_or(&Some(String::new()))
+                        .clone()
+                        .unwrap(),
+                )
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
                 .valign(gtk::Align::Start)
@@ -471,6 +467,27 @@ fn render_html(
     }
 }
 
+fn render_a(el: &Element, element: &Element, label_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>) {
+    let uri = el.attributes.get("href").unwrap().clone().unwrap();
+
+    let link_button = gtk::LinkButton::builder()
+        .label(el.children[0].text().unwrap())
+        .uri(uri)
+        .css_name("a")
+        .css_classes(el.classes.clone())
+        .halign(gtk::Align::Start)
+        .build();
+
+    tags.borrow_mut().push(Tag {
+        classes: el.classes.clone(),
+        widget: Box::new(link_button.clone()),
+        tied_variables: Vec::new(),
+    });
+
+    css::perform_styling(element, &link_button);
+
+    label_box.append(&link_button);
+}
 
 fn render_list(element: &Element, list_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>) {
     for (i, child) in element.children.iter().enumerate() {
@@ -537,9 +554,38 @@ fn fetch_image_to_pixbuf(url: String) -> gdk_pixbuf::Pixbuf {
 }
 
 async fn fetch_file(url: String) -> String {
-    if let Ok(response) = reqwest::get(url).await {
-        if let Ok(text) = response.text().await {
-            text
+    if url.starts_with("https://github.com") {
+        fetch_from_github(url).await
+    } else {
+        if let Ok(response) = reqwest::get(url).await {
+            if let Ok(text) = response.text().await {
+                text
+            } else {
+                // TODO: error report
+                String::new()
+            }
+        } else {
+            // TODO: error report
+            String::new()
+        }
+    }
+}
+
+async fn fetch_from_github(url: String) -> String {
+    let client: reqwest::ClientBuilder = reqwest::Client::builder();
+
+    let url = format!(
+        "https://raw.githubusercontent.com/{}/{}/main/{}",
+        url.split('/').nth(3).unwrap(),
+        url.split('/').nth(4).unwrap(),
+        url.split('/').last().unwrap(),
+    );
+
+    let client = client.build().unwrap();
+
+    if let Ok(response) = client.get(&url).send().await {
+        if let Ok(json) = response.text().await {
+            json
         } else {
             // TODO: error report
             String::new()
