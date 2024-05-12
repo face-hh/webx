@@ -9,7 +9,6 @@ use super::{
 
 use std::{cell::RefCell, rc::Rc, thread};
 
-use base64::prelude::*;
 use gtk::{gdk_pixbuf, gio, glib::Bytes, prelude::*};
 use html_parser::{Dom, Element, Node, Result};
 
@@ -64,9 +63,31 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
         .css_name("body")
         .build();
 
-    let (head, body) = parse_html(tab.url.clone()).await.unwrap();
+    let (head, body) = match parse_html(tab.url.clone()).await {
+        Ok(ok) => ok,
+        Err(e) => {
+            eprintln!("Couldn't parse HTML: {}", e);
+            return Err(html_parser::Error::Parsing(e.to_string()));
+        }
+    };
 
-    for element in head.element().unwrap().children.iter() {
+    let head_elements = match head.element() {
+        Some(ok) => ok,
+        None => {
+            eprintln!("FATAL: Couldn't get head element, aborting!");
+            return Err(html_parser::Error::Parsing("Failed to get head element!".to_string()));
+        }
+    };
+
+    let body_elements = match body.element() {
+        Some(ok) => ok,
+        None => {
+            eprintln!("FATAL: Couldn't get body element, aborting!");
+            return Err(html_parser::Error::Parsing("Failed to get body element!".to_string()));
+        }
+    };
+
+    for element in head_elements.children.iter() {
         if let Some(element) = element.element() {
             let contents = element.children.get(0);
             let aa = &Rc::new(RefCell::new(&tab));
@@ -78,7 +99,7 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
 
     html_view.style();
 
-    for element in body.element().unwrap().children.iter() {
+    for element in body_elements.children.iter() {
         if let Some(element) = element.element() {
             let contents = element.children.get(0);
 
@@ -87,12 +108,14 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
     }
 
     let mut src = String::new();
-    for element in head.element().unwrap().children.iter() {
+    for element in head_elements.children.iter() {
         if let Some(element) = element.element() {
             if element.name == "script" {
                 if let Some(src_attr) = element.attributes.get("src") {
-                    src = src_attr.as_ref().unwrap().to_string();
-                    break;
+                    if let Some(src_attr) = src_attr {
+                        src = src_attr.to_string();
+                        break;
+                    }
                 }
             }
         }
@@ -141,18 +164,22 @@ async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell
             if let Some(contents) = contents {
                 tab.borrow()
                     .label_widget
-                    .set_label(contents.text().unwrap())
+                    .set_label(contents.text().unwrap_or(""))
             }
         }
         "link" => {
             if let Some(href) = element.attributes.get("href") {
                 if let Some(href) = href.as_ref() {
                     if href.ends_with(".png") || href.ends_with(".jpg") {
-                        let stream = fetch_image_to_pixbuf(href.clone());
+                        let result = fetch_image_to_pixbuf(href.clone());
 
-                        tab.borrow()
-                            .icon_widget
-                            .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
+                        if let Ok(stream) = result {
+                            tab.borrow()
+                                .icon_widget
+                                .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
+                        } else {
+                            println!("WARNING: Failed to fetch image: {}", result.unwrap_err());
+                        }
                     } else {
                         let css = fetch_file(tab.borrow().url.clone() + "/" + href).await;
 
@@ -252,7 +279,7 @@ fn render_html(
                 match child {
                     Node::Text(_) => {
                         let label = gtk::Label::builder()
-                            .label(child.text().unwrap())
+                            .label(child.text().unwrap_or(""))
                             .css_name(element.name.as_str())
                             .css_classes(element.classes.clone())
                             .halign(gtk::Align::Start)
@@ -322,9 +349,21 @@ fn render_html(
             html_view.append(&line);
         }
         "img" => {
-            let url = element.attributes.get("src").unwrap().clone().unwrap();
+            let url = match element.attributes.get("src") {
+                Some(Some(url)) => url.clone(),
+                _ => {
+                    println!("INFO: <img> tag must have a src attribute");
+                    return;
+                }
+            };
 
-            let stream = fetch_image_to_pixbuf(url);
+            let stream = match fetch_image_to_pixbuf(url) {
+                Ok(s) => s,
+                Err(e) => {
+                    println!("ERROR: Failed to load image: {}", e);
+                    return;
+                }
+            };
 
             let wrapper = gtk::Box::builder().build();
 
@@ -336,7 +375,7 @@ fn render_html(
                         .get("alt")
                         .unwrap_or(&Some(String::new()))
                         .clone()
-                        .unwrap(),
+                        .unwrap_or_else(|| "".to_string())
                 )
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
@@ -357,12 +396,10 @@ fn render_html(
             html_view.append(&wrapper);
         }
         "input" => {
-            let input_type = element
-                .attributes
-                .get("type")
-                .unwrap()
-                .clone()
-                .unwrap_or_else(|| "text".to_string());
+            let input_type = match element.attributes.get("type") {
+                Some(Some(t)) => t.to_string(),
+                _ => "text".to_string(),
+            };
 
             if input_type == "text" {
                 let entry = gtk::Entry::builder()
@@ -370,9 +407,9 @@ fn render_html(
                         element
                             .attributes
                             .get("placeholder")
-                            .unwrap()
+                            .unwrap_or(&Some(String::new()))
                             .clone()
-                            .unwrap(),
+                            .unwrap_or("".to_string()),
                     )
                     .css_name("input")
                     .css_classes(element.classes.clone())
@@ -398,7 +435,7 @@ fn render_html(
                     Node::Element(el) => {
                         if el.name.as_str() == "option" {
                             // TODO: keep track of value
-                            strings.push(el.children[0].text().unwrap())
+                            strings.push(el.children[0].text().unwrap_or(""))
                         }
                     }
                     _ => {}
@@ -439,13 +476,13 @@ fn render_html(
 
             textview
                 .buffer()
-                .set_text(element.children[0].text().unwrap());
+                .set_text(element.children[0].text().unwrap_or(""));
 
             html_view.append(&textview);
         }
         "button" => {
             let button = gtk::Button::builder()
-                .label(element.children[0].text().unwrap())
+                .label(element.children[0].text().unwrap_or(""))
                 .css_name("button")
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
@@ -468,10 +505,16 @@ fn render_html(
 }
 
 fn render_a(el: &Element, element: &Element, label_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>) {
-    let uri = el.attributes.get("href").unwrap().clone().unwrap();
+    let uri = match el.attributes.get("href") {
+        Some(Some(uri)) => uri.clone(),
+        _ => {
+            println!("INFO: <a> tag must have a href attribute");
+            return;
+        }
+    };
 
     let link_button = gtk::LinkButton::builder()
-        .label(el.children[0].text().unwrap())
+        .label(el.children[0].text().unwrap_or(""))
         .uri(uri)
         .css_name("a")
         .css_classes(el.classes.clone())
@@ -508,7 +551,7 @@ fn render_list(element: &Element, list_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>
                         .build();
 
                     let label = gtk::Label::builder()
-                        .label(el.children[0].text().unwrap())
+                        .label(el.children[0].text().unwrap_or(""))
                         .css_name("li")
                         .css_classes(el.classes.clone())
                         .halign(gtk::Align::Start)
@@ -536,21 +579,37 @@ fn render_list(element: &Element, list_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>
     }
 }
 
-fn fetch_image_to_pixbuf(url: String) -> gdk_pixbuf::Pixbuf {
+fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
     let handle = thread::spawn(move || {
         // TODO: erorr handling
-        let result = reqwest::blocking::get(url).unwrap().bytes().unwrap();
+        let result = reqwest::blocking::get(url)
+            .map_err(|e| e.to_string())
+            .and_then(|res| res.bytes().map_err(|e| e.to_string()))
+            .unwrap_or_else(|e| {
+                println!("ERROR: Failed to fetch image: {}", e);
+                Vec::new().into()
+            });
         result
     });
 
-    let img_data = handle.join().unwrap();
+    let img_data = match handle.join() {
+        Ok(data) => data,
+        Err(_) => {
+            println!("ERROR: Failed to join fetch_image_to_pixbuf thread.");
+            Vec::new().into()
+        }
+    };
 
     let img_stream = gio::MemoryInputStream::from_bytes(&Bytes::from(&img_data));
 
-    let stream =
-        gdk_pixbuf::Pixbuf::from_stream(&img_stream, Some(&gio::Cancellable::new())).unwrap();
+    match gdk_pixbuf::Pixbuf::from_stream(&img_stream, Some(&gio::Cancellable::new())) {
+        Ok(pixbuf) => Ok(pixbuf),
+        Err(_) => {
+            Err(html_parser::Error::Parsing("ERROR: Failed to load image".to_string()))
+        }
+    }
 
-    stream
+    
 }
 
 async fn fetch_file(url: String) -> String {
@@ -576,12 +635,18 @@ async fn fetch_from_github(url: String) -> String {
 
     let url = format!(
         "https://raw.githubusercontent.com/{}/{}/main/{}",
-        url.split('/').nth(3).unwrap(),
-        url.split('/').nth(4).unwrap(),
-        url.split('/').last().unwrap(),
+        url.split('/').nth(3).unwrap_or(""),
+        url.split('/').nth(4).unwrap_or(""),
+        url.split('/').last().unwrap_or(""),
     );
 
-    let client = client.build().unwrap();
+    let client = match client.build() {
+        Ok(client) => client,
+        Err(e) => {
+            eprintln!("ERROR: Couldn't build reqwest client, returning empty string: {}", e);
+            return String::new();
+        }
+    };
 
     if let Ok(response) = client.get(&url).send().await {
         if let Ok(json) = response.text().await {

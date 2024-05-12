@@ -2,6 +2,7 @@
 use crate::parser;
 use std::{collections::HashMap, sync::Mutex};
 
+use glib::GString;
 use gtk::{gdk::Display, prelude::*, CssProvider};
 
 static CSS_RULES: Mutex<Option<HashMap<String, Vec<(String, String)>>>> = Mutex::new(None); // shut the fuck up
@@ -45,7 +46,14 @@ pub(crate) trait Styleable {
 // h1, h2, h3, h4, h5, h6, p
 impl Styleable for gtk::Label {
     fn style(&self) {
-        let guard = CSS_RULES.lock().unwrap();
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkLabel.");
+                return;
+            }
+        };
+
         if let Some(css) = guard.as_ref() {
             let mut classes = self.css_classes();
             let mut final_css = "".to_string();
@@ -129,7 +137,16 @@ impl Styleable for gtk::Label {
 // select
 impl Styleable for gtk::DropDown {
     fn style(&self) {
-        let guard = CSS_RULES.lock().unwrap();
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!(
+                    "FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkDropDown."
+                );
+                return;
+            }
+        };
+
         if let Some(css) = guard.as_ref() {
             let mut classes = self.css_classes();
             let mut final_css = "".to_string();
@@ -189,11 +206,17 @@ impl Styleable for gtk::LinkButton {
         let lbl = gtk::Label::builder()
             .css_name("a")
             .label(
-                self.child()
-                    .unwrap()
-                    .downcast::<gtk::Label>()
-                    .unwrap()
-                    .label(),
+                if let Some(child) = self.child() {
+                    if let Some(label) = child.downcast_ref::<gtk::Label>() {
+                        label.label()
+                    } else {
+                        println!("FATAL: GtkLinkButton child is not a GtkLabel! Silencing the error by returning empty string.");
+                        GString::new()
+                    }
+                } else {
+                    println!("FATAL: GtkLinkButton has no child! Silencing the error by returning empty string.");
+                    GString::new()
+                }
             )
             .build();
         self.set_child(Some(&lbl));
@@ -205,7 +228,13 @@ impl Styleable for gtk::LinkButton {
 // div
 impl Styleable for gtk::Box {
     fn style(&self) {
-        let guard = CSS_RULES.lock().unwrap();
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkBox.");
+                return;
+            }
+        };
 
         if let Some(css) = guard.as_ref() {
             let mut classes = self.css_classes();
@@ -279,7 +308,16 @@ impl Styleable for gtk::Box {
 // textarea
 impl Styleable for gtk::TextView {
     fn style(&self) {
-        let guard = CSS_RULES.lock().unwrap();
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!(
+                    "FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkTextView."
+                );
+                return;
+            }
+        };
+
         if let Some(css) = guard.as_ref() {
             let mut classes = self.css_classes();
             let mut final_css = "".to_string();
@@ -340,7 +378,16 @@ impl Styleable for gtk::TextView {
 // hr
 impl Styleable for gtk::Separator {
     fn style(&self) {
-        let guard = CSS_RULES.lock().unwrap();
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!(
+                    "FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkSeparator."
+                );
+                return;
+            }
+        };
+
         if let Some(css) = guard.as_ref() {
             let mut classes = self.css_classes();
             let mut final_css = "".to_string();
@@ -396,7 +443,14 @@ impl Styleable for gtk::Separator {
 // img
 impl Styleable for gtk::Picture {
     fn style(&self) {
-        let guard = CSS_RULES.lock().unwrap();
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkPicture.");
+                return;
+            }
+        };
+
         if let Some(css) = guard.as_ref() {
             let mut classes = self.css_classes();
             let mut final_css = "".to_string();
@@ -453,7 +507,14 @@ impl Styleable for gtk::Picture {
 // input
 impl Styleable for gtk::Entry {
     fn style(&self) {
-        let guard = CSS_RULES.lock().unwrap();
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkEntry.");
+                return;
+            }
+        };
+
         if let Some(css) = guard.as_ref() {
             let mut classes = self.css_classes();
             let mut final_css = "".to_string();
@@ -515,7 +576,14 @@ impl Styleable for gtk::Entry {
 // button
 impl Styleable for gtk::Button {
     fn style(&self) {
-        let guard = CSS_RULES.lock().unwrap();
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkButton.");
+                return;
+            }
+        };
+
         if let Some(css) = guard.as_ref() {
             let mut classes = self.css_classes();
             let mut final_css = "".to_string();
@@ -571,15 +639,34 @@ impl Styleable for gtk::Button {
 
 pub(crate) fn load_css(css: String) {
     if let Ok(res) = parser::parse(&css) {
-        *CSS_RULES.lock().unwrap() = Some(res);
+        match CSS_RULES.lock() {
+            Ok(mut rules) => {
+                *rules = Some(res);
+            }
+            Err(poisoned_error) => {
+                eprintln!(
+                    "FATAL: Failed to acquire lock on CSS_RULES: {:?}",
+                    poisoned_error
+                );
+            }
+        }
     } else {
         eprintln!("Failed to parse CSS!");
     }
 }
 
 pub(crate) fn reset_css() {
-    *CSS_RULES.lock().unwrap() = None;
+    match CSS_RULES.lock() {
+        Ok(mut rules) => *rules = None,
+        Err(poisoned_error) => {
+            eprintln!(
+                "FATAL: Failed to acquire lock on CSS_RULES while resetting: {:?}",
+                poisoned_error
+            );
+        }
+    }
 }
+
 pub(crate) fn perform_styling<T: Styleable>(_element: &html_parser::Element, styleable: &T) {
     styleable.style();
 }

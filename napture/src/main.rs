@@ -4,7 +4,6 @@ mod parser;
 
 use custom_window::Window;
 
-use gtk::gdk::Cursor;
 use gtk::glib;
 use gtk::prelude::*;
 
@@ -20,7 +19,9 @@ struct Tab {
 }
 
 fn main() -> glib::ExitCode {
-    gtk::gio::resources_register_include!("icons.gresource").unwrap();
+    if let Err(e) = gtk::gio::resources_register_include!("icons.gresource") {
+        eprintln!("ERROR: Failed to register icon resource: {}", e);
+    }
 
     let app = adw::Application::builder().application_id(APP_ID).build();
 
@@ -35,7 +36,7 @@ fn build_ui(app: &adw::Application) {
 
     let window = Window::new(app);
 
-    let cursor_pointer = Cursor::from_name("pointer", None);
+    // let cursor_pointer = Cursor::from_name("pointer", None);
 
     let search = gtk::SearchEntry::builder().build();
     let separator = gtk::Separator::new(gtk::Orientation::Horizontal);
@@ -47,7 +48,7 @@ fn build_ui(app: &adw::Application) {
         // tabs_widget.clone(),
         "New Tab",
         "file.png",
-        cursor_pointer.as_ref(),
+        // cursor_pointer.as_ref(),
         tabs.clone(),
     );
 
@@ -72,10 +73,12 @@ fn build_ui(app: &adw::Application) {
 
         query.set_text(&tab_in_closure.url.replace("buss://", ""));
         query.set_position(-1);
-        query
-            .root()
-            .unwrap()
-            .set_focus(None as Option<&gtk::Widget>);
+
+        if let Some(root) = query.root() {
+            root.set_focus(None as Option<&gtk::Widget>)
+        } else {
+            println!("ERROR: Failed to set focus on search bar. Root is None.");
+        }
 
         if let Ok(htmlview) = b9::html::build_ui(tab_in_closure.clone()) {
             scroll_clone.set_child(Some(&htmlview));
@@ -108,7 +111,7 @@ fn make_tab(
     // tabs_widget: gtk::Box,
     label: &str,
     icon: &str,
-    cursor_pointer: Option<&Cursor>,
+    // cursor_pointer: Option<&Cursor>,
     mut tabs: Vec<Tab>,
 ) -> Tab {
     // let tabid = gen_tab_id();

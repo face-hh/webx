@@ -140,7 +140,7 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
     let mut output = String::new();
     for value in msg.iter() {
         match value {
-            Value::String(s) => output.push_str(s.to_str().unwrap()),
+            Value::String(s) => output.push_str(s.to_str().unwrap_or("")),
             Value::Integer(i) => output.push_str(&i.to_string()),
             Value::Number(n) => output.push_str(&n.to_string()),
             Value::Boolean(b) => output.push_str(&b.to_string()),
@@ -158,9 +158,20 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
     let globals = lua.globals();
 
     let fetchtest = lua.create_async_function(|lua, params: LuaTable| async move {
-        let uri = params.get::<_, String>("url").unwrap();
-        let method = params.get::<_, String>("method").unwrap();
-        let headers = params.get::<_, LuaTable>("headers").unwrap();
+        // I LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTS
+        let uri = match params.get::<_, String>("url") {
+            Ok(url) => url,
+            Err(_) => return Err(LuaError::RuntimeError("url is required".into())),
+        };
+        let method = match params.get::<_, String>("method") {
+            Ok(method) => method,
+            Err(_) => return Err(LuaError::RuntimeError("method is required".into())),
+        };
+        let headers = match params.get::<_, LuaTable>("headers") {
+            Ok(headers) => headers,
+            Err(_) => return Err(LuaError::RuntimeError("headers is required".into())),
+        };
+
         let body_str = match params.get::<_, String>("body") {
             Ok(body) => body,
             Err(_) => "{}".to_string(),
@@ -169,11 +180,11 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
         let mut headermap = HeaderMap::new();
 
         for header in headers.pairs::<String, String>() {
-            let (key, value) = header.unwrap();
+            let (key, value) = header.unwrap_or(("".to_string(), "".to_string()));
 
             headermap.insert(
-                HeaderName::from_bytes(key.as_ref()).unwrap(),
-                HeaderValue::from_str(&value).unwrap(),
+                HeaderName::from_bytes(key.as_ref()).unwrap_or(HeaderName::from_static("")),
+                HeaderValue::from_str(&value).unwrap_or(HeaderValue::from_static("")),
             );
         }
 
@@ -205,7 +216,13 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
             result
         });
 
-        let json = handle.join().unwrap();
+        let json = match handle.join() {
+            Ok(json) => json,
+            Err(_) => {
+                problem!("error", format!("Failed to join request thread at fetch request."));
+                serde_json::Value::Null
+            }
+        };
 
         lua.to_value(&json)
     })?;
