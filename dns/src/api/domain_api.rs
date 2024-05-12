@@ -1,3 +1,8 @@
+const TLD: &'static [&'static str] = &[
+    "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma",
+    "now", "it", "soy",
+];
+
 use crate::{models::user_model::{Domain, DomainInput}, repository::mongodb_repo::MongoRepo, RateLimitGuard};
 use rand::Rng;
 use rocket::{http::Status, serde::json::Json, State};
@@ -12,6 +17,12 @@ pub fn create_domain(
     let secret_key = generate_api_key(24);
 
     if !new.domain.chars().all(|c| c.is_ascii_alphabetic() || c == '-') {
+        return Err(Status::BadRequest);
+    }
+    if !TLD.contains(&&new.domain.as_str()) {
+        return Err(Status::BadRequest);
+    }
+    if new.domain.len() > 24 {
         return Err(Status::BadRequest);
     }
 

@@ -14,7 +14,6 @@ use rocket_governor::{Method, Quota, RocketGovernable};
 pub struct RateLimitGuard;
 
 impl<'r> RocketGovernable<'r> for RateLimitGuard {
-
     fn quota(_method: Method, route_name: &str) -> Quota {
         match route_name {
             "get_domain" => Quota::per_second(Self::nonzero(1u32)),
