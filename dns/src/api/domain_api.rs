@@ -1,6 +1,6 @@
 const TLD: &'static [&'static str] = &[
     "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma",
-    "now", "it", "soy",
+    "now", "it", "soy", "lol"
 ];
 
 use crate::{models::user_model::{Domain, DomainInput}, repository::mongodb_repo::MongoRepo, RateLimitGuard};
@@ -10,7 +10,7 @@ use rocket_governor::RocketGovernor;
 
 #[get("/")]
 pub fn index() -> &'static str {
-    "Hello, world! The available endpoints are: GET /domains, GET /domain/<name>/<domain>, POST /domain, PUT /domain/<key>, DELETE /domain/<key>. Ratelimits provided in headers."
+    "Hello, world! The available endpoints are: GET /domains, GET /domain/<name>/<domain>, POST /domain, PUT /domain/<key>, DELETE /domain/<key>, GET /tlds. Ratelimits provided in headers."
 }
 
 #[post("/domain", data = "<new>")]
@@ -151,6 +151,10 @@ pub fn get_all_domains(_limitguard: RocketGovernor<RateLimitGuard>, db: &State<M
     }
 }
 
+#[get("/tlds")]
+pub fn get_tlds() -> Json<&'static [&'static str]> {
+    Json(TLD)
+}
 // MISC
 
 fn generate_api_key(length: usize) -> String {
