@@ -8,6 +8,11 @@ use rand::Rng;
 use rocket::{http::Status, serde::json::Json, State};
 use rocket_governor::RocketGovernor;
 
+#[get("/")]
+pub fn index() -> &'static str {
+    "Hello, world! The available endpoints are: GET /domains, GET /domain/<name>/<domain>, POST /domain, PUT /domain/<key>, DELETE /domain/<key>. Ratelimits provided in headers."
+}
+
 #[post("/domain", data = "<new>")]
 pub fn create_domain(
     _limitguard: RocketGovernor<RateLimitGuard>,

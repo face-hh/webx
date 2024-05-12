@@ -7,7 +7,7 @@ extern crate rocket;
 
 use rocket_governor::rocket_governor_catcher;
 
-use api::domain_api::{create_domain, delete_domain, get_all_domains, get_domain, update_domain};
+use api::domain_api::{create_domain, delete_domain, get_all_domains, get_domain, update_domain, index};
 
 use rocket_governor::{Method, Quota, RocketGovernable};
 
@@ -35,5 +35,6 @@ fn rocket() -> _ {
         .mount("/", routes![update_domain])
         .mount("/", routes![delete_domain])
         .mount("/", routes![get_all_domains])
+        .mount("/", routes![index])
         .register("/", catchers![rocket_governor_catcher])
 }
