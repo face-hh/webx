@@ -262,6 +262,11 @@ impl Styleable for gtk::Box {
                         _ => {}
                     };
 
+                    self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
+                    self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
+                    self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
+                    self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
+
                     final_css += &format!(
                         "
                 {} {{
@@ -269,11 +274,6 @@ impl Styleable for gtk::Box {
                     background-color: {};
                     font-size: {};
                     font-family: {};
-
-                    margin-top: {};
-                    margin-bottom: {};
-                    margin-left: {};
-                    margin-right: {};
 
                     border-style: {};
                     border-color: {};
@@ -287,10 +287,6 @@ impl Styleable for gtk::Box {
                         properties.background_color,
                         properties.font_size,
                         properties.font_family,
-                        properties.margin_top + "px",
-                        properties.margin_bottom + "px",
-                        properties.margin_left + "px",
-                        properties.margin_right + "px",
                         properties.border_style,
                         properties.border_color,
                         properties.border_width,
@@ -332,6 +328,12 @@ impl Styleable for gtk::TextView {
                     let height = properties.height;
 
                     self.set_size_request(width, height);
+
+                    self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
+                    self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
+                    self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
+                    self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
+
                     final_css += &format!(
                         "
                 {} {{
@@ -339,11 +341,6 @@ impl Styleable for gtk::TextView {
                     background-color: {};
                     font-size: {};
                     font-family: {};
-
-                    margin-top: {};
-                    margin-bottom: {};
-                    margin-left: {};
-                    margin-right: {};
 
                     border-style: {};
                     border-color: {};
@@ -357,10 +354,6 @@ impl Styleable for gtk::TextView {
                         properties.background_color,
                         properties.font_size,
                         properties.font_family,
-                        properties.margin_top + "px",
-                        properties.margin_bottom + "px",
-                        properties.margin_left + "px",
-                        properties.margin_right + "px",
                         properties.border_style,
                         properties.border_color,
                         properties.border_width,
@@ -403,6 +396,11 @@ impl Styleable for gtk::Picture {
                 if let Some(rules) = css.get(&class.to_string()) {
                     let properties: Properties = get_properties(rules);
 
+                    self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
+                    self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
+                    self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
+                    self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
+
                     final_css += &format!(
                         "
                 {} {{
@@ -410,11 +408,6 @@ impl Styleable for gtk::Picture {
                     background-color: {};
                     font-size: {};
                     font-family: {};
-
-                    margin-top: {};
-                    margin-bottom: {};
-                    margin-left: {};
-                    margin-right: {};
 
                     border-style: {};
                     border-color: {};
@@ -428,10 +421,6 @@ impl Styleable for gtk::Picture {
                         properties.background_color,
                         properties.font_size,
                         properties.font_family,
-                        properties.margin_top + "px",
-                        properties.margin_bottom + "px",
-                        properties.margin_left + "px",
-                        properties.margin_right + "px",
                         properties.border_style,
                         properties.border_color,
                         properties.border_width,
@@ -472,6 +461,11 @@ impl Styleable for gtk::Entry {
 
                     self.set_size_request(width, height);
 
+                    self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
+                    self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
+                    self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
+                    self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
+
                     final_css += &format!(
                         "
                 {} {{
@@ -479,11 +473,6 @@ impl Styleable for gtk::Entry {
                     background-color: {};
                     font-size: {};
                     font-family: {};
-
-                    margin-top: {};
-                    margin-bottom: {};
-                    margin-left: {};
-                    margin-right: {};
 
                     border-style: {};
                     border-color: {};
@@ -497,10 +486,6 @@ impl Styleable for gtk::Entry {
                         properties.background_color,
                         properties.font_size,
                         properties.font_family,
-                        properties.margin_top + "px",
-                        properties.margin_bottom + "px",
-                        properties.margin_left + "px",
-                        properties.margin_right + "px",
                         properties.border_style,
                         properties.border_color,
                         properties.border_width,
@@ -536,6 +521,11 @@ impl Styleable for gtk::Button {
                 if let Some(rules) = css.get(&class.to_string()) {
                     let properties: Properties = get_properties(rules);
 
+                    self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
+                    self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
+                    self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
+                    self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
+
                     final_css += &format!(
                         "
                 {} {{
@@ -543,11 +533,6 @@ impl Styleable for gtk::Button {
                     background-color: {};
                     font-size: {};
                     font-family: {};
-
-                    margin-top: {};
-                    margin-bottom: {};
-                    margin-left: {};
-                    margin-right: {};
 
                     border-style: {};
                     border-color: {};
@@ -561,10 +546,6 @@ impl Styleable for gtk::Button {
                         properties.background_color,
                         properties.font_size,
                         properties.font_family,
-                        properties.margin_top + "px",
-                        properties.margin_bottom + "px",
-                        properties.margin_left + "px",
-                        properties.margin_right + "px",
                         properties.border_style,
                         properties.border_color,
                         properties.border_width,
