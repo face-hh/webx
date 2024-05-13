@@ -49,7 +49,6 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     // let cursor_pointer = Cursor::from_name("pointer", None);
 
     let search = gtk::SearchEntry::builder().build();
-    let separator = gtk::Separator::new(gtk::Orientation::Horizontal);
     let headerbar = gtk::HeaderBar::builder().build();
 
     let tabs_widget = gtk::Box::builder().css_name("tabs").spacing(6).build();
@@ -121,7 +120,6 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         .margin_end(12)
         .build();
 
-    nav.append(&separator);
     nav.append(&scroll);
 
     window.set_child(Some(&nav));

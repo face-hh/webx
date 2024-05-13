@@ -335,9 +335,8 @@ fn render_html(
         "hr" => {
             let line = gtk::Separator::builder()
                 .orientation(gtk::Orientation::Horizontal)
-                .css_name("hr")
-                .css_classes(element.classes.clone())
                 .build();
+
             tags.borrow_mut().push(Tag {
                 classes: element.classes.clone(),
                 widget: Box::new(line.clone()),

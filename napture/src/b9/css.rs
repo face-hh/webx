@@ -378,65 +378,7 @@ impl Styleable for gtk::TextView {
 // hr
 impl Styleable for gtk::Separator {
     fn style(&self) {
-        let guard = match CSS_RULES.lock() {
-            Ok(guard) => guard,
-            Err(_) => {
-                println!(
-                    "FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkSeparator."
-                );
-                return;
-            }
-        };
-
-        if let Some(css) = guard.as_ref() {
-            let mut classes = self.css_classes();
-            let mut final_css = "".to_string();
-
-            classes.push(self.css_name());
-            for class in classes {
-                if let Some(rules) = css.get(&class.to_string()) {
-                    let properties: Properties = get_properties(rules);
-
-                    final_css += &format!(
-                        "
-                {} {{
-                    color: {};
-                    background-color: {};
-                    font-size: {};
-                    font-family: {};
-
-                    margin-top: {};
-                    margin-bottom: {};
-                    margin-left: {};
-                    margin-right: {};
-
-                    border-style: {};
-                    border-color: {};
-                    border-width: {};
-                    border-radius: {};
-                    padding: {};
-                }}
-                ",
-                        class,
-                        properties.color,
-                        properties.background_color,
-                        properties.font_size,
-                        properties.font_family,
-                        properties.margin_top + "px",
-                        properties.margin_bottom + "px",
-                        properties.margin_left + "px",
-                        properties.margin_right + "px",
-                        properties.border_style,
-                        properties.border_color,
-                        properties.border_width,
-                        properties.border_radius,
-                        properties.padding
-                    );
-                }
-
-                load_css_into_app(&final_css);
-            }
-        }
+        // hr won't support customization.
     }
 }
 
