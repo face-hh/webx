@@ -4,6 +4,8 @@ mod parser;
 
 use custom_window::Window;
 
+use serde::Deserialize;
+
 use gtk::glib;
 use gtk::prelude::*;
 
@@ -68,10 +70,12 @@ fn build_ui(app: &adw::Application) {
     search.connect_activate(move |query| {
         let mut tab_in_closure = current_tab.clone();
 
-        // TODO: set tab_in_closure's URL to be the DNS'd URL
-        tab_in_closure.url = query.text().to_string();
+        let url = query.text().to_string();
+        let dns_url = fetch_dns(url.clone());
 
-        query.set_text(&tab_in_closure.url.replace("buss://", ""));
+        tab_in_closure.url = dns_url;
+
+        query.set_text(&url.replace("buss://", ""));
         query.set_position(-1);
 
         if let Some(root) = query.root() {
@@ -170,3 +174,40 @@ fn make_tab(
 
 //     Uuid::new_v4().to_string()
 // }
+
+#[derive(Deserialize)]
+struct DomainInfo {
+    ip: String,
+}
+
+fn fetch_dns(url: String) -> String {
+    let url = url.replace("buss://", "");
+
+    let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
+
+    let url = format!(
+        "https://api.buss.lol/domain/{}/{}",
+        url.split('.').nth(0).unwrap_or(""),
+        url.split('.').nth(1).unwrap_or(""),
+    );
+
+    let client = match client.build() {
+        Ok(client) => client,
+        Err(e) => {
+            eprintln!("ERROR: Couldn't build reqwest client, returning empty string: {}", e);
+            return String::new();
+        }
+    };
+
+    if let Ok(response) = client.get(&url).send() {
+        if let Ok(json) = response.json::<DomainInfo>() {
+            json.ip
+        } else {
+            // TODO: error report
+            String::new()
+        }
+    } else {
+        // TODO: error report
+        String::new()
+    }
+}

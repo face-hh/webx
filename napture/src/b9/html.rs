@@ -124,7 +124,7 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
     let tagss = Rc::clone(&tags);
 
     if !src.is_empty() {
-        let luacode: String = fetch_file(tab.url.clone() + "/" + &src).await;
+        let luacode = fetch_file(tab.url.clone() + "/" + &src).await;
 
         if let Err(e) = super::lua::run(luacode, tags).await {
             println!("ERROR: Failed to run lua: {}", e);

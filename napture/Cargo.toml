@@ -15,6 +15,7 @@ html_parser = "0.7.0"
 lazy_static = "1.4.0"
 mlua = { version = "0.9.7", features = ["lua54", "macros", "async", "unstable", "serialize"] }
 reqwest = { version = "0.12.3", features = ["blocking", "json"] }
+serde = "1.0.201"
 serde_json = "1.0.117"
 tokio = { version = "1.37.0", features=["macros"] }
 uuid = { version = "1.8.0", features = ["fast-rng", "v4"] }

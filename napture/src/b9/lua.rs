@@ -183,8 +183,8 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
             let (key, value) = header.unwrap_or(("".to_string(), "".to_string()));
 
             headermap.insert(
-                HeaderName::from_bytes(key.as_ref()).unwrap_or(HeaderName::from_static("")),
-                HeaderValue::from_str(&value).unwrap_or(HeaderValue::from_static("")),
+                HeaderName::from_bytes(key.as_ref()).unwrap(),
+                HeaderValue::from_str(&value).unwrap(),
             );
         }
 
