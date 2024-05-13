@@ -85,7 +85,7 @@ app.post('/domain', async (req, res) => {
     }
 });
 
-app.get('/domain/:name/:domain', async (req, res) => {
+app.get('/domain/:name/:tld', async (req, res) => {
     const { name, tld } = req.params;
     if (!name || !tld) {
         return res.status(400).send();
