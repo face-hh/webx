@@ -195,6 +195,8 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
             let req = match method.as_str() {
                 "GET" => client.get(uri).headers(headermap),
                 "POST" => client.post(uri).headers(headermap).body(body_str),
+                "PUT" => client.put(uri).headers(headermap).body(body_str),
+                "DELETE" => client.delete(uri).headers(headermap).body(body_str),
                 _ => return format!("Unsupported method: {}", method).into(),
             };
 
@@ -205,7 +207,6 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
                 }
             };
 
-            println!("{} {}", res.status(), res.url());
             let errcode = Rc::new(RefCell::new(res.status().as_u16()));
 
             let body: Result<serde_json::Value, reqwest::Error> = res.json();
