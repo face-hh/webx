@@ -250,6 +250,7 @@ fn render_html(
                             .css_name(element.name.as_str())
                             .css_classes(element.classes.clone())
                             .halign(gtk::Align::Start)
+                            .selectable(true)
                             .build();
 
                         css::perform_styling(element, &label);
@@ -283,8 +284,10 @@ fn render_html(
                             .css_name(element.name.as_str())
                             .css_classes(element.classes.clone())
                             .halign(gtk::Align::Start)
+                            .selectable(true)
                             .wrap(true)
                             .build();
+                        
                         tags.borrow_mut().push(Tag {
                             classes: element.classes.clone(),
                             widget: Box::new(label.clone()),
@@ -554,6 +557,7 @@ fn render_list(element: &Element, list_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>
                         .css_name("li")
                         .css_classes(el.classes.clone())
                         .halign(gtk::Align::Start)
+                        .selectable(true)
                         .build();
 
                     tags.borrow_mut().push(Tag {

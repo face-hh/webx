@@ -12,6 +12,7 @@ use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
 use lazy_static::lazy_static;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+use serde_json::Map;
 
 lazy_static! {
     static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
@@ -144,7 +145,7 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
             Value::Integer(i) => output.push_str(&i.to_string()),
             Value::Number(n) => output.push_str(&n.to_string()),
             Value::Boolean(b) => output.push_str(&b.to_string()),
-            def => output.push_str(&format!("{def:#?}"))
+            def => output.push_str(&format!("{def:#?}")),
         }
     }
 
@@ -204,22 +205,35 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
                 }
             };
 
+            println!("{} {}", res.status(), res.url());
+            let errcode = Rc::new(RefCell::new(res.status().as_u16()));
+
             let body: Result<serde_json::Value, reqwest::Error> = res.json();
 
             let result = match body {
                 Ok(body) => body,
                 Err(e) => {
+                    let errcode_clone = Rc::clone(&errcode);
+
                     problem!("error", format!("failed to parse response body: {}", e));
-                    serde_json::Value::Null
+                    let mut map = Map::new();
+
+                    map.insert("status".to_owned(), serde_json::Value::Number(serde_json::Number::from_f64(*errcode_clone.borrow() as f64).unwrap()));
+                                        
+                    serde_json::Value::Object(map)
                 }
             };
+
             result
         });
 
         let json = match handle.join() {
             Ok(json) => json,
             Err(_) => {
-                problem!("error", format!("Failed to join request thread at fetch request."));
+                problem!(
+                    "error",
+                    format!("Failed to join request thread at fetch request.")
+                );
                 serde_json::Value::Null
             }
         };
@@ -234,9 +248,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
     )?;
     globals.set("fetch", fetchtest)?;
 
-    let ok = lua
-        .load(luacode)
-        .eval::<LuaMultiValue>();
+    let ok = lua.load(luacode).eval::<LuaMultiValue>();
 
     match ok {
         Ok(_) => Ok(()),

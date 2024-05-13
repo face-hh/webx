@@ -1,0 +1,58 @@
+introduction {
+    direction: column;
+    align-items: center;
+
+    gap: 10;
+    margin-bottom: 40px;
+}
+
+header {
+    font-size: 48px;
+    font-weight: ultralight;
+    font-style: italic;
+}
+
+result {
+    margin-top: 20px;
+
+    font-size: 24px;
+}
+
+list {
+    align-items: center;
+
+    direction: row;
+    gap: 60;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+list2 {
+    align-items: center;
+
+    direction: column;
+}
+
+item {
+    direction: column;
+    gap:10;
+}
+
+item-title {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+input {
+    padding: 5px;
+    border-color: #616161;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 12px;
+
+    width: 400px;
+}
+
+spacing {
+    margin-bottom: 10px;
+}
