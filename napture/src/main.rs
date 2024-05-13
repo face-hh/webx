@@ -48,7 +48,8 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     // let cursor_pointer = Cursor::from_name("pointer", None);
 
-    let search = gtk::SearchEntry::builder().build();
+    let search = gtk::SearchEntry::builder().width_request(500).build();
+    let empty_label = gtk::Label::new(Some(""));
     let headerbar = gtk::HeaderBar::builder().build();
 
     let tabs_widget = gtk::Box::builder().css_name("tabs").spacing(6).build();
@@ -66,7 +67,8 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     tabs_widget.append(&tab1.widget);
     tabs_widget.append(&search);
 
-    headerbar.set_title_widget(Some(&tabs_widget));
+    headerbar.pack_start(&tabs_widget);
+    headerbar.set_title_widget(Some(&empty_label));
 
     window.set_titlebar(Some(&headerbar));
 
@@ -140,7 +142,7 @@ fn make_tab(
     let tab = gtk::Box::builder()
         .halign(gtk::Align::Center)
         .valign(gtk::Align::Center)
-        .spacing(12)
+        .spacing(6)
         .css_name("tab")
         // .css_classes(vec![tabid.clone()])
         .build();

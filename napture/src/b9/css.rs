@@ -70,15 +70,17 @@ impl Styleable for gtk::Label {
                         self.set_wrap(true)
                     }
 
-                    match self.css_name().as_str() {
-                        "h1" => properties.font_size = "24px".to_string(),
-                        "h2" => properties.font_size = "22px".to_string(),
-                        "h3" => properties.font_size = "20px".to_string(),
-                        "h4" => properties.font_size = "18px".to_string(),
-                        "h5" => properties.font_size = "16px".to_string(),
-                        "h6" => properties.font_size = "14px".to_string(),
-                        _ => {}
-                    };
+                    if properties.font_size == "11px" {
+                        match self.css_name().as_str() {
+                            "h1" => properties.font_size = "24px".to_string(),
+                            "h2" => properties.font_size = "22px".to_string(),
+                            "h3" => properties.font_size = "20px".to_string(),
+                            "h4" => properties.font_size = "18px".to_string(),
+                            "h5" => properties.font_size = "16px".to_string(),
+                            "h6" => properties.font_size = "14px".to_string(),
+                            _ => {}
+                        }
+                    }
 
                     properties.font_size = properties.font_size.replace("px", "pt");
 
@@ -100,14 +102,14 @@ impl Styleable for gtk::Label {
 
                     self.set_markup(markup);
 
+                    self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
+                    self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
+                    self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
+                    self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
+
                     final_css += &format!(
                         "
                 {} {{
-                    margin-top: {};
-                    margin-bottom: {};
-                    margin-left: {};
-                    margin-right: {};
-
                     border-style: {};
                     border-color: {};
                     border-width: {};
@@ -116,10 +118,6 @@ impl Styleable for gtk::Label {
                 }}
                 ",
                         class,
-                        properties.margin_top + "px",
-                        properties.margin_bottom + "px",
-                        properties.margin_left + "px",
-                        properties.margin_right + "px",
                         properties.border_style,
                         properties.border_color,
                         properties.border_width,
