@@ -23,9 +23,9 @@ const TLD = [
  */
 let db;
 
-const limiter1 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, })
-const limiter2 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, limit: 1 })
-const limiter3 = rateLimit({ windowMs: 1000, standardHeaders: 'draft-7', legacyHeaders: false, })
+const limiter1 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, validate: {xForwardedForHeader: false} })
+const limiter2 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, limit: 1, validate: {xForwardedForHeader: false} })
+const limiter3 = rateLimit({ windowMs: 1000, standardHeaders: 'draft-7', legacyHeaders: false, validate: {xForwardedForHeader: false} })
 
 app.use("/domains", limiter1)
 app.post("/domain", limiter2)
