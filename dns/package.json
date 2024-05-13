@@ -1,0 +1,19 @@
+{
+  "name": "buss-dns",
+  "version": "1.0.0",
+  "description": "idk + idc change this",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "creeperita104",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
+    "mongoose": "^8.3.4",
+    "quick.db": "^9.1.7",
+    "quickmongo": "^5.2.0"
+  }
+}
