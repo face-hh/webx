@@ -25,9 +25,9 @@ const TLD = [
  */
 let db;
 
-const limiter1 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, validate: {xForwardedForHeader: false} })
-const limiter2 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, limit: 1, validate: {xForwardedForHeader: false} })
-const limiter3 = rateLimit({ windowMs: 1000, standardHeaders: 'draft-7', legacyHeaders: false, validate: {xForwardedForHeader: false} })
+const limiter1 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, validate: { xForwardedForHeader: false } })
+const limiter2 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, limit: 1, validate: { xForwardedForHeader: false } })
+const limiter3 = rateLimit({ windowMs: 1000, standardHeaders: 'draft-7', legacyHeaders: false, validate: { xForwardedForHeader: false } })
 
 app.use("/domains", limiter1)
 app.post("/domain", limiter2)
@@ -137,26 +137,21 @@ app.put('/domain/:key', async (req, res) => {
         return res.status(400).send();
     }
 
-    const newDomain = req.body;
+    const { ip } = req.body;
+    if (!ip) {
+        return res.status(400).send();
+    }
+
     const data = {
-        id: null,
-        domain: newDomain.domain,
-        name: newDomain.name,
-        ip: newDomain.ip,
-        secret_key: key
+        $set: {
+            ip
+        }
     };
 
     try {
-        const domainInfo = await db.getDomain(key);
-        if (domainInfo && domainInfo.secret_key === key) {
-            await db.updateDomain(key, data);
-            const domain = await db.getDomain(key);
-            res.json({
-                id: null,
-                domain: domain.domain,
-                name: domain.name,
-                ip: domain.ip
-            });
+        const result = await db.updateOne({ secret_key: key }, data);
+        if (result.matchedCount === 1) {
+            res.json({ ip });
         } else {
             res.status(404).send();
         }
@@ -164,6 +159,7 @@ app.put('/domain/:key', async (req, res) => {
         res.status(500).send();
     }
 });
+
 
 app.delete('/domain/:id', async (req, res) => {
     const id = req.params.id;
