@@ -169,7 +169,7 @@ app.delete('/domain/:id', async (req, res) => {
 
     const result = await db.deleteOne({ secret_key: id });
     if (result.deletedCount === 1) {
-        res.json("Domain successfully deleted!");
+        res.status(200).send();
     } else {
         res.status(404).send();
     }
