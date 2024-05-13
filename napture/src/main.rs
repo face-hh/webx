@@ -2,6 +2,9 @@ mod b9;
 mod custom_window;
 mod parser;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use custom_window::Window;
 
 use serde::Deserialize;
@@ -21,6 +24,8 @@ struct Tab {
 }
 
 fn main() -> glib::ExitCode {
+    let args = Rc::new(RefCell::new(std::env::args().collect::<Vec<String>>()));
+
     if let Err(e) = gtk::gio::resources_register_include!("icons.gresource") {
         eprintln!("ERROR: Failed to register icon resource: {}", e);
     }
@@ -28,12 +33,15 @@ fn main() -> glib::ExitCode {
     let app = adw::Application::builder().application_id(APP_ID).build();
 
     app.connect_startup(|_| b9::css::load_css_into_app(include_str!("style.css")));
-    app.connect_activate(build_ui);
+    app.connect_activate(move |app| {
+        let args_clone = Rc::clone(&args);
+        build_ui(app, args_clone)
+    });
 
-    app.run()
+    app.run_with_args(&[""])
 }
 
-fn build_ui(app: &adw::Application) {
+fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let tabs: Vec<Tab> = vec![];
 
     let window = Window::new(app);
@@ -46,7 +54,7 @@ fn build_ui(app: &adw::Application) {
 
     let tabs_widget = gtk::Box::builder().css_name("tabs").spacing(6).build();
 
-    let tab1 = make_tab(
+    let mut tab1 = make_tab(
         // tabs_widget.clone(),
         "New Tab",
         "file.png",
@@ -66,6 +74,17 @@ fn build_ui(app: &adw::Application) {
     let scroll = gtk::ScrolledWindow::builder().build();
 
     let scroll_clone = scroll.clone();
+
+    if let Some(dev_build) = args.borrow().get(1) {
+        println!("{dev_build}");
+        tab1.url = dev_build.to_string();
+
+        if let Ok(htmlview) = b9::html::build_ui(tab1) {
+            scroll_clone.set_child(Some(&htmlview));
+        } else {
+            println!("ERROR: HTML engine failed.");
+        }
+    }
 
     search.connect_activate(move |query| {
         let mut tab_in_closure = current_tab.clone();
@@ -194,7 +213,10 @@ fn fetch_dns(url: String) -> String {
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
-            eprintln!("ERROR: Couldn't build reqwest client, returning empty string: {}", e);
+            eprintln!(
+                "ERROR: Couldn't build reqwest client, returning empty string: {}",
+                e
+            );
             return String::new();
         }
     };

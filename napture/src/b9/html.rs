@@ -7,7 +7,7 @@ use super::{
     lua,
 };
 
-use std::{cell::RefCell, rc::Rc, thread};
+use std::{cell::RefCell, fs, rc::Rc, thread};
 
 use gtk::{gdk_pixbuf, gio, glib::Bytes, prelude::*};
 use html_parser::{Dom, Element, Node, Result};
@@ -613,9 +613,20 @@ fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
 }
 
 async fn fetch_file(url: String) -> String {
-    if url.starts_with("https://github.com") {
+    if url.starts_with("file://") {
+        let path = url.replace("file://", "");
+
+        match fs::read_to_string(path) {
+            Ok(text) => text,
+            Err(_) => {
+                eprintln!("ERROR: Failed to read file: {}", url);
+                String::new()
+            }
+        }
+    } else if url.starts_with("https://github.com") {
         fetch_from_github(url).await
     } else {
+
         if let Ok(response) = reqwest::get(url).await {
             if let Ok(text) = response.text().await {
                 text
