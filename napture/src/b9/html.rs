@@ -21,16 +21,23 @@ pub(crate) struct Tag {
 }
 
 async fn parse_html(url: String) -> Result<(Node, Node)> {
-    let html: String = fetch_file(url + &"/index.html").await;
+    let html = fetch_file(url + &"/index.html").await;
 
     let dom = match !html.is_empty() {
         true => Dom::parse(&html),
         false => Dom::parse(&include_str!("../resources/not_found.html")),
     }?;
 
-    let head = find_element_by_name(&dom.children, "head").expect("Couldn't find head.");
-    let body = find_element_by_name(&dom.children, "body").expect("Couldn't find body.");
+    let head = match find_element_by_name(&dom.children, "head") {
+        Some(head) => head,
+        None => return Err(html_parser::Error::Parsing("Couldn't find head. Invalid HTML?".to_owned())),
+    };
 
+    let body = match find_element_by_name(&dom.children, "body") {
+        Some(body) => body,
+        None => return Err(html_parser::Error::Parsing("Couldn't find head. Invalid HTML?".to_owned())),
+    };
+    
     return Ok((head, body));
 }
 

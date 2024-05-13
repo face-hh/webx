@@ -104,11 +104,15 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             println!("ERROR: Failed to set focus on search bar. Root is None.");
         }
 
-        if let Ok(htmlview) = b9::html::build_ui(tab_in_closure.clone()) {
-            scroll_clone.set_child(Some(&htmlview));
-        } else {
-            tab_in_closure.label_widget.set_label("HTML engine failed.");
-        }
+        match b9::html::build_ui(tab_in_closure.clone()) {
+            Ok(htmlview) => {
+                scroll_clone.set_child(Some(&htmlview));
+            },
+            Err(e) => {
+                tab_in_closure.label_widget.set_label(&e.to_string());
+                return;
+            }
+        };
     });
 
     scroll.set_vexpand(true);
