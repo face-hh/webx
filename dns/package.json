@@ -11,9 +11,6 @@
   "dependencies": {
     "body-parser": "^1.20.2",
     "express": "^4.19.2",
-    "express-rate-limit": "^7.2.0",
-    "mongoose": "^8.3.4",
-    "quick.db": "^9.1.7",
-    "quickmongo": "^5.2.0"
+    "express-rate-limit": "^7.2.0"
   }
 }
