@@ -25,13 +25,17 @@ const TLD = [
  */
 let db;
 
-const limiter1 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, validate: { xForwardedForHeader: false } })
-const limiter2 = rateLimit({ windowMs: 60 * 60 * 1000, standardHeaders: 'draft-7', legacyHeaders: false, limit: 1, validate: { xForwardedForHeader: false } })
-const limiter3 = rateLimit({ windowMs: 1000, standardHeaders: 'draft-7', legacyHeaders: false, validate: { xForwardedForHeader: false } })
+const limiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    skip: (req, res) => res.statusCode != 200
+})
 
-app.use("/domains", limiter1)
-app.post("/domain", limiter2)
-app.use("/domain", limiter3)
+app.set('trust proxy', 1);
+app.post("/domain", limiter)
+
+app.get('/headers', (req, res) => res.json({headers: req.headers}));
 
 async function connectToMongo() {
     const client = new MongoClient(process.env.MONGOURI);
@@ -201,3 +205,5 @@ app.get('/tlds', (_, res) => {
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
+
+
