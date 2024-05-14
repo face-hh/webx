@@ -29,7 +29,10 @@ const limiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: (req, res) => res.statusCode != 200
+    skip: (req, res) => res.statusCode != 200,
+    keyGenerator: function (req, _) {
+        return req.headers['x-forwarded-for'] || req.ip;
+    }
 })
 
 app.set('trust proxy', 1);
