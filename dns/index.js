@@ -29,9 +29,9 @@ const limiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: (_, res) => { console.log(res.statusCode); return res.statusCode != 200 },
+    limit: 1,
+    skip: (_, res) => res.statusCode != 200,
     keyGenerator: function (req, _) {
-        console.log(req.headers['x-forwarded-for'] || req.ip)
         return req.headers['x-forwarded-for'] || req.ip;
     }
 })
