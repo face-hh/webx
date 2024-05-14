@@ -29,7 +29,7 @@ const limiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: (req, res) => res.statusCode != 200,
+    skip: (_, res) => res.statusCode != 201,
     keyGenerator: function (req, _) {
         return req.headers['x-forwarded-for'] || req.ip;
     }
@@ -37,8 +37,6 @@ const limiter = rateLimit({
 
 app.set('trust proxy', 1);
 app.post("/domain", limiter)
-
-app.get('/headers', (req, res) => res.json({headers: req.headers}));
 
 async function connectToMongo() {
     const client = new MongoClient(process.env.MONGOURI);
