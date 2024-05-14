@@ -29,7 +29,7 @@ const limiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: (_, res) => res.statusCode != 201,
+    skip: (_, res) => res.statusCode != 200,
     keyGenerator: function (req, _) {
         return req.headers['x-forwarded-for'] || req.ip;
     }
@@ -84,7 +84,7 @@ app.post('/domain', async (req, res) => {
         await db.insertOne(data);
         delete data._id;
 
-        res.status(201).json(data);
+        res.status(200).json(data);
     } catch (err) {
         res.status(409).send();
     }
