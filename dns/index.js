@@ -68,6 +68,8 @@ app.post('/domain', async (req, res) => {
         return res.status(400).send("Invalid name, non-existant TLD, or name too long (24 chars).");
     }
 
+    newDomain.name = newDomain.name.toLowerCase();
+    
     const data = {
         tld: newDomain.tld,
         ip: newDomain.ip,
