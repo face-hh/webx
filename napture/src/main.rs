@@ -1,12 +1,22 @@
 mod b9;
-mod custom_window;
 mod parser;
+mod imp;
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use custom_window::Window;
+glib::wrapper! {
+    pub struct Window(ObjectSubclass<imp::Window>)
+        @extends adw::ApplicationWindow, gtk::Window, gtk::Widget,
+        @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
+                    gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
+}
 
+use glib::Object;
+
+
+
+use gtk::gio;
 use serde::Deserialize;
 
 use gtk::glib;
@@ -26,10 +36,6 @@ struct Tab {
 fn main() -> glib::ExitCode {
     let args = Rc::new(RefCell::new(std::env::args().collect::<Vec<String>>()));
 
-    if let Err(e) = gtk::gio::resources_register_include!("icons.gresource") {
-        eprintln!("ERROR: Failed to register icon resource: {}", e);
-    }
-
     let app = adw::Application::builder().application_id(APP_ID).build();
 
     app.connect_startup(|_| b9::css::load_css_into_app(include_str!("style.css")));
@@ -44,7 +50,7 @@ fn main() -> glib::ExitCode {
 fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let tabs: Vec<Tab> = vec![];
 
-    let window = Window::new(app);
+    let window: Window = Object::builder().property("application", app).build();
 
     // let cursor_pointer = Cursor::from_name("pointer", None);
 

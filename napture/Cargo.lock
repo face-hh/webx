@@ -1987,8 +1987,6 @@ dependencies = [
 name = "webx"
 version = "0.1.0"
 dependencies = [
- "async-recursion",
- "base64",
  "glib",
  "glib-build-tools",
  "gtk4",
