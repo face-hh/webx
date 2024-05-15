@@ -15,7 +15,7 @@ An alternative to the World Wide Web (`http(s)://`), with:
 
 # Download and Install
 ## Arch Linux
-- `yay -R napture`, it's available on AUR.
+- `yay -S napture`, it's available on AUR.
 ## Linux
 - For now, you have to download [Rust](https://www.rust-lang.org/tools/install). Then, you just need to open `install-linux` as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux`, then you should be able to install).
 ## Windows
