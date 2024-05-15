@@ -14,8 +14,6 @@ glib::wrapper! {
 
 use glib::Object;
 
-
-
 use gtk::gio;
 use serde::Deserialize;
 
