@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+echo "Installing Napture..."
+
+status=$(git status)
+
+# Check if the status contains the phrase "Your branch is behind"
+if [[ $status == *"Your branch is behind"* ]]; then
+    echo "Your branch is behind the remote repository."
+    echo "Pulling the latest changes..."
+    git pull origin $(git rev-parse --abbrev-ref HEAD)
+elif [[ $status == *"Your branch is up to date"* ]]; then
+    echo "Your branch is up to date with the remote repository."
+else
+    echo "Failed to determine the repository status."
+fi
+
+
+
+# Assuming the script is in the same directory as "napture"
+cd "$(dirname "$0")/napture" || exit
+
+# Build Napture
+cargo build --release
+
+# Define paths
+exec_path="$(pwd)/target/release/webx"
+icon_path="$(pwd)/file.png"
+
+# Define the desktop entry content
+content="[Desktop Entry]
+Name=Napture
+Comment=Napture is a simple browser using a modified version of the http protocol called buss, it uses Lua instead of JavaScript and has support for most HTML and CSS tags, it uses a custom DNS found at api.buss.lol.
+Exec=$exec_path
+Icon=$icon_path
+Type=Application
+Categories=Utility;"
+
+# Write desktop entry file using sudo tee
+echo "$content" | sudo tee /usr/share/applications/napture.desktop >/dev/null
+
+# Update desktop database
+sudo update-desktop-database
+
+echo "Napture installation completed."
