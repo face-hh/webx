@@ -32,6 +32,8 @@ struct Tab {
 }
 
 fn main() -> glib::ExitCode {
+    std::env::set_var("GTK_THEME", "Adwaita:dark");
+    
     let args = Rc::new(RefCell::new(std::env::args().collect::<Vec<String>>()));
 
     let app = adw::Application::builder().application_id(APP_ID).build();
@@ -50,6 +52,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     let window: Window = Object::builder().property("application", app).build();
 
+    
     // let cursor_pointer = Cursor::from_name("pointer", None);
 
     let search = gtk::SearchEntry::builder().width_request(500).build();
