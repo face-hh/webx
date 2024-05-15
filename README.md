@@ -13,8 +13,11 @@ An alternative to the World Wide Web (`http(s)://`), with:
 - `/dns` - The source code for the **DNS** (Domain Name System), used for the API at `https://api.buss.lol`
 - [registrar](https://github.com/face-hh/webx-registrar) - The source code for `buss://register.it`, frontend for `https://api.buss.lol` made for Bussin Web X. This can also serve as an example for how buss:// sites are made.
 
-# Download
-For now, you have to download [Rust](https://www.rust-lang.org/tools/install), open the `/napture` folder, and do `cargo run`. Binaries will be available with the official release
+# Download and Install
+- For now, you have to download [Rust](https://www.rust-lang.org/tools/install)
+Then, you just need to open `install-linux` as an executable(if you can't execute it, first do `sudo chmod +x ./install-linux`, then you should be able to install).
+- OR, if you are an Arch user (btw) you can easily download it from the AUR (yay -S napture).
+- On Windows, it's not recommented to try to install, since you need many libraries and the install procedure is not yet documented(we are working on it :)).
 
 # Register website
 To register a website, navigate to `buss://register.it` **through Bussin Napture**.
