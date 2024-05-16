@@ -20,7 +20,7 @@ use serde::Deserialize;
 use gtk::glib;
 use gtk::prelude::*;
 
-const APP_ID: &str = "org.bussin.napture";
+const APP_ID: &str = "io.github.face_hh.Napture";
 
 #[derive(Clone, Debug)]
 struct Tab {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "Installing Napture..."
+echo "Building Napture..."
 
 status=$(git status)
 
@@ -18,26 +18,18 @@ fi
 
 
 # Assuming the script is in the same directory as "napture"
-cd "$(dirname "$0")/napture" || exit
+cd "$(dirname "$0")/napture" || exit 1
 
 # Build Napture
-cargo build --release
+cargo build --release || exit 1
 
-# Define paths
-exec_path="$(pwd)/target/release/webx"
-icon_path="$(pwd)/file.png"
+echo "Installing Napture..."
 
-# Define the desktop entry content
-content="[Desktop Entry]
-Name=Napture
-Comment=Napture is a simple browser using a modified version of the http protocol called buss, it uses Lua instead of JavaScript and has support for most HTML and CSS tags, it uses a custom DNS found at api.buss.lol.
-Exec=$exec_path
-Icon=$icon_path
-Type=Application
-Categories=Utility;"
-
-# Write desktop entry file using sudo tee
-echo "$content" | sudo tee /usr/share/applications/napture.desktop >/dev/null
+# Copy files
+sudo install -Dm755 ./target/release/webx /usr/bin/napture
+sudo install -Dm644 ./io.github.face_hh.Napture.metainfo.xml -t /usr/share/metainfo/
+sudo install -Dm644 ./io.github.face_hh.Napture.desktop -t /usr/share/applications/
+sudo install -Dm644 ./io.github.face_hh.Napture.svg -t /usr/share/icons/hicolor/scalable/apps/
 
 # Update desktop database
 sudo update-desktop-database

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.face_hh.Napture</id>
+  <metadata_license>CC0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <name>Napture</name>
+  <summary>An alternative for the World Wide Web</summary>
+  <description>
+    <p>An alternative to the World Wide Web (<code>http(s)://</code>), with:</p>
+    <ul>
+      <li>its own <em>custom browser</em> written in Rust with GTK,</li>
+      <li>custom HTML, CSS and <em>Lua</em> engine (yup, <em>no javascript! 🎉</em>),</li>
+      <li>custom <em>DNS</em> allowing websites such as <code>buss://ohio.rizz</code>,</li>
+      <li>and <em>search engine</em> (wip).</li>
+    </ul>
+  </description>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/face-hh/webx/183634b803312bc3c3c7b921cbf7057b4d601797/.github_assets/image.png</image>
+      <caption>Preview of buss://register.it, the frontend for registering domains</caption>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/face-hh/webx/blob/master/README.md</url>
+  <url type="vcs-browser">https://github.com/face-hh/webx</url>
+  <content_rating type="oars-1.0" />
+  <releases>
+    <release version="1.0.0" date="2024-05-15">
+    <url type="details">https://github.com/face-hh/webx/releases/tag/v1.0.0</url>
+      <description>
+        <code>readme</code>
+      </description>
+    </release>
+  </releases>
+  <developer id="io.github.face-hh">
+    <name>facedevstuff</name>
+  </developer>
+
+  <launchable type="desktop-id">io.github.face_hh.Napture.desktop</launchable>
+</component>
