@@ -24,16 +24,10 @@
   <url type="vcs-browser">https://github.com/face-hh/webx</url>
   <content_rating type="oars-1.0" />
   <releases>
-    <release version="1.0.1" date="2024-05-14">
-    <url type="details">https://github.com/face-hh/webx/releases/tag/v1.0.1</url>
-      <description>
-        <p>test</p>
-      </description>
-    </release>
-    <release version="1.0.0" date="2024-05-13">
+    <release version="1.0.0" date="2024-05-15">
     <url type="details">https://github.com/face-hh/webx/releases/tag/v1.0.0</url>
       <description>
-        <p>init</p>
+        <code>readme</code>
       </description>
     </release>
   </releases>
@@ -43,4 +37,3 @@
 
   <launchable type="desktop-id">io.github.face_hh.Napture.desktop</launchable>
 </component>
-
