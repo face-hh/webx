@@ -38,6 +38,34 @@ Don't worry! The IP doesn't have to be valid, and you can save the domain for la
 
 **WARNING**: After creating the domain, you'll be shown a **secret key**. Please make sure to save it as you will need it to Update/Delete your domain.
 
+# Run website locally
+Bussin Napture fetches `index.html` at whatever path you give it. For example, if you enter `http://localhost:3000`, Napture will fetch `http://localhost:3000/index.html`. From the index.html, if you have further `<link>` or `<script>` imports, they will be fetched at `http://localhost:3000/file.(css|lua)`.
+
+To locally test a website, you can use something like [Python](https://www.python.org/):
+```bash
+python -m http.server 3000
+```
+Or [NodeJS](https://nodejs.org/en) paired with ExpressJS:
+```js
+// npm i express
+// node .
+const express = require('express');
+const path = require('path');
+
+const app = express();
+const port = 3000; // You can change the port if needed
+
+app.use(express.static(__dirname));
+
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+});
+```
+
+Or any other programming language or software, then enter `http://localhost:3000` in Napture.
+
+CLI support for `./napture file:///home/path/to/folder` exists, but it's currently flawed.
+
 # HTML guide
 The supported tags are: `head`, `title`, `link`, `meta`, `script`, `h1`-`h6`, `div`, `p`, `ul`, `ol`, `li`, `div`, `button`, `hr`, `img`, `input`, `textarea`, `button`, `select`, `option`. Keep in mind their syntax may be different if you're already familiar with HTML5 (i.e. `link` is used for the tab icon). Please check [registrar](https://github.com/face-hh/webx-registrar) or `/napture/test/index.html` for examples.
 
