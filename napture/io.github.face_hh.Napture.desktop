@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Napture
+Comment=An alternative for the World Wide Web
+Type=Application
+Exec=napture
+Terminal=false
+Categories=Network;WebBrowser;GTK;
+Icon=io.github.face_hh.Napture
+StartupNotify=true
+
