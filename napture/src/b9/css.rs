@@ -8,6 +8,7 @@ use gtk::{gdk::Display, prelude::*, CssProvider};
 static CSS_RULES: Mutex<Option<HashMap<String, Vec<(String, String)>>>> = Mutex::new(None); // shut the fuck up
 static DEFAULT_CSS: &str = r"
 body {
+    gap: 10;
     background-color: transparent;
     direction: column;
     align-items: fill;

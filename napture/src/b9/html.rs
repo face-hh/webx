@@ -135,7 +135,7 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
         }
     }
 
-    css::load_css(css);
+    css::load_css_into_app(&css);
 
     let mut src = String::new();
     for element in head_elements.children.iter() {
