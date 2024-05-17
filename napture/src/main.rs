@@ -1,6 +1,6 @@
 mod b9;
-mod parser;
 mod imp;
+mod parser;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -12,8 +12,11 @@ glib::wrapper! {
                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
 }
 
+use b9::lua;
 use glib::Object;
 
+use gtk::gdk;
+use gtk::gdk::ModifierType;
 use gtk::gio;
 use serde::Deserialize;
 
@@ -50,7 +53,6 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     let window: Window = Object::builder().property("application", app).build();
 
-    
     // let cursor_pointer = Cursor::from_name("pointer", None);
 
     let search = gtk::SearchEntry::builder().width_request(500).build();
@@ -111,13 +113,31 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         match b9::html::build_ui(tab_in_closure.clone()) {
             Ok(htmlview) => {
                 scroll_clone.set_child(Some(&htmlview));
-            },
+            }
             Err(e) => {
                 tab_in_closure.label_widget.set_label(&e.to_string());
                 return;
             }
         };
     });
+
+    let app_ = Rc::new(RefCell::new(app.clone()));
+
+    let event_controller = gtk::EventControllerKey::new();
+
+    event_controller.connect_key_pressed(move |_, key, _a, b| {
+        let app_clone = Rc::clone(&app_);
+
+        if b == (gdk::ModifierType::SHIFT_MASK | gdk::ModifierType::CONTROL_MASK)
+            && key == gdk::Key::P
+        {
+            display_lua_logs(&app_clone);
+        }
+
+        glib::Propagation::Proceed
+    });
+
+    window.add_controller(event_controller);
 
     scroll.set_vexpand(true);
 
@@ -240,4 +260,61 @@ fn fetch_dns(url: String) -> String {
         // TODO: error report
         String::new()
     }
+}
+
+fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
+    let window: Window = Object::builder()
+        .property("application", glib::Value::from(&*app.borrow_mut()))
+        .build();
+
+    let gtkbox = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(6)
+        .margin_top(12)
+        .margin_bottom(12)
+        .margin_start(12)
+        .margin_end(12)
+        .build();
+
+    let lualogs = lua::LUA_LOGS.lock().unwrap();
+
+    let label = gtk::Label::builder()
+        .halign(gtk::Align::Start)
+        .valign(gtk::Align::Start)
+        .build();
+
+    label.set_use_markup(true);
+    label.set_markup(&*lualogs);
+
+    gtkbox.append(&label);
+
+    let scroll = gtk::ScrolledWindow::builder().build();
+
+    scroll.set_child(Some(&gtkbox));
+
+    let event_controller = gtk::EventControllerKey::new();
+
+    event_controller.connect_key_pressed(move |_, key, _a, b| {
+        if b == (gdk::ModifierType::CONTROL_MASK) && key == gdk::Key::r {
+            let lualogs = lua::LUA_LOGS.lock().unwrap();
+
+            label.set_markup(&*lualogs);
+        }
+
+        glib::Propagation::Proceed
+    });
+
+    window.add_controller(event_controller);
+
+    window.set_child(Some(&scroll));
+    let labell = gtk::Label::new(Some("Lua logs"));
+    let empty_label = gtk::Label::new(Some(""));
+    let headerbar = gtk::HeaderBar::builder().build();
+
+    headerbar.pack_start(&labell);
+    headerbar.set_title_widget(Some(&empty_label));
+
+    window.set_titlebar(Some(&headerbar));
+
+    window.present();
 }

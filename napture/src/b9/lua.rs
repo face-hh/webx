@@ -15,18 +15,22 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Map;
 
 lazy_static! {
-    static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
+    pub static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
 }
 
-macro_rules! problem {
+use chrono::Local;
+
+macro_rules! lualog {
     ($type:expr, $s:expr) => {{
         let problem_type = match ($type) {
-            "error" => "ERROR",
-            "warning" => "WARNING",
-            _ => "UNKNOWN",
+            "error" => "<span foreground=\"#ff3333\">ERROR:</span> ",
+            "warning" => "<span foreground=\"#ffcc00\">WARNING</span>: ",
+            "debug" => "<span foreground=\"#7bbcb6\">DEBUG</span>: ",
+            _ => "",
         };
 
-        let log_msg = format!("{}: {}\n", problem_type, $s);
+        let now = Local::now();
+        let log_msg = format!("<span foreground=\"#FF0000\">[{}]</span> | {} {}\n", now.format("%Y-%m-%d %H:%M:%S"), problem_type, $s);
 
         if let Ok(mut lua_logs) = LUA_LOGS.lock() {
             lua_logs.push_str(&log_msg);
@@ -149,6 +153,7 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
         }
     }
 
+    lualog!("debug", output);
     println!("{}", output);
     Ok(())
 }
@@ -216,7 +221,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
                 Err(e) => {
                     let errcode_clone = Rc::clone(&errcode);
 
-                    problem!("error", format!("failed to parse response body: {}", e));
+                    lualog!("error", format!("failed to parse response body: {}", e));
                     let mut map = Map::new();
 
                     map.insert("status".to_owned(), serde_json::Value::Number(serde_json::Number::from_f64(*errcode_clone.borrow() as f64).unwrap()));
@@ -231,7 +236,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
         let json = match handle.join() {
             Ok(json) => json,
             Err(_) => {
-                problem!(
+                lualog!(
                     "error",
                     format!("Failed to join request thread at fetch request.")
                 );
@@ -285,7 +290,7 @@ impl Luable for gtk::Label {
         self.text().to_string()
     }
     fn get_href(&self) -> String {
-        problem!(
+        lualog!(
             "warning",
             "Most text-based components do not support the \"get_href\" method. Are you perhaps looking for the \"p\" tag?"
         );
@@ -296,7 +301,7 @@ impl Luable for gtk::Label {
         self.set_text(&contents);
     }
     fn set_href(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "Most text-based components do not support the \"set_href\" method. Are you perhaps looking for the \"p\" tag?"
         );
@@ -309,20 +314,20 @@ impl Luable for gtk::Label {
 
         gesture.connect_released(move |_, _, _, _| {
             if let Err(e) = a.call::<_, ()>(LuaNil) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
 
         self.add_controller(gesture)
     }
     fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "Text-based components do not support the \"submit\" event. Are you perhaps looking for the \"click\" event?"
         );
     }
     fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "Text-based components do not support the \"input\" event."
         );
@@ -343,7 +348,7 @@ impl Luable for gtk::DropDown {
         "".to_string()
     }
     fn get_href(&self) -> String {
-        problem!(
+        lualog!(
             "warning",
             "\"select\" component does not support the \"get_href\" method."
         );
@@ -351,13 +356,13 @@ impl Luable for gtk::DropDown {
     }
 
     fn set_contents(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"select\" component does not support the \"set_content\" method."
         );
     }
     fn set_href(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"select\" component does not support the \"set_href\" method."
         );
@@ -370,20 +375,20 @@ impl Luable for gtk::DropDown {
 
         gesture.connect_released(move |_, _, _, _| {
             if let Err(e) = a.call::<_, ()>(LuaNil) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
 
         self.add_controller(gesture)
     }
     fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"select\" component does not support the \"submit\" event."
         );
     }
     fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"select\" component does not support the \"input\" event."
         );
@@ -421,20 +426,20 @@ impl Luable for gtk::LinkButton {
 
         gesture.connect_released(move |_, _, _, _| {
             if let Err(e) = a.call::<_, ()>(LuaNil) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
 
         self.add_controller(gesture)
     }
     fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"a\" component does not support the \"submit\" event."
         );
     }
     fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"a\" component does not support the \"input\" event."
         );
@@ -455,7 +460,7 @@ impl Luable for gtk::Box {
         "".to_string()
     }
     fn get_href(&self) -> String {
-        problem!(
+        lualog!(
             "warning",
             "\"div\" component does not support the \"get_href\" method."
         );
@@ -463,13 +468,13 @@ impl Luable for gtk::Box {
     }
 
     fn set_contents(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"div\" component does not support the \"set_content\" method."
         );
     }
     fn set_href(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"div\" component does not support the \"set_href\" method."
         );
@@ -482,20 +487,20 @@ impl Luable for gtk::Box {
 
         gesture.connect_released(move |_, _, _, _| {
             if let Err(e) = a.call::<_, ()>(LuaNil) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
 
         self.add_controller(gesture)
     }
     fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"div\" component does not support the \"submit\" event."
         );
     }
     fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"div\" component does not support the \"input\" event."
         );
@@ -517,7 +522,7 @@ impl Luable for gtk::TextView {
         gtk_buffer_to_text(&buffer)
     }
     fn get_href(&self) -> String {
-        problem!(
+        lualog!(
             "warning",
             "\"textarea\" component does not support the \"get_href\" method."
         );
@@ -528,7 +533,7 @@ impl Luable for gtk::TextView {
         self.buffer().set_text(&contents);
     }
     fn set_href(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"textarea\" component does not support the \"set_href\" method."
         );
@@ -541,14 +546,14 @@ impl Luable for gtk::TextView {
 
         gesture.connect_released(move |_, _, _, _| {
             if let Err(e) = a.call::<_, ()>(LuaNil) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
 
         self.add_controller(gesture)
     }
     fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"textarea\" component does not support the \"submit\" event. Are you perhaps looking for the \"input\" event?"
         )
@@ -558,7 +563,7 @@ impl Luable for gtk::TextView {
 
         self.buffer().connect_changed(move |s| {
             if let Err(e) = a.call::<_, ()>(gtk_buffer_to_text(s)) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
     }
@@ -578,7 +583,7 @@ impl Luable for gtk::Separator {
         "".to_string()
     }
     fn get_href(&self) -> String {
-        problem!(
+        lualog!(
             "warning",
             "\"hr\" component does not support the \"get_href\" method."
         );
@@ -586,13 +591,13 @@ impl Luable for gtk::Separator {
     }
 
     fn set_contents(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"hr\" component does not support the \"set_content\" method."
         );
     }
     fn set_href(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"hr\" component does not support the \"set_href\" method."
         );
@@ -605,20 +610,20 @@ impl Luable for gtk::Separator {
 
         gesture.connect_released(move |_, _, _, _| {
             if let Err(e) = a.call::<_, ()>(LuaNil) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
 
         self.add_controller(gesture)
     }
     fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"hr\" component does not support the \"submit\" event."
         );
     }
     fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"hr\" component does not support the \"input\" event."
         );
@@ -639,7 +644,7 @@ impl Luable for gtk::Picture {
         "".to_string()
     }
     fn get_href(&self) -> String {
-        problem!(
+        lualog!(
             "warning",
             "\"img\" component does not support the \"get_href\" method."
         );
@@ -647,13 +652,13 @@ impl Luable for gtk::Picture {
     }
 
     fn set_contents(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"img\" component does not support the \"set_content\" method."
         );
     }
     fn set_href(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"img\" component does not support the \"set_href\" method."
         );
@@ -666,20 +671,20 @@ impl Luable for gtk::Picture {
 
         gesture.connect_released(move |_, _, _, _| {
             if let Err(e) = a.call::<_, ()>(LuaNil) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
 
         self.add_controller(gesture)
     }
     fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"img\" component does not support the \"submit\" event."
         );
     }
     fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"img\" component does not support the \"input\" event."
         );
@@ -700,7 +705,7 @@ impl Luable for gtk::Entry {
         self.text().to_string()
     }
     fn get_href(&self) -> String {
-        problem!(
+        lualog!(
             "warning",
             "\"input\" component does not support the \"get_href\" method."
         );
@@ -711,7 +716,7 @@ impl Luable for gtk::Entry {
         self.buffer().set_text(&contents);
     }
     fn set_href(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"input\" component does not support the \"set_href\" method."
         );
@@ -724,7 +729,7 @@ impl Luable for gtk::Entry {
 
         gesture.connect_released(move |_, _, _, _| {
             if let Err(e) = a.call::<_, ()>(LuaNil) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
 
@@ -737,7 +742,7 @@ impl Luable for gtk::Entry {
             let content = entry.buffer().text().to_string();
 
             if let Err(e) = a.call::<_, ()>(content) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
     }
@@ -748,7 +753,7 @@ impl Luable for gtk::Entry {
             let content = entry.buffer().text().to_string();
 
             if let Err(e) = a.call::<_, ()>(content) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
     }
@@ -768,7 +773,7 @@ impl Luable for gtk::Button {
         self.label().unwrap_or("".into()).to_string()
     }
     fn get_href(&self) -> String {
-        problem!(
+        lualog!(
             "warning",
             "\"button\" component does not support the \"get_href\" method."
         );
@@ -779,7 +784,7 @@ impl Luable for gtk::Button {
         self.set_label(&contents);
     }
     fn set_href(&self, _: String) {
-        problem!(
+        lualog!(
             "warning",
             "\"button\" component does not support the \"set_href\" method."
         );
@@ -790,18 +795,18 @@ impl Luable for gtk::Button {
 
         self.connect_clicked(move |_| {
             if let Err(e) = a.call::<_, ()>(LuaNil) {
-                problem!("error", e.to_string());
+                lualog!("error", e.to_string());
             }
         });
     }
     fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"button\" component does not support the \"submit\" event."
         );
     }
     fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
-        problem!(
+        lualog!(
             "warning",
             "\"button\" component does not support the \"input\" event."
         );
