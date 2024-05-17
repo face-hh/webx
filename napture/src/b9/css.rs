@@ -6,6 +6,63 @@ use glib::GString;
 use gtk::{gdk::Display, prelude::*, CssProvider};
 
 static CSS_RULES: Mutex<Option<HashMap<String, Vec<(String, String)>>>> = Mutex::new(None); // shut the fuck up
+static DEFAULT_CSS: &str = r"
+body {
+    background-color: transparent;
+    direction: column;
+    align-items: fill;
+}
+h1 {
+    font-size: 24pt;
+}
+
+h2 {
+    font-size: 22pt;
+}
+
+h3 {
+    font-size: 20pt;
+}
+
+h4 {
+    font-size: 18pt;
+}
+
+h5 {
+    font-size: 16pt;
+}
+
+h6 {
+    font-size: 14pt;
+}
+
+a {
+    border: none;
+    color: #67B7D1;
+    text-decoration: underline;
+}
+
+input {
+    padding: 5px;
+    border-color: #616161;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 12px;
+
+    width: 400px;
+}
+
+textarea {
+    padding: 5px;
+    border-color: #616161;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 12px;
+
+    width: 400px;
+    height: 100px;
+}
+";
 
 struct Properties {
     direction: String,
@@ -40,17 +97,17 @@ struct Properties {
 }
 
 pub(crate) trait Styleable {
-    fn style(&self);
+    fn style(&self) -> String;
 }
 
 // h1, h2, h3, h4, h5, h6, p
 impl Styleable for gtk::Label {
-    fn style(&self) {
+    fn style(&self) -> String {
         let guard = match CSS_RULES.lock() {
             Ok(guard) => guard,
             Err(_) => {
                 println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkLabel.");
-                return;
+                return String::new();
             }
         };
 
@@ -115,6 +172,7 @@ impl Styleable for gtk::Label {
                     border-width: {};
                     border-radius: {};
                     padding: {};
+                    background-color: {};
                 }}
                 ",
                         class,
@@ -122,26 +180,29 @@ impl Styleable for gtk::Label {
                         properties.border_color,
                         properties.border_width,
                         properties.border_radius,
-                        properties.padding
+                        properties.padding,
+                        properties.background_color,
                     );
                 }
-
-                load_css_into_app(&final_css);
             }
+
+            final_css
+        } else {
+            String::new()
         }
     }
 }
 
 // select
 impl Styleable for gtk::DropDown {
-    fn style(&self) {
+    fn style(&self) -> String {
         let guard = match CSS_RULES.lock() {
             Ok(guard) => guard,
             Err(_) => {
                 println!(
                     "FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkDropDown."
                 );
-                return;
+                return String::new();
             }
         };
 
@@ -191,16 +252,18 @@ impl Styleable for gtk::DropDown {
                         properties.padding
                     );
                 }
-
-                load_css_into_app(&final_css);
             }
+
+            final_css
+        } else {
+            String::new()
         }
     }
 }
 
 // a
 impl Styleable for gtk::LinkButton {
-    fn style(&self) {
+    fn style(&self) -> String {
         let lbl = gtk::Label::builder()
             .css_name("a")
             .label(
@@ -219,18 +282,18 @@ impl Styleable for gtk::LinkButton {
             .build();
         self.set_child(Some(&lbl));
 
-        Styleable::style(&lbl);
+        Styleable::style(&lbl)
     }
 }
 
 // div
 impl Styleable for gtk::Box {
-    fn style(&self) {
+    fn style(&self) -> String {
         let guard = match CSS_RULES.lock() {
             Ok(guard) => guard,
             Err(_) => {
                 println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkBox.");
-                return;
+                return String::new();
             }
         };
 
@@ -292,23 +355,25 @@ impl Styleable for gtk::Box {
                         properties.padding
                     );
                 }
-
-                load_css_into_app(&final_css);
             }
+
+            final_css
+        } else {
+            String::new()
         }
     }
 }
 
 // textarea
 impl Styleable for gtk::TextView {
-    fn style(&self) {
+    fn style(&self) -> String {
         let guard = match CSS_RULES.lock() {
             Ok(guard) => guard,
             Err(_) => {
                 println!(
                     "FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkTextView."
                 );
-                return;
+                return String::new();
             }
         };
 
@@ -345,6 +410,7 @@ impl Styleable for gtk::TextView {
                     border-width: {};
                     border-radius: {};
                     padding: {};
+
                 }}
                 ",
                         class,
@@ -359,28 +425,31 @@ impl Styleable for gtk::TextView {
                         properties.padding
                     );
                 }
-
-                load_css_into_app(&final_css);
             }
+
+            final_css
+        } else {
+            String::new()
         }
     }
 }
 
 // hr
 impl Styleable for gtk::Separator {
-    fn style(&self) {
+    fn style(&self) -> String {
         // hr won't support customization.
+        String::new()
     }
 }
 
 // img
 impl Styleable for gtk::Picture {
-    fn style(&self) {
+    fn style(&self) -> String {
         let guard = match CSS_RULES.lock() {
             Ok(guard) => guard,
             Err(_) => {
                 println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkPicture.");
-                return;
+                return String::new();
             }
         };
 
@@ -426,21 +495,23 @@ impl Styleable for gtk::Picture {
                         properties.padding
                     );
                 }
-
-                load_css_into_app(&final_css);
             }
+
+            final_css
+        } else {
+            String::new()
         }
     }
 }
 
 // input
 impl Styleable for gtk::Entry {
-    fn style(&self) {
+    fn style(&self) -> String {
         let guard = match CSS_RULES.lock() {
             Ok(guard) => guard,
             Err(_) => {
                 println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkEntry.");
-                return;
+                return String::new();
             }
         };
 
@@ -491,21 +562,23 @@ impl Styleable for gtk::Entry {
                         properties.padding
                     );
                 }
-
-                load_css_into_app(&final_css);
             }
+
+            final_css
+        } else {
+            String::new()
         }
     }
 }
 
 // button
 impl Styleable for gtk::Button {
-    fn style(&self) {
+    fn style(&self) -> String {
         let guard = match CSS_RULES.lock() {
             Ok(guard) => guard,
             Err(_) => {
                 println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkButton.");
-                return;
+                return String::new();
             }
         };
 
@@ -551,18 +624,35 @@ impl Styleable for gtk::Button {
                         properties.padding
                     );
                 }
-
-                load_css_into_app(&final_css);
             }
+
+            final_css
+        } else {
+            String::new()
         }
     }
 }
 
 pub(crate) fn load_css(css: String) {
-    if let Ok(res) = parser::parse(&css) {
+    let css_: String = DEFAULT_CSS.to_string() + &css;
+
+    println!("-------------\n\n\n\\n\nnLOADING STRING: {css_}\n\n\n\n\\nn-----------------");
+    if let Ok(res) = parser::parse(&css_) {
         match CSS_RULES.lock() {
             Ok(mut rules) => {
-                *rules = Some(res);
+                let mut converted_res: HashMap<String, Vec<(String, String)>> = HashMap::new();
+
+                for (key, inner_map) in res {
+                    let mut inner_vec: Vec<(String, String)> = Vec::new();
+
+                    for (inner_key, inner_value) in inner_map {
+                        inner_vec.push((inner_key, inner_value));
+                    }
+
+                    converted_res.insert(key, inner_vec);
+                }
+
+                *rules = Some(converted_res);
             }
             Err(poisoned_error) => {
                 eprintln!(
@@ -576,9 +666,11 @@ pub(crate) fn load_css(css: String) {
     }
 }
 
-pub(crate) fn reset_css() {
+pub(crate) fn reset_css() -> String {
     match CSS_RULES.lock() {
-        Ok(mut rules) => *rules = None,
+        Ok(mut rules) => {
+            *rules = None;
+        }
         Err(poisoned_error) => {
             eprintln!(
                 "FATAL: Failed to acquire lock on CSS_RULES while resetting: {:?}",
@@ -586,10 +678,8 @@ pub(crate) fn reset_css() {
             );
         }
     }
-}
 
-pub(crate) fn perform_styling<T: Styleable>(_element: &html_parser::Element, styleable: &T) {
-    styleable.style();
+    DEFAULT_CSS.to_string()
 }
 
 fn get_rule(rules: &Vec<(String, String)>, property: &str, default_value: &str) -> String {
@@ -622,7 +712,7 @@ fn get_properties(rules: &Vec<(String, String)>) -> Properties {
     let line_height = get_rule(&rules, "line-height", &"1");
     let font_size = get_rule(&rules, "font-size", &"11px");
     let color = get_rule(&rules, "color", &"#ffffff");
-    let background_color = get_rule(&rules, "background-color", &"#242424");
+    let background_color = get_rule(&rules, "background-color", &"transparent");
     let font_family = get_rule(&rules, "font-family", &"Noto Sans");
     let font_weight = get_rule(&rules, "font-weight", &"normal");
     let underline = get_rule(&rules, "underline", &"none");

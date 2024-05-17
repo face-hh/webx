@@ -30,14 +30,22 @@ async fn parse_html(url: String) -> Result<(Node, Node)> {
 
     let head = match find_element_by_name(&dom.children, "head") {
         Some(head) => head,
-        None => return Err(html_parser::Error::Parsing("Couldn't find head. Invalid HTML?".to_owned())),
+        None => {
+            return Err(html_parser::Error::Parsing(
+                "Couldn't find head. Invalid HTML?".to_owned(),
+            ))
+        }
     };
 
     let body = match find_element_by_name(&dom.children, "body") {
         Some(body) => body,
-        None => return Err(html_parser::Error::Parsing("Couldn't find head. Invalid HTML?".to_owned())),
+        None => {
+            return Err(html_parser::Error::Parsing(
+                "Couldn't find body. Invalid HTML?".to_owned(),
+            ))
+        }
     };
-    
+
     return Ok((head, body));
 }
 
@@ -70,6 +78,8 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
         .css_name("body")
         .build();
 
+    let mut css: String = css::reset_css();
+
     let (head, body) = match parse_html(tab.url.clone()).await {
         Ok(ok) => ok,
         Err(e) => {
@@ -82,7 +92,9 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
         Some(ok) => ok,
         None => {
             eprintln!("FATAL: Couldn't get head element, aborting!");
-            return Err(html_parser::Error::Parsing("Failed to get head element!".to_string()));
+            return Err(html_parser::Error::Parsing(
+                "Failed to get head element!".to_string(),
+            ));
         }
     };
 
@@ -90,7 +102,9 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
         Some(ok) => ok,
         None => {
             eprintln!("FATAL: Couldn't get body element, aborting!");
-            return Err(html_parser::Error::Parsing("Failed to get body element!".to_string()));
+            return Err(html_parser::Error::Parsing(
+                "Failed to get body element!".to_string(),
+            ));
         }
     };
 
@@ -104,15 +118,24 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
         }
     }
 
-    html_view.style();
+    css.push_str(&html_view.style());
 
     for element in body_elements.children.iter() {
         if let Some(element) = element.element() {
             let contents = element.children.get(0);
 
-            render_html(element, contents, html_view.clone(), false, tags.clone());
+            render_html(
+                element,
+                contents,
+                html_view.clone(),
+                false,
+                tags.clone(),
+                &mut css,
+            );
         }
     }
+
+    css::load_css(css);
 
     let mut src = String::new();
     for element in head_elements.children.iter() {
@@ -210,6 +233,7 @@ fn render_html(
     og_html_view: gtk::Box,
     recursive: bool,
     tags: Rc<RefCell<Vec<Tag>>>,
+    mut css: &mut String,
 ) {
     let mut html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -230,23 +254,31 @@ fn render_html(
                 .css_classes(element.classes.clone())
                 .build();
 
-            div_box.style();
+            css.push_str(&div_box.style());
 
-            tags.borrow_mut().push(Tag {
-                classes: element.classes.clone(),
-                widget: Box::new(div_box.clone()),
-                tied_variables: Vec::new(),
-            });
             html_view.append(&div_box);
 
             for child in element.children.iter() {
                 match child {
                     Node::Element(el) => {
-                        render_html(el, el.children.get(0), div_box.clone(), true, tags.clone());
+                        render_html(
+                            el,
+                            el.children.get(0),
+                            div_box.clone(),
+                            true,
+                            tags.clone(),
+                            &mut css,
+                        );
                     }
                     _ => {}
                 }
             }
+
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(div_box),
+                tied_variables: Vec::new(),
+            });
         }
         "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
             if let Some(text) = contents {
@@ -260,17 +292,25 @@ fn render_html(
                             .selectable(true)
                             .build();
 
-                        css::perform_styling(element, &label);
-                        tags.borrow_mut().push(Tag {
-                            classes: element.classes.clone(),
-                            widget: Box::new(label.clone()),
-                            tied_variables: Vec::new(),
-                        });
+                        css.push_str(&label.style());
 
                         html_view.append(&label);
+
+                        tags.borrow_mut().push(Tag {
+                            classes: element.classes.clone(),
+                            widget: Box::new(label),
+                            tied_variables: Vec::new(),
+                        });
                     }
                     Node::Element(el) => {
-                        render_html(el, el.children.get(0), html_view, true, tags.clone());
+                        render_html(
+                            el,
+                            el.children.get(0),
+                            html_view,
+                            true,
+                            tags.clone(),
+                            &mut css,
+                        );
                     }
                     _ => {}
                 }
@@ -294,20 +334,19 @@ fn render_html(
                             .selectable(true)
                             .wrap(true)
                             .build();
-                        
-                        tags.borrow_mut().push(Tag {
-                            classes: element.classes.clone(),
-                            widget: Box::new(label.clone()),
-                            tied_variables: Vec::new(),
-                        });
-
-                        css::perform_styling(element, &label);
 
                         label_box.append(&label);
+                        css.push_str(&label.style());
+
+                        tags.borrow_mut().push(Tag {
+                            classes: element.classes.clone(),
+                            widget: Box::new(label),
+                            tied_variables: Vec::new(),
+                        });
                     }
                     Node::Element(el) => {
                         if el.name.as_str() == "a" {
-                            render_a(el, element, label_box.clone(), tags.clone());
+                            render_a(el, label_box.clone(), tags.clone(), &mut css);
                         } else {
                             render_html(
                                 el,
@@ -315,6 +354,7 @@ fn render_html(
                                 html_view.clone(),
                                 true,
                                 tags.clone(),
+                                &mut css,
                             );
                         }
                     }
@@ -323,39 +363,40 @@ fn render_html(
             }
         }
         "a" => {
-            render_a(element, element, html_view.clone(), tags.clone());
+            render_a(element, html_view, tags, css);
         }
         "ul" | "ol" => {
             let list_box = gtk::Box::builder()
                 .orientation(gtk::Orientation::Vertical)
                 .css_name(element.name.as_str())
+                .css_classes(element.classes.clone())
                 .build();
-            tags.borrow_mut().push(Tag {
-                classes: element.classes.clone(),
-                widget: Box::new(list_box.clone()),
-                tied_variables: Vec::new(),
-            });
 
-            css::perform_styling(element, &list_box);
+            css.push_str(&list_box.style());
 
             html_view.append(&list_box);
+            render_list(element, &list_box, &tags, &mut css);
 
-            render_list(element, list_box, tags);
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(list_box),
+                tied_variables: Vec::new(),
+            });
         }
         "hr" => {
             let line = gtk::Separator::builder()
                 .orientation(gtk::Orientation::Horizontal)
                 .build();
 
-            tags.borrow_mut().push(Tag {
-                classes: element.classes.clone(),
-                widget: Box::new(line.clone()),
-                tied_variables: Vec::new(),
-            });
-
-            css::perform_styling(element, &line);
+            css.push_str(&line.style());
 
             html_view.append(&line);
+
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(line),
+                tied_variables: Vec::new(),
+            });
         }
         "img" => {
             let url = match element.attributes.get("src") {
@@ -384,7 +425,7 @@ fn render_html(
                         .get("alt")
                         .unwrap_or(&Some(String::new()))
                         .clone()
-                        .unwrap_or_else(|| "".to_string())
+                        .unwrap_or_else(|| "".to_string()),
                 )
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
@@ -397,7 +438,7 @@ fn render_html(
                 tied_variables: Vec::new(),
             });
 
-            css::perform_styling(element, &image);
+            css.push_str(&image.style());
 
             image.set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
             // weird workaround - https://discourse.gnome.org/t/can-shrink-on-picture-creates-empty-occupied-space/20547/2
@@ -425,15 +466,15 @@ fn render_html(
                     .halign(gtk::Align::Start)
                     .build();
 
-                tags.borrow_mut().push(Tag {
-                    classes: element.classes.clone(),
-                    widget: Box::new(entry.clone()),
-                    tied_variables: Vec::new(),
-                });
-
-                css::perform_styling(element, &entry);
+                css.push_str(&entry.style());
 
                 html_view.append(&entry);
+
+                tags.borrow_mut().push(Tag {
+                    classes: element.classes.clone(),
+                    widget: Box::new(entry),
+                    tied_variables: Vec::new(),
+                });
             }
         }
         "select" => {
@@ -457,15 +498,16 @@ fn render_html(
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
                 .build();
-            tags.borrow_mut().push(Tag {
-                classes: element.classes.clone(),
-                widget: Box::new(dropdown.clone()),
-                tied_variables: Vec::new(),
-            });
 
-            css::perform_styling(element, &dropdown);
+            css.push_str(&dropdown.style());
 
             html_view.append(&dropdown);
+
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(dropdown),
+                tied_variables: Vec::new(),
+            });
         }
         "textarea" => {
             let textview = gtk::TextView::builder()
@@ -475,19 +517,20 @@ fn render_html(
                 .halign(gtk::Align::Start)
                 .valign(gtk::Align::Start)
                 .build();
-            tags.borrow_mut().push(Tag {
-                classes: element.classes.clone(),
-                widget: Box::new(textview.clone()),
-                tied_variables: Vec::new(),
-            });
 
-            css::perform_styling(element, &textview);
+            css.push_str(&textview.style());
 
             textview
                 .buffer()
                 .set_text(element.children[0].text().unwrap_or(""));
 
             html_view.append(&textview);
+
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(textview),
+                tied_variables: Vec::new(),
+            });
         }
         "button" => {
             let button = gtk::Button::builder()
@@ -497,15 +540,16 @@ fn render_html(
                 .halign(gtk::Align::Start)
                 .valign(gtk::Align::Start)
                 .build();
-            tags.borrow_mut().push(Tag {
-                classes: element.classes.clone(),
-                widget: Box::new(button.clone()),
-                tied_variables: Vec::new(),
-            });
 
-            css::perform_styling(element, &button);
+            css.push_str(&button.style());
 
             html_view.append(&button);
+
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(button),
+                tied_variables: Vec::new(),
+            });
         }
         _ => {
             println!("INFO: Unknown element: {}", element.name);
@@ -513,7 +557,7 @@ fn render_html(
     }
 }
 
-fn render_a(el: &Element, element: &Element, label_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>) {
+fn render_a(el: &Element, label_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>, css: &mut String) {
     let uri = match el.attributes.get("href") {
         Some(Some(uri)) => uri.clone(),
         _ => {
@@ -530,18 +574,23 @@ fn render_a(el: &Element, element: &Element, label_box: gtk::Box, tags: Rc<RefCe
         .halign(gtk::Align::Start)
         .build();
 
-    tags.borrow_mut().push(Tag {
-        classes: el.classes.clone(),
-        widget: Box::new(link_button.clone()),
-        tied_variables: Vec::new(),
-    });
-
-    css::perform_styling(element, &link_button);
+    css.push_str(&link_button.style());
 
     label_box.append(&link_button);
+
+    tags.borrow_mut().push(Tag {
+        classes: el.classes.clone(),
+        widget: Box::new(link_button),
+        tied_variables: Vec::new(),
+    });
 }
 
-fn render_list(element: &Element, list_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>) {
+fn render_list(
+    element: &Element,
+    list_box: &gtk::Box,
+    tags: &Rc<RefCell<Vec<Tag>>>,
+    css: &mut String,
+) {
     for (i, child) in element.children.iter().enumerate() {
         match child {
             Node::Element(el) => {
@@ -567,17 +616,18 @@ fn render_list(element: &Element, list_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>
                         .selectable(true)
                         .build();
 
-                    tags.borrow_mut().push(Tag {
-                        classes: el.classes.clone(),
-                        widget: Box::new(label.clone()),
-                        tied_variables: Vec::new(),
-                    });
-                    css::perform_styling(element, &label);
+                    css.push_str(&label.style());
 
                     li.append(&lead);
                     li.append(&label);
 
                     list_box.append(&li);
+
+                    tags.borrow_mut().push(Tag {
+                        classes: el.classes.clone(),
+                        widget: Box::new(label),
+                        tied_variables: Vec::new(),
+                    });
                 } else {
                     println!("INFO: Expected li inside ul/ol, instead got: {:?}", child);
                 }
@@ -614,12 +664,10 @@ fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
 
     match gdk_pixbuf::Pixbuf::from_stream(&img_stream, Some(&gio::Cancellable::new())) {
         Ok(pixbuf) => Ok(pixbuf),
-        Err(_) => {
-            Err(html_parser::Error::Parsing("ERROR: Failed to load image".to_string()))
-        }
+        Err(_) => Err(html_parser::Error::Parsing(
+            "ERROR: Failed to load image".to_string(),
+        )),
     }
-
-    
 }
 
 async fn fetch_file(url: String) -> String {
@@ -636,7 +684,6 @@ async fn fetch_file(url: String) -> String {
     } else if url.starts_with("https://github.com") {
         fetch_from_github(url).await
     } else {
-
         if let Ok(response) = reqwest::get(url).await {
             if let Ok(text) = response.text().await {
                 text
@@ -664,7 +711,10 @@ async fn fetch_from_github(url: String) -> String {
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
-            eprintln!("ERROR: Couldn't build reqwest client, returning empty string: {}", e);
+            eprintln!(
+                "ERROR: Couldn't build reqwest client, returning empty string: {}",
+                e
+            );
             return String::new();
         }
     };

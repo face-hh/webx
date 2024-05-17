@@ -1,4 +1,6 @@
-body {}
+body {
+    background-color: #ff0000;
+}
 
 div {
     border-color: #616161;
@@ -13,6 +15,7 @@ div {
 }
 
 h1 {
+    padding: 20px;
     color: #444;
 }
 
@@ -28,6 +31,10 @@ p {
     border-color: red;
 
     border-radius: 12px;
+}
+
+h4 {
+    font-size: 30px;
 }
 
 a {
@@ -52,28 +59,6 @@ ul, ol {
 ok {
     color: red;
 }
-
-textarea {
-    padding: 5px;
-    border-color: #616161;
-    border-width: 1px;
-    border-style: solid;
-    border-radius: 12px;
-
-    width: 400px;
-    height: 100px;
-}
-
-input {
-    padding: 5px;
-    border-color: #616161;
-    border-width: 1px;
-    border-style: solid;
-    border-radius: 12px;
-
-    width: 400px;
-}
-
 
 select {
     padding: 5px;

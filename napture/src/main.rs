@@ -32,8 +32,6 @@ struct Tab {
 }
 
 fn main() -> glib::ExitCode {
-    std::env::set_var("GTK_THEME", "Adwaita:dark");
-    
     let args = Rc::new(RefCell::new(std::env::args().collect::<Vec<String>>()));
 
     let app = adw::Application::builder().application_id(APP_ID).build();
@@ -84,7 +82,6 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let scroll_clone = scroll.clone();
 
     if let Some(dev_build) = args.borrow().get(1) {
-        println!("{dev_build}");
         tab1.url = dev_build.to_string();
 
         if let Ok(htmlview) = b9::html::build_ui(tab1) {
