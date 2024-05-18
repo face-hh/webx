@@ -24,12 +24,20 @@
     </screenshots>
     <url type="homepage">https://github.com/face-hh/webx/blob/master/README.md</url>
     <url type="vcs-browser">https://github.com/face-hh/webx</url>
-    <content_rating type="oars-1.0" />
+    <content_rating type="oars-1.1" />
     <releases>
         <release version="1.1.0" date="2024-05-18">
             <url type="details">https://github.com/face-hh/webx/releases/tag/v1.1.0</url>
             <description>
-                <code>readme</code>
+              <ul>
+                <li>Fixed CSS parser ignoring declarations if one already exists (which made <code>input</code>, <code>textarea</code>, etc.. unstyleable)</li>
+                <li>Fixed CSS styling persisting from one site to another</li>
+                <li>Fixed typo on not_found page.</li>
+                <li>Added <code>background-color</code> property.</li>
+                <li>Added <em>Napture logs</em> for <code>CTRL</code> + <code>SHIFT</code> + <code>P</code></li>
+                <li>Added light theme support (if your OS theme is light)</li>
+                <li>Added support to access local Web X projects.</li>
+              </ul>
             </description>
         </release>
         <release version="1.0.0" date="2024-05-15">
@@ -39,7 +47,7 @@
             </description>
         </release>
     </releases>
-    <developer id="io.github.face-hh">
+    <developer id="io.github.face_hh">
         <name>facedevstuff</name>
     </developer>
 
