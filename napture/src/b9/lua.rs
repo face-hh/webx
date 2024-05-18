@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Mutex;
 use std::thread;
 
 use super::css::Styleable;
@@ -10,35 +9,10 @@ use mlua::prelude::*;
 
 use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
-use lazy_static::lazy_static;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Map;
 
-lazy_static! {
-    pub static ref LUA_LOGS: Mutex<String> = Mutex::new(String::new());
-}
-
-use chrono::Local;
-
-macro_rules! lualog {
-    ($type:expr, $s:expr) => {{
-        let problem_type = match ($type) {
-            "error" => "<span foreground=\"#ff3333\">ERROR:</span> ",
-            "warning" => "<span foreground=\"#ffcc00\">WARNING</span>: ",
-            "debug" => "<span foreground=\"#7bbcb6\">DEBUG</span>: ",
-            _ => "",
-        };
-
-        let now = Local::now();
-        let log_msg = format!("<span foreground=\"#FF0000\">[{}]</span> | {} {}\n", now.format("%Y-%m-%d %H:%M:%S"), problem_type, $s);
-
-        if let Ok(mut lua_logs) = LUA_LOGS.lock() {
-            lua_logs.push_str(&log_msg);
-        } else {
-            eprintln!("FATAL: failed to lock lua logs mutex!");
-        }
-    }};
-}
+use crate::lualog;
 
 pub trait Luable: Styleable {
     fn get_css_classes(&self) -> Vec<String>;

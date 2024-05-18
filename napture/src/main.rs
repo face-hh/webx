@@ -1,6 +1,28 @@
 mod b9;
 mod imp;
 mod parser;
+mod globals;
+
+#[macro_export]
+macro_rules! lualog {
+    ($type:expr, $s:expr) => {{
+        let problem_type = match ($type) {
+            "error" => "<span foreground=\"#ff3333\">ERROR:</span> ",
+            "warning" => "<span foreground=\"#ffcc00\">WARNING</span>: ",
+            "debug" => "<span foreground=\"#7bbcb6\">DEBUG</span>: ",
+            _ => "",
+        };
+
+        let now = chrono::Local::now();
+        let log_msg = format!("<span foreground=\"#FF0000\">[{}]</span> | {} {}\n", now.format("%Y-%m-%d %H:%M:%S"), problem_type, $s);
+
+        if let Ok(mut lua_logs) = crate::globals::LUA_LOGS.lock() {
+            lua_logs.push_str(&log_msg);
+        } else {
+            eprintln!("FATAL: failed to lock lua logs mutex!");
+        }
+    }};
+}
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -13,9 +35,9 @@ glib::wrapper! {
 }
 
 use b9::css;
-use b9::lua;
 use glib::Object;
 
+use globals::LUA_LOGS;
 use gtk::gdk;
 use gtk::gdk::Display;
 use gtk::gio;
@@ -191,6 +213,8 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     nav.append(&scroll);
 
     window.set_child(Some(&nav));
+
+    window.set_default_size(500, 500);
     window.present();
 }
 
@@ -288,14 +312,16 @@ fn fetch_dns(url: String) -> String {
     };
 
     if let Ok(response) = client.get(&url).send() {
+        let status = response.status();
+
         if let Ok(json) = response.json::<DomainInfo>() {
             json.ip
         } else {
-            // TODO: error report
+            lualog!("error", format!("Failed to parse response body from DNS API. Error code: {}", status.as_u16()));
             String::new()
         }
     } else {
-        // TODO: error report
+        lualog!("error", "Failed to send HTTP request to DNS API. Perhaps no internet connection?");
         String::new()
     }
 }
@@ -314,7 +340,7 @@ fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
         .margin_end(12)
         .build();
 
-    let lualogs = lua::LUA_LOGS.lock().unwrap();
+    let lualogs = LUA_LOGS.lock().unwrap();
 
     let label = gtk::Label::builder()
         .halign(gtk::Align::Start)
@@ -334,7 +360,7 @@ fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
 
     event_controller.connect_key_pressed(move |_, key, _a, b| {
         if b == (gdk::ModifierType::CONTROL_MASK) && key == gdk::Key::r {
-            let lualogs = lua::LUA_LOGS.lock().unwrap();
+            let lualogs = LUA_LOGS.lock().unwrap();
 
             label.set_markup(&*lualogs);
         }
@@ -345,7 +371,7 @@ fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
     window.add_controller(event_controller);
 
     window.set_child(Some(&scroll));
-    let labell = gtk::Label::new(Some("Lua logs"));
+    let labell = gtk::Label::new(Some("Napture logs"));
     let empty_label = gtk::Label::new(Some(""));
     let headerbar = gtk::HeaderBar::builder().build();
 

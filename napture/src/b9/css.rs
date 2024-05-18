@@ -118,7 +118,6 @@ impl Styleable for gtk::Label {
             let mut final_css = "".to_string();
 
             classes.push(self.css_name());
-            println!("\n\n--------------\nstyling {:?} with the css: {:?}\n---------------\n\n", classes, css);
 
             self.set_use_markup(true);
 
@@ -639,7 +638,6 @@ impl Styleable for gtk::Button {
 pub(crate) fn load_css(css: String) {
     let css_: String = DEFAULT_CSS.to_string() + &css;
 
-    println!("-------------\n\n\n\\n\nnLOADING STRING: {css_}\n\n\n\n\\nn-----------------");
     if let Ok(res) = parser::parse(&css_) {
         match CSS_RULES.lock() {
             Ok(mut rules) => {
@@ -696,7 +694,7 @@ fn get_rule(rules: &Vec<(String, String)>, property: &str, default_value: &str) 
 
 pub(crate) fn load_css_into_app(content: &str) -> CssProvider {
     let provider = CssProvider::new();
-    
+
     provider.load_from_string(content);
 
     gtk::style_context_add_provider_for_display(
