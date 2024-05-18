@@ -21,11 +21,11 @@ pub(crate) struct Tag {
 }
 
 async fn parse_html(url: String) -> Result<(Node, Node)> {
-    let html = fetch_file(url + &"/index.html").await;
+    let html = fetch_file(url + "/index.html").await;
 
     let dom = match !html.is_empty() {
         true => Dom::parse(&html),
-        false => Dom::parse(&include_str!("../resources/not_found.html")),
+        false => Dom::parse(include_str!("../resources/not_found.html")),
     }?;
 
     let head = match find_element_by_name(&dom.children, "head") {
@@ -46,7 +46,7 @@ async fn parse_html(url: String) -> Result<(Node, Node)> {
         }
     };
 
-    return Ok((head, body));
+    Ok((head, body))
 }
 
 fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
@@ -82,7 +82,7 @@ pub async fn build_ui(
         .build();
 
     let mut css: String = css::reset_css();
-    
+
     let (head, body) = match parse_html(tab.url.clone()).await {
         Ok(ok) => ok,
         Err(e) => {
@@ -113,7 +113,7 @@ pub async fn build_ui(
 
     for element in head_elements.children.iter() {
         if let Some(element) = element.element() {
-            let contents = element.children.get(0);
+            let contents = element.children.first();
             let aa = &Rc::new(RefCell::new(&tab));
 
             let tabb = Rc::clone(aa);
@@ -125,7 +125,7 @@ pub async fn build_ui(
 
     for element in body_elements.children.iter() {
         if let Some(element) = element.element() {
-            let contents = element.children.get(0);
+            let contents = element.children.first();
 
             render_html(
                 element,
@@ -150,11 +150,9 @@ pub async fn build_ui(
     for element in head_elements.children.iter() {
         if let Some(element) = element.element() {
             if element.name == "script" {
-                if let Some(src_attr) = element.attributes.get("src") {
-                    if let Some(src_attr) = src_attr {
+                if let Some(Some(src_attr)) = element.attributes.get("src") {
                         src = src_attr.to_string();
                         break;
-                    }
                 }
             }
         }
@@ -220,6 +218,7 @@ async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell
                             println!("WARNING: Failed to fetch image: {}", result.unwrap_err());
                         }
                     } else {
+                        // todo: a mutex would be better here, since this has to go through async
                         let css = fetch_file(tab.borrow().url.clone() + "/" + href).await;
 
                         css::load_css(css);
@@ -242,7 +241,7 @@ fn render_html(
     og_html_view: gtk::Box,
     recursive: bool,
     tags: Rc<RefCell<Vec<Tag>>>,
-    mut css: &mut String,
+    css: &mut String,
 ) {
     let mut html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -268,18 +267,15 @@ fn render_html(
             html_view.append(&div_box);
 
             for child in element.children.iter() {
-                match child {
-                    Node::Element(el) => {
-                        render_html(
-                            el,
-                            el.children.get(0),
-                            div_box.clone(),
-                            true,
-                            tags.clone(),
-                            &mut css,
-                        );
-                    }
-                    _ => {}
+                if let Node::Element(el) = child {
+                    render_html(
+                        el,
+                        el.children.first(),
+                        div_box.clone(),
+                        true,
+                        tags.clone(),
+                        css,
+                    );
                 }
             }
 
@@ -312,14 +308,7 @@ fn render_html(
                         });
                     }
                     Node::Element(el) => {
-                        render_html(
-                            el,
-                            el.children.get(0),
-                            html_view,
-                            true,
-                            tags.clone(),
-                            &mut css,
-                        );
+                        render_html(el, el.children.first(), html_view, true, tags.clone(), css);
                     }
                     _ => {}
                 }
@@ -355,15 +344,15 @@ fn render_html(
                     }
                     Node::Element(el) => {
                         if el.name.as_str() == "a" {
-                            render_a(el, label_box.clone(), tags.clone(), &mut css);
+                            render_a(el, label_box.clone(), tags.clone(), css);
                         } else {
                             render_html(
                                 el,
-                                el.children.get(0),
+                                el.children.first(),
                                 html_view.clone(),
                                 true,
                                 tags.clone(),
-                                &mut css,
+                                css,
                             );
                         }
                     }
@@ -384,7 +373,7 @@ fn render_html(
             css.push_str(&list_box.style());
 
             html_view.append(&list_box);
-            render_list(element, &list_box, &tags, &mut css);
+            render_list(element, &list_box, &tags, css);
 
             tags.borrow_mut().push(Tag {
                 classes: element.classes.clone(),
@@ -434,7 +423,7 @@ fn render_html(
                         .get("alt")
                         .unwrap_or(&Some(String::new()))
                         .clone()
-                        .unwrap_or_else(|| "".to_string()),
+                        .unwrap_or_default(),
                 )
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
@@ -490,14 +479,11 @@ fn render_html(
             let mut strings = Vec::new();
 
             for child in element.children.iter() {
-                match child {
-                    Node::Element(el) => {
-                        if el.name.as_str() == "option" {
-                            // TODO: keep track of value
-                            strings.push(el.children[0].text().unwrap_or(""))
-                        }
+                if let Node::Element(el) = child {
+                    if el.name.as_str() == "option" {
+                        // TODO: keep track of value
+                        strings.push(el.children[0].text().unwrap_or(""))
                     }
-                    _ => {}
                 }
             }
 
@@ -546,7 +532,7 @@ fn render_html(
                 .label(
                     element
                         .children
-                        .get(0)
+                        .first()
                         .unwrap_or(&Node::Text("".to_owned()))
                         .text()
                         .unwrap_or(""),
@@ -657,14 +643,13 @@ fn render_list(
 
 fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
     let handle = thread::spawn(move || {
-        let result = reqwest::blocking::get(url)
+        reqwest::blocking::get(url)
             .map_err(|e| e.to_string())
             .and_then(|res| res.bytes().map_err(|e| e.to_string()))
             .unwrap_or_else(|e| {
                 lualog!("error", format!("Failed to fetch image: {}", e));
                 Vec::new().into()
-            });
-        result
+            })
     });
 
     let img_data = match handle.join() {
@@ -698,32 +683,30 @@ async fn fetch_file(url: String) -> String {
         }
     } else if url.starts_with("https://github.com") {
         fetch_from_github(url).await
-    } else {
-        if let Ok(response) = reqwest::get(url.clone()).await {
-            let status = response.status();
+    } else if let Ok(response) = reqwest::get(url.clone()).await {
+        let status = response.status();
 
-            if let Ok(text) = response.text().await {
-                text
-            } else {
-                lualog!(
-                    "error",
-                    format!(
-                        "Failed to parse response body from URL (\"{}\"), status code: {}",
-                        url, status
-                    )
-                );
-                String::new()
-            }
+        if let Ok(text) = response.text().await {
+            text
         } else {
             lualog!(
                 "error",
                 format!(
-                    "Failed to fetch URL (\"{}\"). Perhaps no internet connection?",
-                    url
+                    "Failed to parse response body from URL (\"{}\"), status code: {}",
+                    url, status
                 )
             );
             String::new()
         }
+    } else {
+        lualog!(
+            "error",
+            format!(
+                "Failed to fetch URL (\"{}\"). Perhaps no internet connection?",
+                url
+            )
+        );
+        String::new()
     }
 }
 

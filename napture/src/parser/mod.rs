@@ -26,10 +26,10 @@ pub fn parse(input: &str) -> Result<HashMap<String, HashMap<String, String>>, Pa
             continue;
         }
 
-        if line.ends_with("{") {
+        if line.ends_with('{') {
             current_selector = Some(line.trim_end_matches('{').trim().to_string());
             current_declarations.clear();
-        } else if line.ends_with("}") {
+        } else if line.ends_with('}') {
             if let Some(selector) = current_selector.take() {
                 result.entry(selector).and_modify(|val: &mut HashMap<String, String>| {
                     for (key, value) in current_declarations.iter() {

@@ -1,73 +1,33 @@
-div {
-    border-color: #616161;
-    border-width: 1px;
-    border-style: solid;
-    border-radius: 12px;
-    padding: 10px;
-    direction: row;
+body {
+    direction: column;
     align-items: center;
-
-    gap: 10;
 }
 
-h1 {
-    padding: 20px;
-    color: #444;
+message_container {
+    background-color: white;
+    direction: column;
 }
 
-p {
-    color:antiquewhite;
-    font-size: 16px;
-    line-height: 1.5;
-    font-family: Iosevka;
-    font-weight: bold;
-
-    border-style: solid;
-    border-width: 5px;
-    border-color: red;
-
-    border-radius: 12px;
+message {
+    direction: column;
+    background-color:  #ffffff;
 }
 
-h4 {
-    font-size: 30px;
+username {
+    background-color:  #ffffff;
+
+    font-size: 10px;
 }
 
-a {
-    color: #007bff;
-    font-size: 16px;
-    text-decoration: none;
-    font-weight: ultralight;
-    underline: double;
-    underline-color: #ff0000;
-    overline: single;
-    overline-color: #ff0000;
-    strikethrough: true;
-    strikethrough-color: #ff0000;
-
-    margin-right: 50px;
+message_text {
+    font-size: 9px;
 }
 
-ul, ol {
-    margin-left: 20px;
+message_container {
+    direction: column;
+    gap: 10px;
 }
 
-ok {
-    color: red;
-}
-
-select {
-    padding: 5px;
-    border-width: 1px;
-    border-style: solid;
-    border-color: #ccc;
-    border-radius: 3px;
-
-    margin-left: 40px;
-}
-
-hr {
-    border-color: #ccc;
-    border-width: 1px;
-    border-style: solid;
+send_button {
+    background-color: red;
 }

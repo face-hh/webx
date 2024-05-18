@@ -24,9 +24,9 @@ pub trait Luable: Styleable {
     fn set_contents(&self, contents: String);
     fn set_href(&self, href: String);
 
-    fn _on_click<'a>(&self, func: &'a LuaOwnedFunction);
-    fn _on_submit<'a>(&self, func: &'a LuaOwnedFunction);
-    fn _on_input<'a>(&self, func: &'a LuaOwnedFunction);
+    fn _on_click(&self, func: &LuaOwnedFunction);
+    fn _on_submit(&self, func: &LuaOwnedFunction);
+    fn _on_input(&self, func: &LuaOwnedFunction);
 }
 // use tokio::time::{sleep, Duration};
 
@@ -35,11 +35,11 @@ pub trait Luable: Styleable {
 //     Ok(())
 // }
 
-fn get<'lua>(
-    lua: &'lua Lua,
+fn get(
+    lua: &Lua,
     class: String,
     tags: Rc<RefCell<Vec<Tag>>>,
-) -> LuaResult<LuaTable<'lua>> {
+) -> LuaResult<LuaTable<>> {
     let tags_ref = tags.borrow();
 
     for (i, tag) in tags_ref.iter().enumerate() {
@@ -294,13 +294,13 @@ impl Luable for gtk::Label {
 
         self.add_controller(gesture)
     }
-    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_submit(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "Text-based components do not support the \"submit\" event. Are you perhaps looking for the \"click\" event?"
         );
     }
-    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_input(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "Text-based components do not support the \"input\" event."
@@ -355,13 +355,13 @@ impl Luable for gtk::DropDown {
 
         self.add_controller(gesture)
     }
-    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_submit(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"select\" component does not support the \"submit\" event."
         );
     }
-    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_input(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"select\" component does not support the \"input\" event."
@@ -406,13 +406,13 @@ impl Luable for gtk::LinkButton {
 
         self.add_controller(gesture)
     }
-    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_submit(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"a\" component does not support the \"submit\" event."
         );
     }
-    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_input(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"a\" component does not support the \"input\" event."
@@ -467,13 +467,13 @@ impl Luable for gtk::Box {
 
         self.add_controller(gesture)
     }
-    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_submit(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"div\" component does not support the \"submit\" event."
         );
     }
-    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_input(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"div\" component does not support the \"input\" event."
@@ -526,13 +526,13 @@ impl Luable for gtk::TextView {
 
         self.add_controller(gesture)
     }
-    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_submit(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"textarea\" component does not support the \"submit\" event. Are you perhaps looking for the \"input\" event?"
         )
     }
-    fn _on_input<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_input(&self, func: &LuaOwnedFunction) {
         let a = Rc::new(func.clone());
 
         self.buffer().connect_changed(move |s| {
@@ -590,13 +590,13 @@ impl Luable for gtk::Separator {
 
         self.add_controller(gesture)
     }
-    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_submit(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"hr\" component does not support the \"submit\" event."
         );
     }
-    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_input(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"hr\" component does not support the \"input\" event."
@@ -651,13 +651,13 @@ impl Luable for gtk::Picture {
 
         self.add_controller(gesture)
     }
-    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_submit(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"img\" component does not support the \"submit\" event."
         );
     }
-    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_input(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"img\" component does not support the \"input\" event."
@@ -687,7 +687,7 @@ impl Luable for gtk::Entry {
     }
 
     fn set_contents(&self, contents: String) {
-        self.buffer().set_text(&contents);
+        self.buffer().set_text(contents);
     }
     fn set_href(&self, _: String) {
         lualog!(
@@ -709,7 +709,7 @@ impl Luable for gtk::Entry {
 
         self.add_controller(gesture)
     }
-    fn _on_submit<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_submit(&self, func: &LuaOwnedFunction) {
         let a = Rc::new(func.clone());
 
         self.connect_activate(move |entry| {
@@ -720,7 +720,7 @@ impl Luable for gtk::Entry {
             }
         });
     }
-    fn _on_input<'a>(&self, func: &'a LuaOwnedFunction) {
+    fn _on_input(&self, func: &LuaOwnedFunction) {
         let a = Rc::new(func.clone());
 
         self.connect_changed(move |entry| {
@@ -773,13 +773,13 @@ impl Luable for gtk::Button {
             }
         });
     }
-    fn _on_submit<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_submit(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"button\" component does not support the \"submit\" event."
         );
     }
-    fn _on_input<'a>(&self, _: &'a LuaOwnedFunction) {
+    fn _on_input(&self, _: &LuaOwnedFunction) {
         lualog!(
             "warning",
             "\"button\" component does not support the \"input\" event."

@@ -1,7 +1,7 @@
 mod b9;
+mod globals;
 mod imp;
 mod parser;
-mod globals;
 
 #[macro_export]
 macro_rules! lualog {
@@ -15,9 +15,14 @@ macro_rules! lualog {
         };
 
         let now = chrono::Local::now();
-        let log_msg = format!("<span foreground=\"#FF0000\">[{}]</span> | {} {}\n", now.format("%Y-%m-%d %H:%M:%S"), problem_type, $s);
+        let log_msg = format!(
+            "<span foreground=\"#FF0000\">[{}]</span> | {} {}\n",
+            now.format("%Y-%m-%d %H:%M:%S"),
+            problem_type,
+            $s
+        );
 
-        if let Ok(mut lua_logs) = crate::globals::LUA_LOGS.lock() {
+        if let Ok(mut lua_logs) = $crate::globals::LUA_LOGS.lock() {
             lua_logs.push_str(&log_msg);
         } else {
             eprintln!("FATAL: failed to lock lua logs mutex!");
@@ -34,6 +39,8 @@ glib::wrapper! {
         @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
 }
+
+static LOGO_PNG: &[u8] = include_bytes!("../file.png");
 
 use b9::css;
 use b9::css::Styleable;
@@ -147,6 +154,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     let previous_css_provider = Rc::new(RefCell::new(CssProvider::new()));
 
+    // CLI command
     if let Some(dev_build) = args.borrow().get(1) {
         tab1.url = dev_build.to_string();
 
@@ -158,6 +166,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         }
     }
 
+    // search bar
     search.connect_activate(move |query| {
         let previous_css_provider_clone = Rc::clone(&previous_css_provider);
 
@@ -177,14 +186,16 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             println!("ERROR: Failed to set focus on search bar. Root is None.");
         }
 
-        match b9::html::build_ui(tab_in_closure.clone(), Some(previous_css_provider_clone.take())) {
+        match b9::html::build_ui(
+            tab_in_closure.clone(),
+            Some(previous_css_provider_clone.take()),
+        ) {
             Ok((htmlview, provider)) => {
                 scroll_clone.set_child(Some(&htmlview));
                 *previous_css_provider.borrow_mut() = provider;
             }
             Err(e) => {
                 tab_in_closure.label_widget.set_label(&e.to_string());
-                return;
             }
         };
     });
@@ -219,7 +230,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         .build();
 
     nav.append(&scroll);
-
+    
     window.set_child(Some(&nav));
 
     window.set_default_size(500, 500);
@@ -264,6 +275,27 @@ fn make_tab(
         .label(label)
         .build();
 
+    let gesture = gtk::GestureClick::new();
+
+    let bytes = glib::Bytes::from_static(LOGO_PNG);
+    let logo = gdk::Texture::from_bytes(&bytes).expect("gtk-rs.svg to load");
+
+    gesture.connect_released(move |_, _, _, _| {
+        let dialog = gtk::AboutDialog::builder()
+            .modal(true)
+            .program_name("Bussin Napture")
+            .version("v1.1.1")
+            .website("https://github.com/face-hh/webx")
+            .website_label("GitHub")
+            .license_type(gtk::License::Apache20)
+            .authors(["facedev"])
+            .logo(&logo)
+            .build();
+ 
+        dialog.present();
+    });
+
+    tabname.add_controller(gesture);
     tab.append(&tabicon);
     tab.append(&tabname);
 
@@ -304,22 +336,19 @@ fn fetch_dns(url: String) -> String {
 
     let clienturl = format!(
         "https://api.buss.lol/domain/{}/{}",
-        url.split('.').nth(0).unwrap_or(""),
+        url.split('.').next().unwrap_or(""),
         url.split('.').nth(1).unwrap_or(""),
     );
 
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
-            eprintln!(
-                "ERROR: Couldn't build reqwest client: {}",
-                e
-            );
+            eprintln!("ERROR: Couldn't build reqwest client: {}", e);
             return url;
         }
     };
 
-    if let Ok(response) = client.get(&clienturl).send() {
+    if let Ok(response) = client.get(clienturl).send() {
         let status = response.status();
 
         if let Ok(json) = response.json::<DomainInfo>() {
@@ -329,7 +358,10 @@ fn fetch_dns(url: String) -> String {
             url
         }
     } else {
-        lualog!("debug", "Failed to send HTTP request to DNS API. Returning original URL.");
+        lualog!(
+            "debug",
+            "Failed to send HTTP request to DNS API. Returning original URL."
+        );
         url
     }
 }
@@ -356,7 +388,7 @@ fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
         .build();
 
     label.set_use_markup(true);
-    label.set_markup(&*lualogs);
+    label.set_markup(&lualogs);
 
     gtkbox.append(&label);
 
@@ -370,7 +402,7 @@ fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
         if b == (gdk::ModifierType::CONTROL_MASK) && key == gdk::Key::r {
             let lualogs = LUA_LOGS.lock().unwrap();
 
-            label.set_markup(&*lualogs);
+            label.set_markup(&lualogs);
         }
 
         glib::Propagation::Proceed
