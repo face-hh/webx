@@ -68,7 +68,7 @@ fn main() -> glib::ExitCode {
         let mut content = r"tab {
             background-color: #424242;
             border-radius: 12px;
-            padding: 5px;
+            padding: 10px;
         }
         search {
             background-color: #424242;
