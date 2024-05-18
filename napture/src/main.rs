@@ -12,12 +12,14 @@ glib::wrapper! {
                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
 }
 
+use b9::css;
 use b9::lua;
 use glib::Object;
 
 use gtk::gdk;
-use gtk::gdk::ModifierType;
+use gtk::gdk::Display;
 use gtk::gio;
+use gtk::CssProvider;
 use serde::Deserialize;
 
 use gtk::glib;
@@ -39,7 +41,34 @@ fn main() -> glib::ExitCode {
 
     let app = adw::Application::builder().application_id(APP_ID).build();
 
-    app.connect_startup(|_| b9::css::load_css_into_app(include_str!("style.css")));
+    app.connect_startup(|_| {
+        let mut content = r"tab {
+            background-color: #424242;
+            border-radius: 12px;
+            padding: 5px;
+        }
+        search {
+            background-color: #424242;
+            border-radius: 12px;
+            padding: 5px;
+            color: white;
+        }
+        search image {
+            margin-right: 5px;
+        }
+        "
+        .to_string();
+
+        if !gtk::Settings::for_display(&Display::default().unwrap())
+            .is_gtk_application_prefer_dark_theme()
+        {
+            content = content
+                .replace(r"#424242;", r"#d4d2d2;")
+                .replace(r"white;", r"black;")
+        }
+
+        css::load_css_into_app(&content);
+    });
     app.connect_activate(move |app| {
         let args_clone = Rc::clone(&args);
         build_ui(app, args_clone)
@@ -55,7 +84,10 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     // let cursor_pointer = Cursor::from_name("pointer", None);
 
-    let search = gtk::SearchEntry::builder().width_request(500).build();
+    let search = gtk::SearchEntry::builder()
+        .css_name("search")
+        .width_request(500)
+        .build();
     let empty_label = gtk::Label::new(Some(""));
     let headerbar = gtk::HeaderBar::builder().build();
 
@@ -83,17 +115,22 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     let scroll_clone = scroll.clone();
 
+    let previous_css_provider = Rc::new(RefCell::new(CssProvider::new()));
+
     if let Some(dev_build) = args.borrow().get(1) {
         tab1.url = dev_build.to_string();
 
-        if let Ok(htmlview) = b9::html::build_ui(tab1) {
+        if let Ok((htmlview, provider)) = b9::html::build_ui(tab1, None) {
             scroll_clone.set_child(Some(&htmlview));
+            *previous_css_provider.borrow_mut() = provider;
         } else {
             println!("ERROR: HTML engine failed.");
         }
     }
 
     search.connect_activate(move |query| {
+        let previous_css_provider_clone = Rc::clone(&previous_css_provider);
+
         let mut tab_in_closure = current_tab.clone();
 
         let url = query.text().to_string();
@@ -110,9 +147,10 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             println!("ERROR: Failed to set focus on search bar. Root is None.");
         }
 
-        match b9::html::build_ui(tab_in_closure.clone()) {
-            Ok(htmlview) => {
+        match b9::html::build_ui(tab_in_closure.clone(), Some(previous_css_provider_clone.take())) {
+            Ok((htmlview, provider)) => {
                 scroll_clone.set_child(Some(&htmlview));
+                *previous_css_provider.borrow_mut() = provider;
             }
             Err(e) => {
                 tab_in_closure.label_widget.set_label(&e.to_string());

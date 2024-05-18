@@ -6,6 +6,7 @@ use glib::GString;
 use gtk::{gdk::Display, prelude::*, CssProvider};
 
 static CSS_RULES: Mutex<Option<HashMap<String, Vec<(String, String)>>>> = Mutex::new(None); // shut the fuck up
+
 static DEFAULT_CSS: &str = r"
 body {
     gap: 10;
@@ -117,6 +118,7 @@ impl Styleable for gtk::Label {
             let mut final_css = "".to_string();
 
             classes.push(self.css_name());
+            println!("\n\n--------------\nstyling {:?} with the css: {:?}\n---------------\n\n", classes, css);
 
             self.set_use_markup(true);
 
@@ -692,8 +694,9 @@ fn get_rule(rules: &Vec<(String, String)>, property: &str, default_value: &str) 
         .to_owned()
 }
 
-pub(crate) fn load_css_into_app(content: &str) {
+pub(crate) fn load_css_into_app(content: &str) -> CssProvider {
     let provider = CssProvider::new();
+    
     provider.load_from_string(content);
 
     gtk::style_context_add_provider_for_display(
@@ -701,6 +704,8 @@ pub(crate) fn load_css_into_app(content: &str) {
         &provider,
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
+
+    provider
 }
 
 // shithole

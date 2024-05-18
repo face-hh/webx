@@ -9,7 +9,7 @@ use super::{
 
 use std::{cell::RefCell, fs, rc::Rc, thread};
 
-use gtk::{gdk_pixbuf, gio, glib::Bytes, prelude::*};
+use gtk::{gdk::Display, gdk_pixbuf, gio, glib::Bytes, prelude::*, CssProvider};
 use html_parser::{Dom, Element, Node, Result};
 
 use lua::Luable;
@@ -64,7 +64,10 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
 }
 
 #[tokio::main]
-pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
+pub async fn build_ui(
+    tab: Tab,
+    previous_css_provider: Option<CssProvider>,
+) -> Result<(gtk::Box, CssProvider)> {
     css::reset_css();
 
     let tags = Rc::new(RefCell::new(Vec::new()));
@@ -135,7 +138,14 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
         }
     }
 
-    css::load_css_into_app(&css);
+    if previous_css_provider.is_some() {
+        println!("removing css!");
+        gtk::style_context_remove_provider_for_display(
+            &Display::default().unwrap(),
+            &previous_css_provider.unwrap(),
+        );
+    }
+    let provider = css::load_css_into_app(&css);
 
     let mut src = String::new();
     for element in head_elements.children.iter() {
@@ -185,7 +195,7 @@ pub async fn build_ui(tab: Tab) -> Result<gtk::Box> {
         tag.tied_variables = tied_variables;
     }
 
-    Ok(html_view)
+    Ok((html_view, provider))
 }
 
 async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell<&Tab>>) {
