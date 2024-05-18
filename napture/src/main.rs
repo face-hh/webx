@@ -10,6 +10,7 @@ macro_rules! lualog {
             "error" => "<span foreground=\"#ff3333\">ERROR:</span> ",
             "warning" => "<span foreground=\"#ffcc00\">WARNING</span>: ",
             "debug" => "<span foreground=\"#7bbcb6\">DEBUG</span>: ",
+            "lua" => "<span foreground=\"#a89332\">LUA</span>: ",
             _ => "",
         };
 
@@ -294,7 +295,7 @@ fn fetch_dns(url: String) -> String {
 
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
 
-    let url = format!(
+    let clienturl = format!(
         "https://api.buss.lol/domain/{}/{}",
         url.split('.').nth(0).unwrap_or(""),
         url.split('.').nth(1).unwrap_or(""),
@@ -304,25 +305,25 @@ fn fetch_dns(url: String) -> String {
         Ok(client) => client,
         Err(e) => {
             eprintln!(
-                "ERROR: Couldn't build reqwest client, returning empty string: {}",
+                "ERROR: Couldn't build reqwest client: {}",
                 e
             );
-            return String::new();
+            return url;
         }
     };
 
-    if let Ok(response) = client.get(&url).send() {
+    if let Ok(response) = client.get(&clienturl).send() {
         let status = response.status();
 
         if let Ok(json) = response.json::<DomainInfo>() {
             json.ip
         } else {
-            lualog!("error", format!("Failed to parse response body from DNS API. Error code: {}", status.as_u16()));
-            String::new()
+            lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}. Returning original URL.", status.as_u16()));
+            url
         }
     } else {
-        lualog!("error", "Failed to send HTTP request to DNS API. Perhaps no internet connection?");
-        String::new()
+        lualog!("debug", "Failed to send HTTP request to DNS API. Returning original URL.");
+        url
     }
 }
 

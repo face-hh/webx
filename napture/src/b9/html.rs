@@ -82,7 +82,7 @@ pub async fn build_ui(
         .build();
 
     let mut css: String = css::reset_css();
-
+    
     let (head, body) = match parse_html(tab.url.clone()).await {
         Ok(ok) => ok,
         Err(e) => {

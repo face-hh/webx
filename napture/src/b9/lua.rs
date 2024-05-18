@@ -127,7 +127,7 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
         }
     }
 
-    lualog!("debug", output);
+    lualog!("lua", output);
     println!("{}", output);
     Ok(())
 }
@@ -195,8 +195,8 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
                 Err(e) => {
                     let errcode_clone = Rc::clone(&errcode);
 
-                    lualog!("error", format!("failed to parse response body: {}", e));
-                    let mut map = Map::new();
+                    lualog!("lua", format!("ERROR: failed to parse response body: {}", e));
+                    let mut map: Map<String, serde_json::Value> = Map::new();
 
                     map.insert("status".to_owned(), serde_json::Value::Number(serde_json::Number::from_f64(*errcode_clone.borrow() as f64).unwrap()));
                                         
@@ -212,7 +212,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
             Err(_) => {
                 lualog!(
                     "error",
-                    format!("Failed to join request thread at fetch request.")
+                    format!("Failed to join request thread at fetch request. Originates from the Lua runtime. Returning null.")
                 );
                 serde_json::Value::Null
             }
