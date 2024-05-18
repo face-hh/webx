@@ -366,6 +366,44 @@ impl Styleable for gtk::Box {
     }
 }
 
+impl Styleable for gtk::ScrolledWindow {
+    fn style(&self) -> String {
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkBox.");
+                return String::new();
+            }
+        };
+
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
+
+            classes.push(self.css_name());
+
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let properties: Properties = get_properties(rules);
+
+                    final_css += &format!(
+                        "
+                {} {{
+                    background-color: {};
+                }}
+                ",
+                        class,
+                        properties.background_color,
+                    );
+                }
+            }
+
+            final_css
+        } else {
+            String::new()
+        }
+    }
+}
 // textarea
 impl Styleable for gtk::TextView {
     fn style(&self) -> String {

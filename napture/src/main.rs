@@ -36,6 +36,7 @@ glib::wrapper! {
 }
 
 use b9::css;
+use b9::css::Styleable;
 use glib::Object;
 
 use globals::LUA_LOGS;
@@ -65,7 +66,11 @@ fn main() -> glib::ExitCode {
     let app = adw::Application::builder().application_id(APP_ID).build();
 
     app.connect_startup(|_| {
-        let mut content = r"tab {
+        let mut content = r"
+        tab-label {
+            margin-bottom: 2px;
+        }
+        tab {
             background-color: #424242;
             border-radius: 12px;
             padding: 10px;
@@ -134,7 +139,9 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     window.set_titlebar(Some(&headerbar));
 
-    let scroll = gtk::ScrolledWindow::builder().build();
+    let scroll = gtk::ScrolledWindow::builder().css_name("body").build();
+
+    scroll.style();
 
     let scroll_clone = scroll.clone();
 
