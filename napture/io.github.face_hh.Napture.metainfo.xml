@@ -43,7 +43,7 @@
         <release version="1.0.0" date="2024-05-15">
             <url type="details">https://github.com/face-hh/webx/releases/tag/v1.0.0</url>
             <description>
-                <code>readme</code>
+                <p><code>readme</code></p>
             </description>
         </release>
     </releases>
