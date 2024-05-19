@@ -161,7 +161,11 @@ pub async fn build_ui(
     let tagss = Rc::clone(&tags);
 
     if !src.is_empty() {
-        let luacode = fetch_file(tab.url.clone() + "/" + &src).await;
+        let luacode = if src.starts_with("https://") {
+            fetch_file(src).await
+        } else {
+            fetch_file(tab.url.clone() + "/" + &src).await
+        };
 
         if let Err(e) = super::lua::run(luacode, tags).await {
             println!("ERROR: Failed to run lua: {}", e);
