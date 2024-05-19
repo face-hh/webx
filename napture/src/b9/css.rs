@@ -332,32 +332,7 @@ impl Styleable for gtk::Box {
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
 
-                    final_css += &format!(
-                        "
-                .{} {{
-                    color: {};
-                    background-color: {};
-                    font-size: {};
-                    font-family: {};
-
-                    border-style: {};
-                    border-color: {};
-                    border-width: {};
-                    border-radius: {};
-                    padding: {};
-                }}
-                ",
-                        class,
-                        properties.color,
-                        properties.background_color,
-                        properties.font_size,
-                        properties.font_family,
-                        properties.border_style,
-                        properties.border_color,
-                        properties.border_width,
-                        properties.border_radius,
-                        properties.padding
-                    );
+                    final_css += &compute_styling(class, &properties);
                 }
             }
 
@@ -438,33 +413,7 @@ impl Styleable for gtk::TextView {
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
 
-                    final_css += &format!(
-                        "
-                .{} {{
-                    color: {};
-                    background-color: {};
-                    font-size: {};
-                    font-family: {};
-
-                    border-style: {};
-                    border-color: {};
-                    border-width: {};
-                    border-radius: {};
-                    padding: {};
-
-                }}
-                ",
-                        class,
-                        properties.color,
-                        properties.background_color,
-                        properties.font_size,
-                        properties.font_family,
-                        properties.border_style,
-                        properties.border_color,
-                        properties.border_width,
-                        properties.border_radius,
-                        properties.padding
-                    );
+                    final_css += &compute_styling(class, &properties);
                 }
             }
 
@@ -509,32 +458,7 @@ impl Styleable for gtk::Picture {
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
 
-                    final_css += &format!(
-                        "
-                {} {{
-                    color: {};
-                    background-color: {};
-                    font-size: {};
-                    font-family: {};
-
-                    border-style: {};
-                    border-color: {};
-                    border-width: {};
-                    border-radius: {};
-                    padding: {};
-                }}
-                ",
-                        class,
-                        properties.color,
-                        properties.background_color,
-                        properties.font_size,
-                        properties.font_family,
-                        properties.border_style,
-                        properties.border_color,
-                        properties.border_width,
-                        properties.border_radius,
-                        properties.padding
-                    );
+                    final_css += &compute_styling(class, &properties);
                 }
             }
 
@@ -576,32 +500,7 @@ impl Styleable for gtk::Entry {
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
 
-                    final_css += &format!(
-                        "
-                {} {{
-                    color: {};
-                    background-color: {};
-                    font-size: {};
-                    font-family: {};
-
-                    border-style: {};
-                    border-color: {};
-                    border-width: {};
-                    border-radius: {};
-                    padding: {};
-                }}
-                ",
-                        class,
-                        properties.color,
-                        properties.background_color,
-                        properties.font_size,
-                        properties.font_family,
-                        properties.border_style,
-                        properties.border_color,
-                        properties.border_width,
-                        properties.border_radius,
-                        properties.padding
-                    );
+                    final_css += &compute_styling(class, &properties);
                 }
             }
 
@@ -638,32 +537,7 @@ impl Styleable for gtk::Button {
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
 
-                    final_css += &format!(
-                        "
-                {} {{
-                    color: {};
-                    background-color: {};
-                    font-size: {};
-                    font-family: {};
-
-                    border-style: {};
-                    border-color: {};
-                    border-width: {};
-                    border-radius: {};
-                    padding: {};
-                }}
-                ",
-                        class,
-                        properties.color,
-                        properties.background_color,
-                        properties.font_size,
-                        properties.font_family,
-                        properties.border_style,
-                        properties.border_color,
-                        properties.border_width,
-                        properties.border_radius,
-                        properties.padding
-                    );
+                    final_css += &compute_styling(class, &properties);
                 }
             }
 
@@ -743,6 +617,44 @@ pub(crate) fn load_css_into_app(content: &str) -> CssProvider {
     );
 
     provider
+}
+
+fn compute_styling(class: GString, properties: &Properties) -> String {
+    let mut borders = String::new();
+
+    if properties.border_color != "black" {
+        borders.push_str(&format!("border-color: {};", properties.border_color));
+    }
+    if properties.border_width != "0" {
+        borders.push_str(&format!("border-width: {};", properties.border_width));
+    }
+    if properties.border_radius != "0" {
+        borders.push_str(&format!("border-radius: {};", properties.border_radius));
+    }
+    if properties.border_style != "none" {
+        borders.push_str(&format!("border-style: {};", properties.border_style));
+    }
+
+    format!(
+        "
+.{} {{
+    color: {};
+    background-color: {};
+    font-size: {};
+    font-family: {};
+
+    {}
+    padding: {};
+}}
+",
+        class,
+        properties.color,
+        properties.background_color,
+        properties.font_size,
+        properties.font_family,
+        borders,
+        properties.padding
+    )
 }
 
 // shithole
