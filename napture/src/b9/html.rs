@@ -50,6 +50,7 @@ async fn parse_html(url: String) -> Result<(Node, Node)> {
 }
 
 fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
+    println!("{:?}", elements);
     for element in elements {
         if element.element()?.name == name {
             return Some(element.to_owned());
