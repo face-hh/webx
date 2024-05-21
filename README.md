@@ -104,18 +104,16 @@ For those coming from the traditional web...
 ```diff
 - 1. const test = document.querySelector(".classExample");
 - 2. test.textContent = "abc";
-- 3. (async () => {})()
-- 4. test.href = "https://ok.test"
-- 5. console.log(test.href)
-- 6. test.addEventListener("click", () => {})
-- 7. test.addEventListener("submit", () => {})
+- 3. test.href = "https://ok.test"
+- 4. console.log(test.href)
+- 5. test.addEventListener("click", () => {})
+- 6. test.addEventListener("submit", () => {})
 + 1. local test = get("classExample")
 + 2. test.set_content("abc");
-+ 3. coroutine.wrap(function())
-+ 4. test.set_href("buss://register.it")
-+ 5. print(test.get_href())
-+ 6. test.on_click(function())
-+ 7. test.on_submit(function())
++ 3. test.set_href("buss://register.it")
++ 4. print(test.get_href())
++ 5. test.on_click(function())
++ 6. test.on_submit(function())
 ```
 
 I believe you'd get a better understand if you explored the [registrar](https://github.com/face-hh/webx-registrar) repository's `script.lua`.
