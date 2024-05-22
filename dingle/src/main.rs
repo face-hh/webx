@@ -10,13 +10,17 @@ use index::{DocumentMap, Simple, SimpleOccurences};
 use query::Query;
 use regex::Regex;
 use rocket::serde::{json::Json, Deserialize, Serialize};
-use std::{collections::HashSet, sync::{Arc, Mutex}};
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 use utils::Website;
 
 #[derive(Serialize)]
 struct SearchResult {
     domain: String,
     rating: f32,
+    title: String,
 }
 
 #[derive(Deserialize)]
@@ -24,8 +28,16 @@ struct SearchQuery {
     query: String,
 }
 
-async fn fetch_content(website: &Website) -> Result<String, html_parser::Error> {
+#[derive(Debug, Clone)]
+struct Ids {
+    site: String,
+    content: String,
+    title: String,
+}
+
+async fn fetch_content(website: &Website) -> Result<(String, String), html_parser::Error> {
     let mut content = String::new();
+    let mut title = String::new();
 
     let url = utils::fetch_dns(website.clone().name, website.clone().tld).await;
 
@@ -39,8 +51,9 @@ async fn fetch_content(website: &Website) -> Result<String, html_parser::Error> 
 
     for element in head.element().unwrap().children.iter() {
         if let Some(element) = element.element() {
-            let meta_content = render_head(element).await;
+            let (meta_content, title_) = render_head(element).await;
 
+            title.push_str(&title_);
             content.push_str(&format!("{} ", meta_content));
         }
     }
@@ -64,11 +77,12 @@ async fn fetch_content(website: &Website) -> Result<String, html_parser::Error> 
         return Err(html_parser::Error::Parsing("Empty content".to_owned()));
     }
 
-    Ok(res.to_lowercase())
+    Ok((res.to_lowercase(), title))
 }
 
-async fn render_head(element: &Element) -> String {
+async fn render_head(element: &Element) -> (String, String) {
     let mut content = String::new();
+    let mut title = String::new();
 
     match element.name.as_str() {
         "meta" => {
@@ -78,11 +92,16 @@ async fn render_head(element: &Element) -> String {
                 }
             }
         }
+        "title" => {
+            if let Some(contents) = element.children.first() {
+                title.push_str(contents.text().unwrap_or_default())
+            }
+        }
         _ => {
             println!("Unknown head element: {}", element.name);
         }
     }
-    content
+    (content, title)
 }
 
 fn render_body(element: &Element, contents: Option<&Node>) -> String {
@@ -149,12 +168,13 @@ fn augment_simple<'a>(
     index: &'a Simple,
     map: &DocumentMap,
     proximate_map: &'a ProximateMap,
-    ids: Vec<(String, String)>,
+    ids: Vec<Ids>,
 ) -> SimpleOccurences<'a> {
     let mut occurences = SimpleOccurences::new(index, proximate_map);
-    for (id, content) in ids {
-        occurences.add_document(map.get_id(&id).unwrap(), Arc::new(content));
+    for id in ids {
+        occurences.add_document(map.get_id(&id.site).unwrap(), Arc::new(id.content));
     }
+
     occurences
 }
 
@@ -173,61 +193,70 @@ fn query_and(
     query: String,
     map: &DocumentMap,
     index: &Simple,
-    ids: &Vec<(String, String)>,
+    ids: &Vec<Ids>,
 ) -> Vec<SearchResult> {
     let q = pq(&query);
     let mut docs = q.documents(index);
     let proximate_map = docs.take_proximate_map();
-    let occ_provider = augment_simple(index, map, &proximate_map, ids.clone());
+    let occ_provider = augment_simple(index, map, &proximate_map, ids.clone().to_vec());
     let occurrences = q.occurrences(&occ_provider, 100).unwrap();
+
+    let mut unique_domains: HashSet<String> = HashSet::new();
 
     let mut results = occurrences
         .map(|occ| {
             let id = format!("{:?}", occ.id());
             let id = parse_int(&id).unwrap_or_default();
-            let id = take(ids.clone(), id as usize).unwrap().0.clone();
+            let id = take(ids.clone(), id as usize).unwrap();
             SearchResult {
-                domain: id,
+                domain: id.site,
                 rating: occ.rating(),
+                title: id.title,
             }
         })
         .collect::<Vec<_>>();
-
-    let mut unique_domains: HashSet<String> = HashSet::new();
     
-    results.extend((0..10).filter_map(|i| {
-        match take(ids.clone(), i) {
-            Some((domain, _)) => {
-                if unique_domains.contains(&domain) {
-                    None
-                } else {
-                    unique_domains.insert(domain.clone());
-                    Some(SearchResult {
-                        domain,
-                        rating: -999.0,
-                    })
-                }
+    results.sort_by(|a, b| a.domain.cmp(&b.domain));
+    results.dedup_by(|a, b| a.domain == b.domain);
+
+    results.extend((0..10).filter_map(|i| match take(ids.clone(), i) {
+        Some(id) => {
+            if unique_domains.contains(&id.site) {
+                None
+            } else {
+                unique_domains.insert(id.site.clone());
+                Some(SearchResult {
+                    domain: id.site,
+                    rating: -999.0,
+                    title: id.title,
+                })
             }
-            None => None,
         }
+        None => None,
     }));
 
     results
 }
-async fn abc() -> (DocumentMap, Simple, Vec<(String, String)>) {
+async fn abc() -> (DocumentMap, Simple, Vec<Ids>) {
     let mut map = DocumentMap::new();
     let mut index = Simple::default();
-    let mut ids: Vec<(String, String)> = Vec::new();
+    let mut ids: Vec<Ids> = Vec::new();
     let websites = utils::get_websites().await;
 
     for website in websites {
-        let content = match fetch_content(&website).await {
-            Ok(content) => content,
+        let (content, title) = match fetch_content(&website).await {
+            Ok((content, title)) => (content, title),
             Err(_) => continue,
         };
+
         let domain = website.name + "." + &website.tld;
+
         map.insert(&domain, &content, &mut index);
-        ids.push((domain, content));
+        ids.push(Ids {
+            site: domain,
+            content,
+            title,
+        });
     }
 
     println!("{:?}", ids);
@@ -237,7 +266,7 @@ async fn abc() -> (DocumentMap, Simple, Vec<(String, String)>) {
 #[post("/search", format = "json", data = "<query>")]
 async fn search(
     query: Json<SearchQuery>,
-    global_data: &rocket::State<Arc<Mutex<(DocumentMap, Simple, Vec<(String, String)>)>>>,
+    global_data: &rocket::State<Arc<Mutex<(DocumentMap, Simple, Vec<Ids>)>>>,
 ) -> Json<Vec<SearchResult>> {
     let data = global_data.lock().unwrap();
     let results = query_and(query.query.clone(), &data.0, &data.1, &data.2);
@@ -252,16 +281,14 @@ async fn main() {
         Vec::new(),
     )));
 
-    let global_data_ = global_data.clone();
-    tokio::spawn(async move {
-        let mut interval = tokio::time::interval(std::time::Duration::from_secs(60 * 10));
-        loop {
-            interval.tick().await;
-            let (map, index, ids) = abc().await;
-            let mut data = global_data_.lock().unwrap();
-            *data = (map, index, ids);
-        }
-    });
+    let a = global_data.clone();
+    let aa = a.clone();
+
+    let (map, index, ids) = abc().await;
+    {
+        let mut data = aa.lock().unwrap();
+        *data = (map, index, ids);
+    }
 
     rocket::build()
         .manage(global_data)
@@ -269,4 +296,18 @@ async fn main() {
         .launch()
         .await
         .unwrap();
+
+    tokio::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(1800)).await;
+
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(1800));
+            loop {
+                interval.tick().await;
+                let (map, index, ids) = abc().await;
+                let mut data = a.lock().unwrap();
+                *data = (map, index, ids);
+            }
+        });
+    });
 }
