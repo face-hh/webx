@@ -112,6 +112,48 @@ fn main() -> glib::ExitCode {
     app.run_with_args(&[""])
 }
 
+fn handle_search_activate(
+    scroll_clone: Rc<RefCell<gtk::ScrolledWindow>>,
+    previous_css_provider: Rc<RefCell<CssProvider>>,
+    current_tab: Rc<RefCell<Tab>>,
+    query_: Rc<RefCell<gtk::SearchEntry>>,
+) {
+    let previous_css_provider_clone = Rc::clone(&previous_css_provider);
+
+    let mut tab_in_closure = current_tab.borrow_mut();
+    let c = query_.clone();
+    let query = c.borrow_mut();
+
+    let url = query.text().to_string();
+    let dns_url = fetch_dns(url.clone());
+
+    tab_in_closure.url = dns_url;
+
+    query.set_text(&url.replace("buss://", ""));
+    query.set_position(-1);
+
+    if let Some(root) = query.root() {
+        root.set_focus(None as Option<&gtk::Widget>)
+    } else {
+        println!("ERROR: Failed to set focus on search bar. Root is None.");
+    }
+
+    match b9::html::build_ui(
+        tab_in_closure.clone(),
+        Some(previous_css_provider_clone.take()),
+        scroll_clone.clone(),
+        query_,
+    ) {
+        Ok((htmlview, provider)) => {
+            scroll_clone.borrow_mut().set_child(Some(&htmlview));
+            *previous_css_provider.borrow_mut() = provider;
+        }
+        Err(e) => {
+            tab_in_closure.label_widget.set_label(&e.to_string());
+        }
+    };
+}
+
 fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let tabs: Vec<Tab> = vec![];
 
@@ -152,15 +194,18 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     let scroll_clone = scroll.clone();
 
-    let previous_css_provider = Rc::new(RefCell::new(CssProvider::new()));
+    let rc_css_provider = Rc::new(RefCell::new(CssProvider::new()));
+    let rc_scroll = Rc::new(RefCell::new(scroll.clone()));
+    let rc_tab = Rc::new(RefCell::new(current_tab.clone()));
+    let rc_search = Rc::new(RefCell::new(search.clone()));
 
     // CLI command
     if let Some(dev_build) = args.borrow().get(1) {
         tab1.url = dev_build.to_string();
 
-        if let Ok((htmlview, provider)) = b9::html::build_ui(tab1, None) {
+        if let Ok((htmlview, provider)) = b9::html::build_ui(tab1, None, rc_scroll.clone(), rc_search.clone()) {
             scroll_clone.set_child(Some(&htmlview));
-            *previous_css_provider.borrow_mut() = provider;
+            *rc_css_provider.borrow_mut() = provider;
         } else {
             println!("ERROR: HTML engine failed.");
         }
@@ -168,36 +213,11 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     // search bar
     search.connect_activate(move |query| {
-        let previous_css_provider_clone = Rc::clone(&previous_css_provider);
+        let pprevious_css_provider = Rc::clone(&rc_css_provider);
+        let scroll_clonee = Rc::clone(&rc_scroll);
+        let tabb = Rc::clone(&rc_tab);
 
-        let mut tab_in_closure = current_tab.clone();
-
-        let url = query.text().to_string();
-        let dns_url = fetch_dns(url.clone());
-
-        tab_in_closure.url = dns_url;
-
-        query.set_text(&url.replace("buss://", ""));
-        query.set_position(-1);
-
-        if let Some(root) = query.root() {
-            root.set_focus(None as Option<&gtk::Widget>)
-        } else {
-            println!("ERROR: Failed to set focus on search bar. Root is None.");
-        }
-
-        match b9::html::build_ui(
-            tab_in_closure.clone(),
-            Some(previous_css_provider_clone.take()),
-        ) {
-            Ok((htmlview, provider)) => {
-                scroll_clone.set_child(Some(&htmlview));
-                *previous_css_provider.borrow_mut() = provider;
-            }
-            Err(e) => {
-                tab_in_closure.label_widget.set_label(&e.to_string());
-            }
-        };
+        handle_search_activate(scroll_clonee, pprevious_css_provider, tabb, Rc::new(RefCell::new(query.clone())));
     });
 
     let app_ = Rc::new(RefCell::new(app.clone()));
@@ -230,7 +250,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         .build();
 
     nav.append(&scroll);
-    
+
     window.set_child(Some(&nav));
 
     window.set_default_size(500, 500);
@@ -291,7 +311,7 @@ fn make_tab(
             .authors(["facedev"])
             .logo(&logo)
             .build();
- 
+
         dialog.present();
     });
 

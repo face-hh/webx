@@ -68,6 +68,8 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
 pub async fn build_ui(
     tab: Tab,
     previous_css_provider: Option<CssProvider>,
+    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    searchbar: Rc<RefCell<gtk::SearchEntry>>,
 ) -> Result<(gtk::Box, CssProvider)> {
     css::reset_css();
 
@@ -135,6 +137,10 @@ pub async fn build_ui(
                 false,
                 tags.clone(),
                 &mut css,
+                scroll.clone(),
+                previous_css_provider.clone(),
+                searchbar.clone(),
+                Rc::new(RefCell::new(tab.clone())),
             );
         }
     }
@@ -152,8 +158,8 @@ pub async fn build_ui(
         if let Some(element) = element.element() {
             if element.name == "script" {
                 if let Some(Some(src_attr)) = element.attributes.get("src") {
-                        src = src_attr.to_string();
-                        break;
+                    src = src_attr.to_string();
+                    break;
                 }
             }
         }
@@ -247,6 +253,10 @@ fn render_html(
     recursive: bool,
     tags: Rc<RefCell<Vec<Tag>>>,
     css: &mut String,
+    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    previous_css_provider: Option<CssProvider>,
+    searchbar: Rc<RefCell<gtk::SearchEntry>>,
+    current_tab: Rc<RefCell<Tab>>,
 ) {
     let mut html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -280,6 +290,10 @@ fn render_html(
                         true,
                         tags.clone(),
                         css,
+                        scroll.clone(),
+                        previous_css_provider.clone(),
+                        searchbar.clone(),
+                        current_tab.clone(),
                     );
                 }
             }
@@ -313,7 +327,18 @@ fn render_html(
                         });
                     }
                     Node::Element(el) => {
-                        render_html(el, el.children.first(), html_view, true, tags.clone(), css);
+                        render_html(
+                            el,
+                            el.children.first(),
+                            html_view,
+                            true,
+                            tags.clone(),
+                            css,
+                            scroll.clone(),
+                            previous_css_provider.clone(),
+                            searchbar,
+                            current_tab.clone(),
+                        );
                     }
                     _ => {}
                 }
@@ -349,7 +374,16 @@ fn render_html(
                     }
                     Node::Element(el) => {
                         if el.name.as_str() == "a" {
-                            render_a(el, label_box.clone(), tags.clone(), css);
+                            render_a(
+                                el,
+                                label_box.clone(),
+                                tags.clone(),
+                                css,
+                                scroll.clone(),
+                                previous_css_provider.clone(),
+                                searchbar.clone(),
+                                current_tab.clone(),
+                            );
                         } else {
                             render_html(
                                 el,
@@ -358,6 +392,10 @@ fn render_html(
                                 true,
                                 tags.clone(),
                                 css,
+                                scroll.clone(),
+                                previous_css_provider.clone(),
+                                searchbar.clone(),
+                                current_tab.clone(),
                             );
                         }
                     }
@@ -366,7 +404,16 @@ fn render_html(
             }
         }
         "a" => {
-            render_a(element, html_view, tags, css);
+            render_a(
+                element,
+                html_view,
+                tags,
+                css,
+                scroll.clone(),
+                previous_css_provider.clone(),
+                searchbar.clone(),
+                current_tab.clone(),
+            );
         }
         "ul" | "ol" => {
             let list_box = gtk::Box::builder()
@@ -564,7 +611,16 @@ fn render_html(
     }
 }
 
-fn render_a(el: &Element, label_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>, css: &mut String) {
+fn render_a(
+    el: &Element,
+    label_box: gtk::Box,
+    tags: Rc<RefCell<Vec<Tag>>>,
+    css: &mut String,
+    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    previous_css_provider: Option<CssProvider>,
+    searchbar: Rc<RefCell<gtk::SearchEntry>>,
+    current_tab: Rc<RefCell<Tab>>,
+) {
     let uri = match el.attributes.get("href") {
         Some(Some(uri)) => uri.clone(),
         _ => {
@@ -580,6 +636,32 @@ fn render_a(el: &Element, label_box: gtk::Box, tags: Rc<RefCell<Vec<Tag>>>, css:
         .css_classes(el.classes.clone())
         .halign(gtk::Align::Start)
         .build();
+
+    let rc_css_prov = Rc::new(RefCell::new(
+        previous_css_provider.unwrap_or(CssProvider::new()),
+    ));
+
+    link_button.connect_activate_link(move |btn| {
+        let scroll = Rc::clone(&scroll);
+        let css_prov = Rc::clone(&rc_css_prov);
+
+        let current_tab = Rc::clone(&current_tab);
+        let searchbar = Rc::clone(&searchbar);
+
+        let uri = btn.uri();
+
+        if !uri.starts_with("buss://") {
+            return glib::Propagation::Proceed;
+        }
+
+        let uri = uri.replace("buss://", "");
+
+        searchbar.borrow_mut().set_text(&uri);
+
+        crate::handle_search_activate(scroll, css_prov, current_tab, searchbar);
+
+        glib::Propagation::Stop
+    });
 
     css.push_str(&link_button.style());
 

@@ -20,7 +20,7 @@ get("textarea").on_input(function(content)
     print(content)
 end)
 
-get("futurelink").set_href("https://www.duckduckgo.com/")
+-- get("futurelink").set_href("https://www.duckduckgo.com/")
 
 coroutine.wrap(function()
 	local res = fetch({
