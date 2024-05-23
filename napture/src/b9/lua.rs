@@ -5,7 +5,7 @@ use std::thread;
 use super::css::Styleable;
 use super::html::Tag;
 use gtk::prelude::*;
-use mlua::prelude::*;
+use mlua::{prelude::*, StdLib};
 
 use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
@@ -134,7 +134,11 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
 
 // todo: make this async if shit breaks
 pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
-    let lua = Lua::new();
+    let lua = Lua::new_with(
+        StdLib::COROUTINE | StdLib::STRING |
+        StdLib::TABLE | StdLib::MATH,
+        LuaOptions::new().catch_rust_panics(true)
+    )?;
     let globals = lua.globals();
 
     let fetchtest = lua.create_async_function(|lua, params: LuaTable| async move {
