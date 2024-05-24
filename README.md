@@ -3,7 +3,7 @@
 An alternative to the World Wide Web (`http(s)://`), with:
 - its own **custom browser** written in Rust with [GTK](https://gtk.org/),
 - custom HTML, CSS and ***Lua*** engine (yup, **no javascript! 🎉**),
-- custom **DNS** allowing websites such as `buss://ohio.rizz`,
+- custom **DNS** allowing Top-Level domains such as `rizz`, `sigma`, `lol`, `dev`, etc,
 - and **search engine** at `buss://dingle.it`.
 
 ![Preview of buss://register.it, the frontend for registering domains](.github_assets/image.png)
