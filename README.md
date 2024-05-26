@@ -40,7 +40,22 @@ Welcome to Gaming OS 🙂
 9. Open a terminal in the folder with `napture/`, run `cargo run`.
 
 # Register website
-To register a website, navigate to `buss://register.it` **through Bussin Napture**.
+So you wish to publish a website to Web X? Great! Let's go through the rules:
+
+1. If your website contains Not Safe For Work material of any kind, it will be removed.
+2. If your website contains frequent racial slurs, references made in bad faith to tragic events, racism towards other races, or anything of that kind, it will be removed.
+3. If your website is dedicated to the publication of private information, it will be removed.
+4. If your website is actively engaged in leaking information about incoming traffic (i.e., posting the IPs of users), it will be removed.
+5. If your website displays content that violates law or regulations, including but not limited to, piracy, hacking, or illegal activities such as drug usage, will result in a removal.
+6. If your website contains or distributes malware, viruses, or any other harmful software, it will be removed.
+7. If your website is dedicated to harassment, bullying, or targeted attacks against individuals or groups, it will be removed.
+8. If your website infringes upon intellectual property rights of others, it will be removed.
+9. If your website is involved in fradulent activities, scams, or deceptive practices, it will be removed.
+10. If your website contains content that encourages harmful behavior, including self-harm, suicide, substance abuse, or dangerous challanges, it will be removed.
+
+By publishing content to this platform ("Bussin Napture"/"Bussin Web X"), you agree to comply with all rules and regulations set forth by the administrators. The administrators reserve the right to interpret and enforce these rules at their discretion.
+
+Now, to register a website, navigate to `buss://register.it` **through Bussin Napture**.
 
 You will see this interface.
 ![Preview of buss://register.it, the frontend for registering domains](.github_assets/image.png)
