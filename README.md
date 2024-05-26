@@ -22,8 +22,40 @@ An alternative to the World Wide Web (`http(s)://`), with:
 ## Windows
 - Install the executable from the release tab. It's a self-extractor with WinRAR because it has a lot of DLLs.
 
+# Download and Compile
+## Linux
+Install [Rust](https://www.rust-lang.org/tools/install) if you haven't already.
+It should work by default, but if you're getting errors such as "missing PC files", you should Google it. Most likely you just have to install a library
+
+## Windows
+Welcome to Gaming OS 🙂
+1. Download [Rust](https://www.rust-lang.org/tools/install)
+2. Download GNU target: `rustup toolchain install stable-gnu && rustup default stable-gnu`
+3. Download [MSYS32](https://www.msys2.org/)
+4. Open MSYS32 MINGW32
+5. Run: `pacman -Syu` just in case.
+6. Run `pacman -S mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua`
+7. Go to `Settings` -> `Search` and open `Advanced system settings` -> Click on `Environment variables` (or just search "path")
+8. Select `Path` -> Click on `Edit` -> Add the following three entries: `C:\msys64\mingw64\include`, `C:\msys64\mingw64\bin`, and `C:\msys64\mingw64\lib`.
+9. Open a terminal in the folder with `napture/`, run `cargo run`.
+
 # Register website
-To register a website, navigate to `buss://register.it` **through Bussin Napture**.
+So you wish to publish a website to Web X? Great! Let's go through the rules:
+
+1. If your website contains Not Safe For Work material of any kind, it will be removed.
+2. If your website contains frequent racial slurs, references made in bad faith to tragic events, racism towards other races, or anything of that kind, it will be removed.
+3. If your website is dedicated to the publication of private information, it will be removed.
+4. If your website is actively engaged in leaking information about incoming traffic (i.e., posting the IPs of users), it will be removed.
+5. If your website displays content that violates law or regulations, including but not limited to, piracy, hacking, or illegal activities such as drug usage, will result in a removal.
+6. If your website contains or distributes malware, viruses, or any other harmful software, it will be removed.
+7. If your website is dedicated to harassment, bullying, or targeted attacks against individuals or groups, it will be removed.
+8. If your website infringes upon intellectual property rights of others, it will be removed.
+9. If your website is involved in fradulent activities, scams, or deceptive practices, it will be removed.
+10. If your website contains content that encourages harmful behavior, including self-harm, suicide, substance abuse, or dangerous challanges, it will be removed.
+
+By publishing content to this platform ("Bussin Napture"/"Bussin Web X"), you agree to comply with all rules and regulations set forth by the administrators. The administrators reserve the right to interpret and enforce these rules at their discretion. To report websites that are not following the listed rules, please contact `FaceDev` on either [Twitter](https://twitter.com/facedevstuff) or [Discord](https://discord.gg/cNwWvdWj42).
+
+Now, to register a website, navigate to `buss://register.it` **through Bussin Napture**.
 
 You will see this interface.
 ![Preview of buss://register.it, the frontend for registering domains](.github_assets/image.png)
