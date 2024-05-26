@@ -274,6 +274,7 @@ impl Luable for gtk::Label {
 
     fn set_contents(&self, contents: String) {
         self.set_text(&contents);
+        self.style();
     }
     fn set_href(&self, _: String) {
         lualog!(
