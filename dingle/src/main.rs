@@ -21,6 +21,7 @@ struct SearchResult {
     domain: String,
     rating: f32,
     title: String,
+    description: String,
 }
 
 #[derive(Deserialize)]
@@ -33,11 +34,13 @@ struct Ids {
     site: String,
     content: String,
     title: String,
+    description: String,
 }
 
-async fn fetch_content(website: &Website) -> Result<(String, String), html_parser::Error> {
+async fn fetch_content(website: &Website) -> Result<(String, String, String), html_parser::Error> {
     let mut content = String::new();
     let mut title = String::new();
+    let mut description = String::new();
 
     let url = utils::fetch_dns(website.clone().name, website.clone().tld).await;
 
@@ -51,9 +54,10 @@ async fn fetch_content(website: &Website) -> Result<(String, String), html_parse
 
     for element in head.element().unwrap().children.iter() {
         if let Some(element) = element.element() {
-            let (meta_content, title_) = render_head(element).await;
+            let (meta_content, title_, description_) = render_head(element).await;
 
             title.push_str(&title_);
+            description.push_str(&description_);
             content.push_str(&format!("{} ", meta_content));
         }
     }
@@ -77,18 +81,27 @@ async fn fetch_content(website: &Website) -> Result<(String, String), html_parse
         return Err(html_parser::Error::Parsing("Empty content".to_owned()));
     }
 
-    Ok((res.to_lowercase(), title))
+    Ok((res.to_lowercase(), title, description))
 }
 
-async fn render_head(element: &Element) -> (String, String) {
+async fn render_head(element: &Element) -> (String, String, String) {
     let mut content = String::new();
     let mut title = String::new();
+    let mut description = String::new();
 
     match element.name.as_str() {
         "meta" => {
             if let Some(contents) = element.attributes.get("content") {
                 if let Some(contents) = contents {
                     content.push_str(&format!("{} ", contents));
+
+                    if let Some(desc) = element.attributes.get("name") {
+                        if let Some(desc) = desc {
+                            if desc == "description" {
+                                description.push_str(&contents);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -101,7 +114,7 @@ async fn render_head(element: &Element) -> (String, String) {
             println!("Unknown head element: {}", element.name);
         }
     }
-    (content, title)
+    (content, title, description)
 }
 
 fn render_body(element: &Element, contents: Option<&Node>) -> String {
@@ -212,6 +225,7 @@ fn query_and(
                 domain: id.site,
                 rating: occ.rating(),
                 title: id.title,
+                description: id.description,
             }
         })
         .collect::<Vec<_>>();
@@ -229,6 +243,7 @@ fn query_and(
                     domain: id.site,
                     rating: -999.0,
                     title: id.title,
+                    description: id.description
                 })
             }
         }
@@ -244,8 +259,8 @@ async fn abc() -> (DocumentMap, Simple, Vec<Ids>) {
     let websites = utils::get_websites().await;
 
     for website in websites {
-        let (content, title) = match fetch_content(&website).await {
-            Ok((content, title)) => (content, title),
+        let (content, title, description) = match fetch_content(&website).await {
+            Ok((content, title, description)) => (content, title, description),
             Err(_) => continue,
         };
 
@@ -256,6 +271,7 @@ async fn abc() -> (DocumentMap, Simple, Vec<Ids>) {
             site: domain,
             content,
             title,
+            description,
         });
     }
 
@@ -268,7 +284,11 @@ async fn search(
     query: Json<SearchQuery>,
     global_data: &rocket::State<Arc<Mutex<(DocumentMap, Simple, Vec<Ids>)>>>,
 ) -> Json<Vec<SearchResult>> {
-    let data = global_data.lock().unwrap();
+    let data = global_data.lock().unwrap_or_else(|poisoned_data| {
+        let guard = poisoned_data.into_inner();
+        guard
+    });
+
     let results = query_and(query.query.clone(), &data.0, &data.1, &data.2);
     Json(results)
 }
