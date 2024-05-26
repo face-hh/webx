@@ -21,3 +21,6 @@ uuid = { version = "1.8.0", features = ["fast-rng", "v4"] }
 
 [build-dependencies]
 glib-build-tools = "0.19.0"
+
+[profile.release]
+strip = true
