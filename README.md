@@ -53,7 +53,7 @@ So you wish to publish a website to Web X? Great! Let's go through the rules:
 9. If your website is involved in fradulent activities, scams, or deceptive practices, it will be removed.
 10. If your website contains content that encourages harmful behavior, including self-harm, suicide, substance abuse, or dangerous challanges, it will be removed.
 
-By publishing content to this platform ("Bussin Napture"/"Bussin Web X"), you agree to comply with all rules and regulations set forth by the administrators. The administrators reserve the right to interpret and enforce these rules at their discretion.
+By publishing content to this platform ("Bussin Napture"/"Bussin Web X"), you agree to comply with all rules and regulations set forth by the administrators. The administrators reserve the right to interpret and enforce these rules at their discretion. To report websites that are not following the listed rules, please contact `FaceDev` on either [Twitter](https://twitter.com/facedevstuff) or [Discord](https://discord.gg/cNwWvdWj42).
 
 Now, to register a website, navigate to `buss://register.it` **through Bussin Napture**.
 
