@@ -26,6 +26,20 @@
     <url type="vcs-browser">https://github.com/face-hh/webx</url>
     <content_rating type="oars-1.1" />
     <releases>
+        <release version="1.1.1" date="2024-05-19">
+            <url type="details">https://github.com/face-hh/webx/releases/tag/v1.1.1</url>
+            <description>
+              <ul>
+                <li>Fixed misalignment on the tab title and expanded the width to make it match the search bar</li>
+                <li>Fixed body not being fully colored by <code>background-color</code></li>
+                <li>Fixed borders not applying properly</li>
+                <li>Slightly changed the not found page.</li>
+                <li>Added <code>uwu</code> TLD</li>
+                <li>Added support for <code>https://</code> in the <code>script</code> tag</li>
+                <li>Added <em>about</em> popup when clicking the tab title.</li>
+              </ul>
+            </description>
+        </release>
         <release version="1.1.0" date="2024-05-18">
             <url type="details">https://github.com/face-hh/webx/releases/tag/v1.1.0</url>
             <description>
