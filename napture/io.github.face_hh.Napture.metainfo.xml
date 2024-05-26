@@ -11,7 +11,7 @@
             <li>its own <em>custom browser</em> written in Rust with GTK,</li>
             <li>custom HTML, CSS and <em>Lua</em> engine (yup, <em>no javascript! 🎉</em>),
             </li>
-            <li>custom <em>DNS</em> allowing websites such as <code>buss://ohio.rizz</code>,
+            <li>custom <em>DNS</em> allowing Top-Level domains such as <code>rizz</code>, <code>sigma</code>, <code>lol</code>, <code>dev</code>, etc,
             </li>
             <li>and <em>search engine</em> (wip).</li>
         </ul>
