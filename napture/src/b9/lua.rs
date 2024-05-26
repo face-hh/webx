@@ -46,7 +46,7 @@ fn get(
 
     let tags_ref = tags.borrow();
 
-    let mut i2 = 0;
+    let mut i2 = 1;
 
     for (i, tag) in tags_ref.iter().enumerate() {
         if tag.classes.contains(&class) {
