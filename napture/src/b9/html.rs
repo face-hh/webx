@@ -351,26 +351,14 @@ fn render_html(
 
             html_view.append(&label_box);
 
+            if element.children.len() == 0 {
+                render_p(&Node::Text(String::new()), element, &label_box, css, &tags);
+            }
+
             for child in element.children.iter() {
                 match child {
                     Node::Text(_) => {
-                        let label = gtk::Label::builder()
-                            .label(child.text().unwrap_or(""))
-                            .css_name(element.name.as_str())
-                            .css_classes(element.classes.clone())
-                            .halign(gtk::Align::Start)
-                            .selectable(true)
-                            .wrap(true)
-                            .build();
-
-                        label_box.append(&label);
-                        css.push_str(&label.style());
-
-                        tags.borrow_mut().push(Tag {
-                            classes: element.classes.clone(),
-                            widget: Box::new(label),
-                            tied_variables: Vec::new(),
-                        });
+                        render_p(child, element, &label_box, css, &tags);
                     }
                     Node::Element(el) => {
                         if el.name.as_str() == "a" {
@@ -851,4 +839,24 @@ async fn fetch_from_github(url: String) -> String {
 
         String::new()
     }
+}
+
+fn render_p(child: &Node, element: &Element, label_box: &gtk::Box, css: &mut String, tags: &Rc<RefCell<Vec<Tag>>>){
+    let label = gtk::Label::builder()
+        .label(child.text().unwrap_or(""))
+        .css_name(element.name.as_str())
+        .css_classes(element.classes.clone())
+        .halign(gtk::Align::Start)
+        .selectable(true)
+        .wrap(true)
+        .build();
+
+    label_box.append(&label);
+    css.push_str(&label.style());
+
+    tags.borrow_mut().push(Tag {
+        classes: element.classes.clone(),
+        widget: Box::new(label),
+        tied_variables: Vec::new(),
+    });
 }

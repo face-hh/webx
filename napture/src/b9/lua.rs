@@ -42,6 +42,8 @@ fn get(
     let tags_ref = tags.borrow();
 
     for (i, tag) in tags_ref.iter().enumerate() {
+        println!("{:?}", tag.classes);
+
         if tag.classes.contains(&class) {
             let tags1 = Rc::clone(&tags);
             let tags2 = Rc::clone(&tags);
