@@ -27,6 +27,8 @@ macro_rules! lualog {
         } else {
             eprintln!("FATAL: failed to lock lua logs mutex!");
         }
+
+        println!("MIMICKING - TYPE: {}, INFO: {}", $type, $s);
     }};
 }
 
@@ -202,23 +204,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     // CLI command
     if let Some(dev_build) = args.borrow().get(1) {
         tab1.url = dev_build.to_string();
-
-        if let Ok((htmlview, provider)) = b9::html::build_ui(tab1, None, rc_scroll.clone(), rc_search.clone()) {
-            scroll_clone.set_child(Some(&htmlview));
-            *rc_css_provider.borrow_mut() = provider;
-        } else {
-            println!("ERROR: HTML engine failed.");
-        }
     }
-
-    // search bar
-    search.connect_activate(move |query| {
-        let pprevious_css_provider = Rc::clone(&rc_css_provider);
-        let scroll_clonee = Rc::clone(&rc_scroll);
-        let tabb = Rc::clone(&rc_tab);
-
-        handle_search_activate(scroll_clonee, pprevious_css_provider, tabb, Rc::new(RefCell::new(query.clone())));
-    });
 
     let app_ = Rc::new(RefCell::new(app.clone()));
 
@@ -255,6 +241,22 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     window.set_default_size(500, 500);
     window.present();
+    
+    if let Ok((htmlview, provider)) = b9::html::build_ui(tab1.clone(), None, rc_scroll.clone(), rc_search.clone()) {
+        scroll_clone.set_child(Some(&htmlview));
+        *rc_css_provider.borrow_mut() = provider;
+    } else {
+        println!("ERROR: HTML engine failed.");
+    }
+    
+    // search bar
+    search.connect_activate(move |query| {
+        let pprevious_css_provider = Rc::clone(&rc_css_provider);
+        let scroll_clonee = Rc::clone(&rc_scroll);
+        let tabb = Rc::clone(&rc_tab);
+
+        handle_search_activate(scroll_clonee, pprevious_css_provider, tabb, Rc::new(RefCell::new(query.clone())));
+    });
 }
 
 // commented code here was an attempt at implementing multiple tabs.
@@ -320,7 +322,7 @@ fn make_tab(
     tab.append(&tabname);
 
     let res = Tab {
-        url: "".to_string(),
+        url: "https://github.com/face-hh/dingle-frontend".to_string(),
         widget: tab,
         // id: tabid,
         label_widget: tabname,

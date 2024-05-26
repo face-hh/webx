@@ -22,7 +22,7 @@ pub(crate) struct Tag {
 
 async fn parse_html(url: String) -> Result<(Node, Node)> {
     let html = fetch_file(url + "/index.html").await;
-
+    println!("html: {html}");
     let dom = match !html.is_empty() {
         true => Dom::parse(&html),
         false => Dom::parse(include_str!("../resources/not_found.html")),
@@ -50,7 +50,6 @@ async fn parse_html(url: String) -> Result<(Node, Node)> {
 }
 
 fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
-    println!("{:?}", elements);
     for element in elements {
         if element.element()?.name == name {
             return Some(element.to_owned());
@@ -798,7 +797,7 @@ async fn fetch_from_github(url: String) -> String {
         url.split('/').nth(4).unwrap_or(""),
         url.split('/').last().unwrap_or(""),
     );
-
+    println!("{}", url);
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
