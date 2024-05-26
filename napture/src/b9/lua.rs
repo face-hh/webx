@@ -15,7 +15,6 @@ use serde_json::Map;
 use crate::lualog;
 
 pub trait Luable: Styleable {
-    fn get_css_classes(&self) -> Vec<String>;
     fn get_css_name(&self) -> String;
 
     fn get_contents(&self) -> String;
@@ -256,10 +255,6 @@ fn gtk_buffer_to_text(buffer: &gtk::TextBuffer) -> String {
 
 // h1, h2, h3, h4, h5, h6
 impl Luable for gtk::Label {
-    fn get_css_classes(&self) -> Vec<String> {
-        self.css_classes().iter().map(|s| s.to_string()).collect()
-    }
-
     fn get_css_name(&self) -> String {
         self.css_name().to_string()
     }
@@ -314,10 +309,6 @@ impl Luable for gtk::Label {
 
 // select
 impl Luable for gtk::DropDown {
-    fn get_css_classes(&self) -> Vec<String> {
-        self.css_classes().iter().map(|s| s.to_string()).collect()
-    }
-
     fn get_css_name(&self) -> String {
         self.css_name().to_string()
     }
@@ -375,10 +366,6 @@ impl Luable for gtk::DropDown {
 
 // a
 impl Luable for gtk::LinkButton {
-    fn get_css_classes(&self) -> Vec<String> {
-        self.css_classes().iter().map(|s| s.to_string()).collect()
-    }
-
     fn get_css_name(&self) -> String {
         self.css_name().to_string()
     }
@@ -426,10 +413,6 @@ impl Luable for gtk::LinkButton {
 
 // div
 impl Luable for gtk::Box {
-    fn get_css_classes(&self) -> Vec<String> {
-        self.css_classes().iter().map(|s| s.to_string()).collect()
-    }
-
     fn get_css_name(&self) -> String {
         self.css_name().to_string()
     }
@@ -487,10 +470,6 @@ impl Luable for gtk::Box {
 
 // textarea
 impl Luable for gtk::TextView {
-    fn get_css_classes(&self) -> Vec<String> {
-        self.css_classes().iter().map(|s| s.to_string()).collect()
-    }
-
     fn get_css_name(&self) -> String {
         self.css_name().to_string()
     }
@@ -549,10 +528,6 @@ impl Luable for gtk::TextView {
 
 // hr
 impl Luable for gtk::Separator {
-    fn get_css_classes(&self) -> Vec<String> {
-        self.css_classes().iter().map(|s| s.to_string()).collect()
-    }
-
     fn get_css_name(&self) -> String {
         self.css_name().to_string()
     }
@@ -610,10 +585,6 @@ impl Luable for gtk::Separator {
 
 // img
 impl Luable for gtk::Picture {
-    fn get_css_classes(&self) -> Vec<String> {
-        self.css_classes().iter().map(|s| s.to_string()).collect()
-    }
-
     fn get_css_name(&self) -> String {
         self.css_name().to_string()
     }
@@ -671,10 +642,6 @@ impl Luable for gtk::Picture {
 
 // input
 impl Luable for gtk::Entry {
-    fn get_css_classes(&self) -> Vec<String> {
-        self.css_classes().iter().map(|s| s.to_string()).collect()
-    }
-
     fn get_css_name(&self) -> String {
         self.css_name().to_string()
     }
@@ -739,10 +706,6 @@ impl Luable for gtk::Entry {
 
 // button
 impl Luable for gtk::Button {
-    fn get_css_classes(&self) -> Vec<String> {
-        self.css_classes().iter().map(|s| s.to_string()).collect()
-    }
-
     fn get_css_name(&self) -> String {
         self.css_name().to_string()
     }

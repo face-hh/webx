@@ -534,7 +534,11 @@ fn render_html(
                 if let Node::Element(el) = child {
                     if el.name.as_str() == "option" {
                         // TODO: keep track of value
-                        strings.push(el.children[0].text().unwrap_or(""))
+                        if let Some(node) = el.children.first() {
+                            strings.push(node.text().unwrap_or(""))
+                        } else {
+                            strings.push("")
+                        }
                     }
                 }
             }
@@ -569,7 +573,7 @@ fn render_html(
 
             textview
                 .buffer()
-                .set_text(element.children[0].text().unwrap_or(""));
+                .set_text(element.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""));
 
             html_view.append(&textview);
 
@@ -630,7 +634,7 @@ fn render_a(
     };
 
     let link_button = gtk::LinkButton::builder()
-        .label(el.children[0].text().unwrap_or(""))
+        .label(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""))
         .uri(uri)
         .css_name("a")
         .css_classes(el.classes.clone())
@@ -698,7 +702,7 @@ fn render_list(
                         .build();
 
                     let label = gtk::Label::builder()
-                        .label(el.children[0].text().unwrap_or(""))
+                        .label(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""))
                         .css_name("li")
                         .css_classes(el.classes.clone())
                         .halign(gtk::Align::Start)
