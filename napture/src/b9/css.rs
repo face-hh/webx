@@ -53,7 +53,6 @@ input {
     border-style: solid;
     border-radius: 12px;
 
-    width: 400px;
 }
 
 textarea {
@@ -406,7 +405,9 @@ impl Styleable for gtk::TextView {
                     let width = properties.width;
                     let height = properties.height;
 
-                    self.set_size_request(width, height);
+                    if width != 0 && height != 0 {
+                        self.set_size_request(width, height);
+                    }
 
                     self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
                     self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
@@ -492,8 +493,10 @@ impl Styleable for gtk::Entry {
 
                     let width = properties.width;
                     let height = properties.height;
-
-                    self.set_size_request(width, height);
+                    
+                    if width != 0 && height != 0 {
+                        self.set_size_request(width, height);
+                    }
 
                     self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
                     self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
