@@ -182,7 +182,7 @@ pub async fn build_ui(
     for tag in tagss.borrow_mut().iter_mut() {
         let mut tied_variables = Vec::new();
 
-        let text = tag.widget.get_contents();
+        let text = tag.widget.get_contents_();
 
         let mut inside = false;
         let mut var = String::new();

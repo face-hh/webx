@@ -17,11 +17,13 @@ use crate::lualog;
 pub trait Luable: Styleable {
     fn get_css_name(&self) -> String;
 
-    fn get_contents(&self) -> String;
-    fn get_href(&self) -> String;
+    fn get_contents_(&self) -> String;
+    fn get_href_(&self) -> String;
+    fn get_opacity_(&self) -> f64;
 
-    fn set_contents(&self, contents: String);
-    fn set_href(&self, href: String);
+    fn set_contents_(&self, contents: String);
+    fn set_href_(&self, href: String);
+    fn set_opacity_(&self, amount: f64);
 
     fn _on_click(&self, func: &LuaOwnedFunction);
     fn _on_submit(&self, func: &LuaOwnedFunction);
@@ -38,12 +40,15 @@ fn get(
     lua: &Lua,
     class: String,
     tags: Rc<RefCell<Vec<Tag>>>,
+    multi: bool
 ) -> LuaResult<LuaTable<>> {
+    let global_table = lua.create_table()?;
+
     let tags_ref = tags.borrow();
 
-    for (i, tag) in tags_ref.iter().enumerate() {
-        println!("{:?}", tag.classes);
+    let mut i2 = 0;
 
+    for (i, tag) in tags_ref.iter().enumerate() {
         if tag.classes.contains(&class) {
             let tags1 = Rc::clone(&tags);
             let tags2 = Rc::clone(&tags);
@@ -52,6 +57,8 @@ fn get(
             let tags5 = Rc::clone(&tags);
             let tags6 = Rc::clone(&tags);
             let tags7 = Rc::clone(&tags);
+            let tags8 = Rc::clone(&tags);
+            let tags9 = Rc::clone(&tags);
 
             let table = lua.create_table()?;
 
@@ -62,14 +69,14 @@ fn get(
             table.set(
                 "get_content",
                 lua.create_function(move |_, ()| {
-                    let ok = tags1.borrow()[i].widget.get_contents();
+                    let ok = tags1.borrow()[i].widget.get_contents_();
                     Ok(ok)
                 })?,
             )?;
             table.set(
                 "set_content",
                 lua.create_function(move |_, label: String| {
-                    tags2.borrow()[i].widget.set_contents(label);
+                    tags2.borrow()[i].widget.set_contents_(label);
                     Ok(())
                 })?,
             )?;
@@ -97,23 +104,46 @@ fn get(
             table.set(
                 "get_href",
                 lua.create_function(move |_, ()| {
-                    let ok = tags6.borrow()[i].widget.get_href();
+                    let ok = tags6.borrow()[i].widget.get_href_();
                     Ok(ok)
                 })?,
             )?;
             table.set(
                 "set_href",
                 lua.create_function(move |_, label: String| {
-                    tags7.borrow()[i].widget.set_href(label);
+                    tags7.borrow()[i].widget.set_href_(label);
+                    Ok(())
+                })?,
+            )?;
+            table.set(
+                "get_opacity",
+                lua.create_function(move |_, ()| {
+                    let ok = tags8.borrow()[i].widget.get_opacity_();
+                    Ok(ok)
+                })?,
+            )?;
+            table.set(
+                "set_opacity",
+                lua.create_function(move |_, amount: f64| {
+                    tags9.borrow()[i].widget.set_opacity_(amount);
                     Ok(())
                 })?,
             )?;
 
-            return Ok(table);
+            if multi {
+                global_table.set(i2, table)?;
+                i2 += 1;
+            } else {
+                return Ok(table);
+            }
         }
     }
 
-    Err(LuaError::RuntimeError("Tag not found".into()))
+    if multi {
+        Ok(global_table)
+    } else {
+        Err(LuaError::RuntimeError("Tag not found".into()))
+    }
 }
 
 fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
@@ -229,7 +259,9 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
         "get",
-        lua.create_function(move |lua, class: String| get(lua, class, tags.clone()))?,
+        lua.create_function(move |lua, (class, multiple): (String, Option<bool>) | {
+            get(lua, class, tags.clone(), multiple.unwrap_or(false))
+        })?
     )?;
     globals.set("fetch", fetchtest)?;
 
@@ -261,22 +293,28 @@ impl Luable for gtk::Label {
         self.css_name().to_string()
     }
 
-    fn get_contents(&self) -> String {
+    fn get_contents_(&self) -> String {
         self.text().to_string()
     }
-    fn get_href(&self) -> String {
+    fn get_href_(&self) -> String {
         lualog!(
             "warning",
             "Most text-based components do not support the \"get_href\" method. Are you perhaps looking for the \"p\" tag?"
         );
         "".to_string()
     }
+    fn get_opacity_(&self) -> f64 {
+        self.opacity()
+    }
+    fn set_opacity_(&self, amount: f64) {
+        self.set_opacity(amount);
+    }
 
-    fn set_contents(&self, contents: String) {
+    fn set_contents_(&self, contents: String) {
         self.set_text(&contents);
         self.style();
     }
-    fn set_href(&self, _: String) {
+    fn set_href_(&self, _: String) {
         lualog!(
             "warning",
             "Most text-based components do not support the \"set_href\" method. Are you perhaps looking for the \"p\" tag?"
@@ -316,24 +354,29 @@ impl Luable for gtk::DropDown {
         self.css_name().to_string()
     }
 
-    fn get_contents(&self) -> String {
+    fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href(&self) -> String {
+    fn get_href_(&self) -> String {
         lualog!(
             "warning",
             "\"select\" component does not support the \"get_href\" method."
         );
         "".to_string()
     }
-
-    fn set_contents(&self, _: String) {
+    fn get_opacity_(&self) -> f64 {
+        self.opacity()
+    }
+    fn set_opacity_(&self, amount: f64) {
+        self.set_opacity(amount);
+    }
+    fn set_contents_(&self, _: String) {
         lualog!(
             "warning",
             "\"select\" component does not support the \"set_content\" method."
         );
     }
-    fn set_href(&self, _: String) {
+    fn set_href_(&self, _: String) {
         lualog!(
             "warning",
             "\"select\" component does not support the \"set_href\" method."
@@ -373,19 +416,24 @@ impl Luable for gtk::LinkButton {
         self.css_name().to_string()
     }
 
-    fn get_contents(&self) -> String {
+    fn get_contents_(&self) -> String {
         self.label().unwrap_or("".into()).to_string()
     }
-    fn get_href(&self) -> String {
+    fn get_href_(&self) -> String {
         self.uri().to_string()
     }
-
-    fn set_contents(&self, contents: String) {
+    fn get_opacity_(&self) -> f64 {
+        self.opacity()
+    }
+    fn set_opacity_(&self, amount: f64) {
+        self.set_opacity(amount);
+    }
+    fn set_contents_(&self, contents: String) {
         self.set_label(&contents);
         self.style();
     }
 
-    fn set_href(&self, href: String) {
+    fn set_href_(&self, href: String) {
         self.set_uri(&href);
     }
 
@@ -422,24 +470,29 @@ impl Luable for gtk::Box {
         self.css_name().to_string()
     }
 
-    fn get_contents(&self) -> String {
+    fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href(&self) -> String {
+    fn get_href_(&self) -> String {
         lualog!(
             "warning",
             "\"div\" component does not support the \"get_href\" method."
         );
         "".to_string()
     }
-
-    fn set_contents(&self, _: String) {
+    fn get_opacity_(&self) -> f64 {
+        self.opacity()
+    }
+    fn set_opacity_(&self, amount: f64) {
+        self.set_opacity(amount);
+    }
+    fn set_contents_(&self, _: String) {
         lualog!(
             "warning",
             "\"div\" component does not support the \"set_content\" method."
         );
     }
-    fn set_href(&self, _: String) {
+    fn set_href_(&self, _: String) {
         lualog!(
             "warning",
             "\"div\" component does not support the \"set_href\" method."
@@ -479,22 +532,27 @@ impl Luable for gtk::TextView {
         self.css_name().to_string()
     }
 
-    fn get_contents(&self) -> String {
+    fn get_contents_(&self) -> String {
         let buffer = self.buffer();
         gtk_buffer_to_text(&buffer)
     }
-    fn get_href(&self) -> String {
+    fn get_href_(&self) -> String {
         lualog!(
             "warning",
             "\"textarea\" component does not support the \"get_href\" method."
         );
         "".to_string()
     }
-
-    fn set_contents(&self, contents: String) {
+    fn get_opacity_(&self) -> f64 {
+        self.opacity()
+    }
+    fn set_opacity_(&self, amount: f64) {
+        self.set_opacity(amount);
+    }
+    fn set_contents_(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
-    fn set_href(&self, _: String) {
+    fn set_href_(&self, _: String) {
         lualog!(
             "warning",
             "\"textarea\" component does not support the \"set_href\" method."
@@ -537,24 +595,29 @@ impl Luable for gtk::Separator {
         self.css_name().to_string()
     }
 
-    fn get_contents(&self) -> String {
+    fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href(&self) -> String {
+    fn get_href_(&self) -> String {
         lualog!(
             "warning",
             "\"hr\" component does not support the \"get_href\" method."
         );
         "".to_string()
     }
-
-    fn set_contents(&self, _: String) {
+    fn get_opacity_(&self) -> f64 {
+        self.opacity()
+    }
+    fn set_opacity_(&self, amount: f64) {
+        self.set_opacity(amount);
+    }
+    fn set_contents_(&self, _: String) {
         lualog!(
             "warning",
             "\"hr\" component does not support the \"set_content\" method."
         );
     }
-    fn set_href(&self, _: String) {
+    fn set_href_(&self, _: String) {
         lualog!(
             "warning",
             "\"hr\" component does not support the \"set_href\" method."
@@ -594,24 +657,29 @@ impl Luable for gtk::Picture {
         self.css_name().to_string()
     }
 
-    fn get_contents(&self) -> String {
+    fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href(&self) -> String {
+    fn get_href_(&self) -> String {
         lualog!(
             "warning",
             "\"img\" component does not support the \"get_href\" method."
         );
         "".to_string()
     }
-
-    fn set_contents(&self, _: String) {
+    fn get_opacity_(&self) -> f64 {
+        self.opacity()
+    }
+    fn set_opacity_(&self, amount: f64) {
+        self.set_opacity(amount);
+    }
+    fn set_contents_(&self, _: String) {
         lualog!(
             "warning",
             "\"img\" component does not support the \"set_content\" method."
         );
     }
-    fn set_href(&self, _: String) {
+    fn set_href_(&self, _: String) {
         lualog!(
             "warning",
             "\"img\" component does not support the \"set_href\" method."
@@ -651,21 +719,26 @@ impl Luable for gtk::Entry {
         self.css_name().to_string()
     }
 
-    fn get_contents(&self) -> String {
+    fn get_contents_(&self) -> String {
         self.text().to_string()
     }
-    fn get_href(&self) -> String {
+    fn get_href_(&self) -> String {
         lualog!(
             "warning",
             "\"input\" component does not support the \"get_href\" method."
         );
         "".to_string()
     }
-
-    fn set_contents(&self, contents: String) {
+    fn get_opacity_(&self) -> f64 {
+        self.opacity()
+    }
+    fn set_opacity_(&self, amount: f64) {
+        self.set_opacity(amount);
+    }
+    fn set_contents_(&self, contents: String) {
         self.buffer().set_text(contents);
     }
-    fn set_href(&self, _: String) {
+    fn set_href_(&self, _: String) {
         lualog!(
             "warning",
             "\"input\" component does not support the \"set_href\" method."
@@ -715,21 +788,26 @@ impl Luable for gtk::Button {
         self.css_name().to_string()
     }
 
-    fn get_contents(&self) -> String {
+    fn get_contents_(&self) -> String {
         self.label().unwrap_or("".into()).to_string()
     }
-    fn get_href(&self) -> String {
+    fn get_href_(&self) -> String {
         lualog!(
             "warning",
             "\"button\" component does not support the \"get_href\" method."
         );
         "".to_string()
     }
-
-    fn set_contents(&self, contents: String) {
+    fn get_opacity_(&self) -> f64 {
+        self.opacity()
+    }
+    fn set_opacity_(&self, amount: f64) {
+        self.set_opacity(amount);
+    }
+    fn set_contents_(&self, contents: String) {
         self.set_label(&contents);
     }
-    fn set_href(&self, _: String) {
+    fn set_href_(&self, _: String) {
         lualog!(
             "warning",
             "\"button\" component does not support the \"set_href\" method."

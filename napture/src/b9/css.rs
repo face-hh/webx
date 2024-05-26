@@ -97,6 +97,7 @@ struct Properties {
     padding: String,
     font_size: String,
     gap: i32,
+    opacity: f64,
 }
 
 pub(crate) trait Styleable {
@@ -167,6 +168,8 @@ impl Styleable for gtk::Label {
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
 
+                    self.set_opacity(properties.opacity);
+
                     final_css += &format!(
                         "
                 .{} {{
@@ -219,6 +222,8 @@ impl Styleable for gtk::DropDown {
                 if let Some(rules) = css.get(&class.to_string()) {
                     let properties: Properties = get_properties(rules);
 
+                    self.set_opacity(properties.opacity);
+
                     final_css += &format!(
                         "
                 .{} {{
@@ -252,7 +257,7 @@ impl Styleable for gtk::DropDown {
                         properties.border_color,
                         properties.border_width,
                         properties.border_radius,
-                        properties.padding
+                        properties.padding,
                     );
                 }
             }
@@ -330,6 +335,8 @@ impl Styleable for gtk::Box {
                     self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
+
+                    self.set_opacity(properties.opacity);
 
                     final_css += &compute_styling(class, &properties);
                 }
@@ -414,6 +421,8 @@ impl Styleable for gtk::TextView {
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
 
+                    self.set_opacity(properties.opacity);
+
                     final_css += &compute_styling(class, &properties);
                 }
             }
@@ -459,6 +468,8 @@ impl Styleable for gtk::Picture {
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
 
+                    self.set_opacity(properties.opacity);
+
                     final_css += &compute_styling(class, &properties);
                 }
             }
@@ -503,6 +514,8 @@ impl Styleable for gtk::Entry {
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
 
+                    self.set_opacity(properties.opacity);
+
                     final_css += &compute_styling(class, &properties);
                 }
             }
@@ -539,6 +552,8 @@ impl Styleable for gtk::Button {
                     self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
+                    
+                    self.set_opacity(properties.opacity);
 
                     final_css += &compute_styling(class, &properties);
                 }
@@ -656,7 +671,7 @@ fn compute_styling(class: GString, properties: &Properties) -> String {
         properties.font_size,
         properties.font_family,
         borders,
-        properties.padding
+        properties.padding,
     )
 }
 
@@ -704,6 +719,9 @@ fn get_properties(rules: &[(String, String)]) -> Properties {
         .replace("px", "")
         .parse::<i32>()
         .unwrap_or(0);
+    let opacity = get_rule(rules, "opacity", "1.0")
+    .parse::<f64>()
+    .unwrap_or(1.0);
 
     Properties {
         direction,
@@ -733,5 +751,6 @@ fn get_properties(rules: &[(String, String)]) -> Properties {
         padding,
         gap,
         font_size,
+        opacity
     }
 }
