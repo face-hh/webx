@@ -382,7 +382,9 @@ impl Luable for gtk::LinkButton {
 
     fn set_contents(&self, contents: String) {
         self.set_label(&contents);
+        self.style();
     }
+
     fn set_href(&self, href: String) {
         self.set_uri(&href);
     }
