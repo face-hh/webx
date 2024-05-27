@@ -26,6 +26,26 @@
     <url type="vcs-browser">https://github.com/face-hh/webx</url>
     <content_rating type="oars-1.1" />
     <releases>
+        <release version="1.2.0" date="2024-05-27">
+            <url type="details">https://github.com/face-hh/webx/releases/tag/v1.2.0</url>
+            <description>
+              <ul>
+                <li>Fixed Lua's OS library being available.</li>
+                <li>Fixed tags with no content crashing/not rendering in Napture.</li>
+                <li>Fixed width and height on input and text area.</li>
+                <li>Fixed labels (<code>h1</code>-<code>h6</code>, <code>a</code>, <code>p</code>) resetting their styling on <code>set_content</code>.</li>
+                <li>Hyperlinks that point to <code>buss://</code> will now be opened by Napture.</li>
+                <li>By publishing or owning a website, you agree to the rules</li>
+                <li>Added Windows compilation guide</li>
+                <li>Added <em>Dingle It</em>! at <code>buss://dingle.it</code></li>
+                <li>Napture will open Dingle by default on start.</li>
+                <li>Added <code>get(query, </code><em><code>true</code></em><code>)</code>, which makes <code>get</code> return all matches of the query. Similar to <code>querySelectorAll()</code>.</li>
+                <li>Added <code>set_opacity</code></li>
+                <li>Added <code>get_opacity</code></li>
+                <li>Builds will now be more lightweight</li>
+              </ul>
+            </description>
+        </release>
         <release version="1.1.1" date="2024-05-19">
             <url type="details">https://github.com/face-hh/webx/releases/tag/v1.1.1</url>
             <description>
