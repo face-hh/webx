@@ -153,5 +153,4 @@ I believe you'd get a better understand if you explored the [registrar](https://
 
 NOTE: Bussin Napture doesn't support `buss://` redirects yet. They will be added in the official release.
 
-# WIP
-The rest of the README is work in progress. Thanks for reading!
+Made by FaceDev with pure utter hatred and undesire :D
