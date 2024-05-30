@@ -40,6 +40,8 @@ Welcome to Gaming OS 🙂
 9. Open a terminal in the folder with `napture/`, run `cargo run`.
 
 # Register website
+Please follow [How to code a Buss site](https://facedev.gitbook.io/bussin-web-x-how-to-make-a-website/) for a better visual guide.
+
 So you wish to publish a website to Web X? Great! Let's go through the rules:
 
 1. If your website contains Not Safe For Work material of any kind, it will be removed.
