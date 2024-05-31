@@ -46,7 +46,12 @@ async fn fetch_content(website: &Website) -> Result<(String, String, String), ht
 
     let html_content = utils::fetch_file(url + &"/index.html").await;
 
-    let dom = Dom::parse(&html_content).unwrap();
+    let dom = match Dom::parse(&html_content) {
+        Ok(dom) => dom,
+        Err(_) => {
+            return Err(html_parser::Error::Parsing("Oh fuck invalid HTML".to_owned()))
+        }
+    };
 
     let head = find_element_by_name(&dom.children, "head").ok_or_else(|| {
         html_parser::Error::Parsing("Couldn't find head. Invalid HTML?".to_owned())
