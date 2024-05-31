@@ -67,7 +67,7 @@ What you need is the **Publish** section.
 - for the TLD, choose one displayed above the `Result will appear...` label. (example: `rizz`)
 - for the IP, you can either use:
    - an IP that serves `/index.html` on port 80
-   - a GitHub repository that has `index.html`, **outside any folder**. (example: [registrar](https://github.com/face-hh/webx-registrar))
+   - a GitHub repository that has `index.html`, **outside any folder**. (example: [registrar](https://github.com/face-hh/webx-registrar)), ***with the `main` default branch***.
 
 Don't worry! The IP doesn't have to be valid, and you can save the domain for later!
 
