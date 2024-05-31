@@ -76,7 +76,8 @@ async function isOffensive(query) {
         presence_penalty: 0,
     });
 
-    response?.choices?.[0]?.message == "Yes"
+    //use trim and tolowercase to ensure a Yes is also a yes
+    return response?.choices?.[0]?.message.trim().toLowerCase() == "yes"
 }
 
 connectToMongo().catch(console.error);
@@ -121,7 +122,7 @@ app.post('/domain', async (req, res) => {
             return res.status(409).send();
         }
 
-        const is_offensive = isOffensive(newDomain.name + '.' + newDomain.tld);
+        const is_offensive = await isOffensive(newDomain.name + '.' + newDomain.tld);
 
         if (is_offensive) {
             return res.status(400).send("The given domain is offensive.")
