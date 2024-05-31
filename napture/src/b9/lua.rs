@@ -7,12 +7,13 @@ use super::html::Tag;
 use gtk::prelude::*;
 use mlua::{prelude::*, StdLib};
 
-use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
+use mlua::{Lua, UserData, UserDataMethods, Value, MultiValue, Result as LuaResult, OwnedFunction};
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Map;
 
 use crate::lualog;
+use crate::get_search_bar_content;
 
 pub trait Luable: Styleable {
     fn get_css_name(&self) -> String;
@@ -29,6 +30,9 @@ pub trait Luable: Styleable {
     fn _on_submit(&self, func: &LuaOwnedFunction);
     fn _on_input(&self, func: &LuaOwnedFunction);
 }
+
+struct SearchBarContent;
+
 // use tokio::time::{sleep, Duration};
 
 // async fn sleep_ms(_lua: &Lua, ms: u64) -> LuaResult<()> {
@@ -163,6 +167,16 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
     Ok(())
 }
 
+impl UserData for SearchBarContent {
+    fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
+        methods.add_function("get", |_ctx, ()| {
+            Ok(get_search_bar_content())
+        });
+    }
+}
+
+
+
 // todo: make this async if shit breaks
 pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
     let lua = Lua::new_with(
@@ -264,6 +278,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
         })?
     )?;
     globals.set("fetch", fetchtest)?;
+    globals.set("SearchBarContent", lua.create_userdata(SearchBarContent)?)?;
 
     let ok = lua.load(luacode).eval::<LuaMultiValue>();
 

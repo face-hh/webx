@@ -34,6 +34,8 @@ macro_rules! lualog {
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
+use lazy_static::lazy_static;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -67,6 +69,10 @@ struct Tab {
     label_widget: gtk::Label,
     icon_widget: gtk::Image,
     // id: String,
+}
+// i know i know it should be in globals.rs but i dont really know rust that well
+lazy_static! {
+    static ref SEARCH_BAR_CONTENT: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
 }
 
 fn main() -> glib::ExitCode {
@@ -113,6 +119,26 @@ fn main() -> glib::ExitCode {
 
     app.run_with_args(&[""])
 }
+// WHAT THE FUCK IS HAPPENING????
+pub fn get_search_bar_content() -> String {
+    match SEARCH_BAR_CONTENT.lock() {
+        Ok(content) => {
+            println!("Searchbar content: {}", content);
+            content.clone()
+        }
+        Err(e) => {
+            eprintln!("Error accessing search bar content: {}", e);
+            String::new() // Return an empty string or handle the error as appropriate
+        }
+    }
+}
+
+// IM TRYING MY BEST HERE OKAY???
+pub fn update_search_bar_content(new_content: &str) {
+    let mut content = SEARCH_BAR_CONTENT.lock().unwrap();
+    *content = new_content.to_string();
+    drop(content);
+}
 
 fn handle_search_activate(
     scroll_clone: Rc<RefCell<gtk::ScrolledWindow>>,
@@ -127,12 +153,14 @@ fn handle_search_activate(
     let query = c.borrow_mut();
 
     let url = query.text().to_string();
+    update_search_bar_content(&url);
     let dns_url = fetch_dns(url.clone());
 
     tab_in_closure.url = dns_url;
 
     query.set_text(&url.replace("buss://", ""));
     query.set_position(-1);
+
 
     if let Some(root) = query.root() {
         root.set_focus(None as Option<&gtk::Widget>)
@@ -377,7 +405,13 @@ fn fetch_dns(url: String) -> String {
             json.ip
         } else {
             lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}. Returning original URL.", status.as_u16()));
-            url
+            if status.as_u16() == 404 {
+                lualog!("debug", "No results found for this DNS request. Trying to browse for it instead.");
+               return "https://github.com/face-hh/dingle-frontend".to_string();
+            } else {
+                // Something else went wrong and we shouldn't browse for it.
+            return url
+            }
         }
     } else {
         lualog!(
