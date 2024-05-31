@@ -2,15 +2,28 @@ require("dotenv").config();
 
 const express = require('express');
 const bodyParser = require('body-parser')
+const {
+    OpenAI
+} = require('openai');
 
-const { MongoClient } = require('mongodb');
-const { generateApiKey } = require('./utils');
-const { rateLimit } = require('express-rate-limit');
+const {
+    MongoClient
+} = require('mongodb');
+const {
+    generateApiKey
+} = require('./utils');
+const {
+    rateLimit
+} = require('express-rate-limit');
+
+const openai = new OpenAI();
 
 const app = express();
 const port = 8000;
 
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({
+    extended: false
+}))
 app.use(bodyParser.json())
 
 const TLD = [
@@ -31,7 +44,7 @@ const limiter = rateLimit({
     legacyHeaders: false,
     limit: 1,
     skip: (_, res) => res.statusCode != 200,
-    keyGenerator: function (req, _) {
+    keyGenerator: function(req, _) {
         return req.headers['x-forwarded-for'] || req.ip;
     }
 })
@@ -43,6 +56,27 @@ async function connectToMongo() {
     const client = new MongoClient(process.env.MONGOURI);
     await client.connect();
     db = client.db('mydb').collection('domains');
+}
+
+async function isOffensive(query) {
+    const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{
+                "role": "user",
+                "content": [{
+                    "type": "text",
+                    "text": "I need you to reply with \"yes\" and \"no\" only.\n\nYour task is to tell me if this domain name is offensive (i.e. it's vulgar, racist, dicriminating).\n\nDomain: " + query + "\n"
+                }]
+            },
+        ],
+        temperature: 1,
+        max_tokens: 10,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+    });
+
+    response?.choices?.[0]?.message == "Yes"
 }
 
 connectToMongo().catch(console.error);
@@ -69,7 +103,7 @@ app.post('/domain', async (req, res) => {
     }
 
     newDomain.name = newDomain.name.toLowerCase();
-    
+
     const data = {
         tld: newDomain.tld,
         ip: newDomain.ip,
@@ -78,12 +112,21 @@ app.post('/domain', async (req, res) => {
     };
 
     try {
-        const existingDomain = await db.findOne({ name: newDomain.name, tld: newDomain.tld });
+        const existingDomain = await db.findOne({
+            name: newDomain.name,
+            tld: newDomain.tld
+        });
 
         if (existingDomain) {
             return res.status(409).send();
         }
 
+        const is_offensive = isOffensive(newDomain.name + '.' + newDomain.tld);
+
+        if (is_offensive) {
+            return res.status(400).send("The given domain is offensive.")
+        }
+    
         await db.insertOne(data);
         delete data._id;
 
@@ -94,13 +137,19 @@ app.post('/domain', async (req, res) => {
 });
 
 app.get('/domain/:name/:tld', async (req, res) => {
-    const { name, tld } = req.params;
+    const {
+        name,
+        tld
+    } = req.params;
     if (!name || !tld) {
         return res.status(400).send();
     }
 
     try {
-        const result = await db.findOne({ name, tld });
+        const result = await db.findOne({
+            name,
+            tld
+        });
         if (result) {
             res.json({
                 tld: result.tld,
@@ -116,7 +165,10 @@ app.get('/domain/:name/:tld', async (req, res) => {
 });
 
 app.get('/domain/:name/:domain', async (req, res) => {
-    const { name, tld } = req.params;
+    const {
+        name,
+        tld
+    } = req.params;
     if (!name || !tld) {
         return res.status(400).send();
     }
@@ -145,7 +197,9 @@ app.put('/domain/:key', async (req, res) => {
         return res.status(400).send();
     }
 
-    const { ip } = req.body;
+    const {
+        ip
+    } = req.body;
     if (!ip) {
         return res.status(400).send();
     }
@@ -157,9 +211,13 @@ app.put('/domain/:key', async (req, res) => {
     };
 
     try {
-        const result = await db.updateOne({ secret_key: key }, data);
+        const result = await db.updateOne({
+            secret_key: key
+        }, data);
         if (result.matchedCount === 1) {
-            res.json({ ip });
+            res.json({
+                ip
+            });
         } else {
             res.status(404).send();
         }
@@ -175,7 +233,9 @@ app.delete('/domain/:id', async (req, res) => {
         return res.status(400).send();
     }
 
-    const result = await db.deleteOne({ secret_key: id });
+    const result = await db.deleteOne({
+        secret_key: id
+    });
     if (result.deletedCount === 1) {
         res.status(200).send();
     } else {
@@ -209,5 +269,3 @@ app.get('/tlds', (_, res) => {
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
-
-
