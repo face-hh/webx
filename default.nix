@@ -28,5 +28,16 @@
     install -Dm644 $src/io.github.face_hh.Napture.metainfo.xml -t $out/share/metainfo/
     install -Dm644 $src/io.github.face_hh.Napture.desktop -t $out/share/applications/
     install -Dm644 $src/io.github.face_hh.Napture.svg -t $out/share/icons/hicolor/scalable/apps/
+
+    # updating the `Exec` field
+    substituteInPlace $out/share/applications/io.github.face_hh.Napture.desktop \
+      --replace napture $out/bin/webx
   '';
+
+  meta = {
+    description = "An alternative for the World Wide Web";
+    license = lib.licenses.unlicense;
+    maintainers = [ lib.maintainers.alphatechnolog ]; # flake maintainer ig
+    mainProgram = "napture";
+  };
 }
