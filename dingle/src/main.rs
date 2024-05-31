@@ -168,15 +168,6 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
     None
 }
 
-fn pq(s: &str) -> Query {
-    match s.parse() {
-        Ok(p) => p,
-        Err(err) => {
-            panic!("Failed to parse '{}', {:?}", s, err);
-        }
-    }
-}
-
 fn augment_simple<'a>(
     index: &'a Simple,
     map: &DocumentMap,
@@ -208,7 +199,11 @@ fn query_and(
     index: &Simple,
     ids: &Vec<Ids>,
 ) -> Vec<SearchResult> {
-    let q = pq(&query);
+    let q: Query = match query.parse() {
+        Ok(q) => q,
+        Err(_) => "dingle".parse().unwrap()
+    };
+    
     let mut docs = q.documents(index);
     let proximate_map = docs.take_proximate_map();
     let occ_provider = augment_simple(index, map, &proximate_map, ids.clone().to_vec());
