@@ -26,6 +26,14 @@
     <url type="vcs-browser">https://github.com/face-hh/webx</url>
     <content_rating type="oars-1.1" />
     <releases>
+            <release version="1.2.1" date="2024-05-31">
+            <url type="details">https://github.com/face-hh/webx/releases/tag/v1.2.1</url>
+            <description>
+              <ul>
+                <li>Fixed styling on the body.</li>
+              </ul>
+            </description>
+        </release>
         <release version="1.2.0" date="2024-05-27">
             <url type="details">https://github.com/face-hh/webx/releases/tag/v1.2.0</url>
             <description>
