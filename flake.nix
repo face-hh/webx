@@ -11,19 +11,19 @@
 
   outputs = { self, nixpkgs, flake-utils, ... } @inputs: flake-utils.lib.eachDefaultSystem(system: let
     pkgs = import nixpkgs {inherit system overlays;};
+
+    # same as the one in the overlay but with the current pkgs iteration (current system).
     package = pkgs.callPackage ./default.nix {};
 
-    overlays = [
-      (_: _: {
-        inherit (inputs) webx-src;
-      })
-    ];
-  in {
-    packages.default = package;
+    overlays = [mainOverlay];
 
-    overlays.default = (final: _: {
+    mainOverlay = (final: _: {
+      inherit (inputs) webx-src;
       webx = final.callPackage ./default.nix {};
     });
+  in {
+    packages.default = package;
+    overlays.default = mainOverlay;
 
     devShells.default = let inherit (pkgs) mkShell; in mkShell {
       name = "dev";
