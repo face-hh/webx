@@ -21,6 +21,10 @@
   in {
     packages.default = package;
 
+    overlays.default = (_: _: {
+      webx = package;
+    });
+
     devShells.default = let inherit (pkgs) mkShell; in mkShell {
       name = "dev";
       nativeBuildInputs = [pkgs.pkg-config];
