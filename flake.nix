@@ -21,8 +21,8 @@
   in {
     packages.default = package;
 
-    overlays.default = (_: _: {
-      webx = package;
+    overlays.default = (final: _: {
+      webx = final.callPackage ./default.nix {};
     });
 
     devShells.default = let inherit (pkgs) mkShell; in mkShell {
