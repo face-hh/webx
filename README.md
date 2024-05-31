@@ -17,6 +17,40 @@ An alternative to the World Wide Web (`http(s)://`), with:
 # Download and Install
 ## Arch Linux
 - `yay -S napture`, it's available on AUR.
+## Nix[OS]
+
+**Flakes**: The repository provides a flake which exposes an overlay providing the webx package, so you could just add the input in your flake.nix file
+
+```nix
+{
+    inputs = {
+        webx.url = "github:face-hh/webx";
+    };
+}
+```
+
+Then add it to your overlays and install it
+
+```nix
+{ inputs, ... }: {
+    nixpkgs.overlays = [
+        inputs.webx.overlays.x86_64-linux.default
+    ];
+}
+```
+
+> For now, only tested on x86_64-linux, but may work on others aswell, just change the arch
+
+Add it to either home.packages (home manager) or environment.systemPackages (global packages).
+
+```nix
+home.packages = with pkgs; [
+    webx
+];
+```
+
+Then you could just launch it using `webx` in your terminal.
+
 ## Linux
 - For now, you have to download [Rust](https://www.rust-lang.org/tools/install). Then, you just need to open `install-linux` as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux`, then you should be able to install).
 ## Windows
