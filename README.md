@@ -11,7 +11,7 @@ An alternative to the World Wide Web (`http(s)://`), with:
 # File structure
 - `/napture` - The source code for the **browser** Bussin Napture, used to view buss:// sites.
 - `/dns` - The source code for the **DNS** (Domain Name System), used for the API at `https://api.buss.lol`
-- `/dingle` - The source code for the official **search engine** (API) of Web X. For the frontend, check [dingle frontend repo](https://github.com/face-hh/webx-dingle)
+- `/dingle` - The source code for the official **search engine** (API) of Web X. For the frontend, check [dingle frontend repo](https://github.com/face-hh/dingle-frontend)
 - [registrar](https://github.com/face-hh/webx-registrar) - The source code for `buss://register.it`, frontend for `https://api.buss.lol` made for Bussin Web X. This can also serve as an example for how buss:// sites are made.
 
 # Download and Install
