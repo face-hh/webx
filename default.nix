@@ -38,6 +38,6 @@
     description = "An alternative for the World Wide Web";
     license = lib.licenses.unlicense;
     maintainers = [ lib.maintainers.alphatechnolog ]; # flake maintainer ig
-    mainProgram = "napture";
+    mainProgram = "webx";
   };
 }
