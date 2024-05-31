@@ -652,7 +652,7 @@ fn compute_styling(class: GString, properties: &Properties) -> String {
     if properties.border_style != "none" {
         borders.push_str(&format!("border-style: {};", properties.border_style));
     }
-
+    
     format!(
         "
 .{} {{

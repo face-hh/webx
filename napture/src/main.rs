@@ -1,4 +1,3 @@
-#![windows_subsystem = "windows"]
 mod b9;
 mod globals;
 mod imp;
@@ -191,7 +190,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     window.set_titlebar(Some(&headerbar));
 
-    let scroll = gtk::ScrolledWindow::builder().css_name("body").build();
+    let scroll = gtk::ScrolledWindow::builder().css_classes(vec!["body"]).build();
 
     scroll.style();
 
@@ -307,7 +306,7 @@ fn make_tab(
         let dialog = gtk::AboutDialog::builder()
             .modal(true)
             .program_name("Bussin Napture")
-            .version("v1.2.0")
+            .version("v1.2.1")
             .website("https://github.com/face-hh/webx")
             .website_label("GitHub")
             .license_type(gtk::License::Apache20)

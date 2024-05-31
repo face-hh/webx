@@ -22,7 +22,7 @@ pub(crate) struct Tag {
 
 async fn parse_html(url: String) -> Result<(Node, Node)> {
     let html = fetch_file(url + "/index.html").await;
-    println!("html: {html}");
+
     let dom = match !html.is_empty() {
         true => Dom::parse(&html),
         false => Dom::parse(include_str!("../resources/not_found.html")),
@@ -81,6 +81,7 @@ pub async fn build_ui(
         .valign(gtk::Align::Start)
         .spacing(6)
         .css_name("body")
+        .css_classes(vec!["body"])
         .build();
 
     let mut css: String = css::reset_css();
@@ -260,6 +261,8 @@ fn render_html(
     let mut html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(6)
+        .css_name("htmlview")
+        .css_classes(vec!["body"])
         .build();
 
     if !recursive {
