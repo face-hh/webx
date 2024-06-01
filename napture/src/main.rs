@@ -128,7 +128,7 @@ fn handle_search_activate(
     let query = c.borrow_mut();
 
     let url = query.text().to_string();
-    let dns_url = fetch_dns(url.clone());
+    let dns_url = fetch_dns(url.clone()).await;
 
     if dns_url.is_empty() {
         tab_in_closure.url = url.clone();
@@ -356,12 +356,17 @@ struct DomainInfo {
     ip: String,
 }
 
-fn fetch_dns(url: String) -> String {
+async fn fetch_dns(url: String) -> String {
     let mut url = url.replace("buss://", "");
 
     url = url.split("?").nth(0).unwrap_or(&url).to_owned();
     
-    let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
+    let client = reqwest::Client::builder().build()
+        .await
+        .unwrap_or_else(|e| {
+            eprintln!("ERROR: Couldn't build reqwest client: {}", e);
+            std::process::exit(1);
+        });
 
     let clienturl = format!(
         "https://api.buss.lol/domain/{}/{}",
@@ -369,31 +374,21 @@ fn fetch_dns(url: String) -> String {
         url.split('.').nth(1).unwrap_or(""),
     );
 
-    let client = match client.build() {
-        Ok(client) => client,
-        Err(e) => {
-            eprintln!("ERROR: Couldn't build reqwest client: {}", e);
-            return url;
-        }
-    };
-
-    if let Ok(response) = client.get(clienturl).send() {
+    if let Ok(response) = client.get(&clienturl).send().await {
         let status = response.status();
 
-        if let Ok(json) = response.json::<DomainInfo>() {
+        if let Ok(json) = response.json::<DomainInfo>().await {
             json.ip
         } else {
-            lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}.", status.as_u16()));
+            eprintln!("Failed to parse response body from DNS API. Error code: {}.", status.as_u16());
             String::new()
         }
     } else {
-        lualog!(
-            "debug",
-            "Failed to send HTTP request to DNS API."
-        );
+        eprintln!("Failed to send HTTP request to DNS API.");
         String::new()
     }
 }
+
 
 fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
     let window: Window = Object::builder()
