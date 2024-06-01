@@ -50,9 +50,8 @@ async function get_records(db) {
 
     for(let i = 0; i < domains.length; i++) {
         let domain = domains[i];
-        process.stdout.write(`${i}/${domains.length} (${((i / domains.length) * 100).toFixed(2)}%)`)
-        process.stdout.clearLine();
-        process.stdout.cursorTo(0);
+        console.clear()
+        console.log(`${i}/${domains.length} (${((i / domains.length) * 100).toFixed(2)}%)`)
 //        console.log(`Now at ${domain.name}.${domain.tld} (located at ${domain.ip.startsWith("https://") || domain.ip.startsWith("http://")})`);
         if (!(domain.ip.startsWith("https://") || domain.ip.startsWith("http://")) || existing_ips.includes(domain.ip)) {
             continue;
@@ -66,7 +65,7 @@ async function get_records(db) {
 
         let res = extractContent(content);
 
-        if (res == '') continue;
+        if (res.descriptions == '') continue;
         
         needle_docs.push(
             {
