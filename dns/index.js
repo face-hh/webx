@@ -2,21 +2,12 @@ require("dotenv").config();
 
 const express = require('express');
 const bodyParser = require('body-parser')
-const {
-    OpenAI
-} = require('openai');
 
-const {
-    MongoClient
-} = require('mongodb');
-const {
-    generateApiKey
-} = require('./utils');
-const {
-    rateLimit
-} = require('express-rate-limit');
+const { MongoClient } = require('mongodb');
+const { generateApiKey } = require('./utils');
+const Captcha = require("captcha-generator-alphanumeric").default;
 
-const openai = new OpenAI();
+let captchas = {};
 
 const app = express();
 const port = 8000;
@@ -38,45 +29,19 @@ const TLD = [
  */
 let db;
 
-const limiter = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-    limit: 1,
-    skip: (_, res) => res.statusCode != 200,
-    keyGenerator: function(req, _) {
-        return req.headers['x-forwarded-for'] || req.ip;
-    }
-})
+const FastRateLimit = require("fast-ratelimit").FastRateLimit;
+
+const limiter = new FastRateLimit({
+  threshold : 1, // available tokens over timespan
+  ttl       : 60 * 60  // time-to-live value of token bucket (in seconds)
+});
 
 app.set('trust proxy', 1);
-app.post("/domain", limiter)
 
 async function connectToMongo() {
     const client = new MongoClient(process.env.MONGOURI);
     await client.connect();
     db = client.db('mydb').collection('domains');
-}
-
-async function isOffensive(query) {
-    const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{
-                "role": "user",
-                "content": [{
-                    "type": "text",
-                    "text": "I need you to reply with \"yes\" and \"no\" only.\n\nYour task is to tell me if this domain name is offensive (i.e. it's vulgar, racist, dicriminating).\n\nDomain: " + query + "\n"
-                }]
-            },
-        ],
-        temperature: 1,
-        max_tokens: 10,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-    });
-
-    response?.choices?.[0]?.message == "Yes"
 }
 
 connectToMongo().catch(console.error);
@@ -86,6 +51,10 @@ app.get('/', (_, res) => {
 });
 
 app.post('/domain', async (req, res) => {
+    if (!limiter.hasTokenSync(req.ip)) {
+        return res.status(429).send("Try again in an hour")
+    }
+
     const secretKey = generateApiKey(24);
 
     const newDomain = req.body;
@@ -93,7 +62,37 @@ app.post('/domain', async (req, res) => {
     if (!newDomain.tld || !newDomain.ip || !newDomain.name) {
         return res.status(400).send();
     }
+    console.log(captchas, "and your ip is... ", req.ip, " or ", req.connection.remoteAddress)
 
+    if (captchas[req.ip]) {
+        if (!req.body.captcha) {
+            return res.status(403).send("You need to solve the previous captcha and provide the \"captcha\" property. It will reset in 20 minutes.");
+        } else {
+            let key = req.body.captcha;
+
+            if (captchas[req.ip] == key) {
+                return do_the_register_shit(newDomain, res, secretKey, req)
+            }
+
+            return res.status(400).send("The captcha is invalid")
+        }
+    } else {
+        let captcha = new Captcha();
+        
+        captchas[req.ip] = captcha.value;
+    
+        setTimeout(() => {
+            delete captchas[req.ip];
+        }, 20 * 60 * 1000);
+    
+        res.setHeader('Content-Type', 'image/png');
+        captcha.JPEGStream.pipe(res);
+
+        return res.status(202);
+    }    
+});
+
+async function do_the_register_shit(newDomain, res, secretKey, req){
     if (
         !newDomain.name.match(/^[a-zA-Z\-]+$/) ||
         !TLD.includes(newDomain.tld) ||
@@ -121,20 +120,19 @@ app.post('/domain', async (req, res) => {
             return res.status(409).send();
         }
 
-        const is_offensive = isOffensive(newDomain.name + '.' + newDomain.tld);
-
-        if (is_offensive) {
+        if (["nigg", "sex", "porn"].includes(newDomain.name)) {
             return res.status(400).send("The given domain is offensive.")
         }
     
         await db.insertOne(data);
         delete data._id;
 
+        limiter.consumeSync(req.ip)
         res.status(200).json(data);
     } catch (err) {
         res.status(409).send();
     }
-});
+}
 
 app.get('/domain/:name/:tld', async (req, res) => {
     const {

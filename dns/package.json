@@ -10,9 +10,10 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.2",
+    "captcha-generator-alphanumeric": "^1.10.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "express-rate-limit": "^7.2.0",
+    "fast-ratelimit": "^3.0.1",
     "mongodb": "^6.7.0",
     "openai": "^4.47.2"
   }
