@@ -364,7 +364,7 @@ async fn fetch_dns(url: String) -> String {
     let client = reqwest::Client::builder().build()
         .await
         .unwrap_or_else(|e| {
-            eprintln!("ERROR: Couldn't build reqwest client: {}", e);
+            lualog!("ERROR: Couldn't build reqwest client: {}", e);
             std::process::exit(1);
         });
 
@@ -380,11 +380,14 @@ async fn fetch_dns(url: String) -> String {
         if let Ok(json) = response.json::<DomainInfo>().await {
             json.ip
         } else {
-            eprintln!("Failed to parse response body from DNS API. Error code: {}.", status.as_u16());
+            lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}.", status.as_u16()));
             String::new()
         }
     } else {
-        eprintln!("Failed to send HTTP request to DNS API.");
+        lualog!(
+            "debug",
+            "Failed to send HTTP request to DNS API."
+        );
         String::new()
     }
 }
