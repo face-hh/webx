@@ -2,7 +2,7 @@
 
 An alternative to the World Wide Web (`http(s)://`), with:
 - its own **custom browser** written in Rust with [GTK](https://gtk.org/),
-- custom HTML, CSS and **_Lua_** engine (yup, **no javascript! 🎉**),
+- custom HTML, CSS and ***Lua*** engine (yup, **no javascript! 🎉**),
 - custom **DNS** allowing Top-Level domains such as `rizz`, `sigma`, `lol`, `dev`, etc,
 - and **search engine** at `buss://dingle.it`.
 
@@ -52,11 +52,8 @@ home.packages = with pkgs; [
 Then you could just launch it using `webx` in your terminal.
 
 ## Linux
-
 - For now, you have to download [Rust](https://www.rust-lang.org/tools/install). Then, you just need to open `install-linux` as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux`, then you should be able to install).
-
 ## Windows
-
 - Install the executable from the release tab. It's a self-extractor with WinRAR because it has a lot of DLLs.
 
 # Download and Compile
@@ -134,7 +131,6 @@ cargo run
 ```
 
 # Register website
-
 Please follow [How to code a Buss site](https://facedev.gitbook.io/bussin-web-x-how-to-make-a-website/) for a better visual guide.
 
 So you wish to publish a website to Web X? Great! Let's go through the rules:
@@ -162,7 +158,7 @@ What you need is the **Publish** section.
 - for the TLD, choose one displayed above the `Result will appear...` label. (example: `rizz`)
 - for the IP, you can either use:
   - an IP that serves `/index.html` on port 80
-  - a GitHub repository that has `index.html`, **outside any folder**. (example: [registrar](https://github.com/face-hh/webx-registrar)), **_with the `main` default branch_**.
+  - a GitHub repository that has `index.html`, **outside any folder**. (example: [registrar](https://github.com/face-hh/webx-registrar)), ***with the `main` default branch***.
 
 Don't worry! The IP doesn't have to be valid, and you can save the domain for later!
 
@@ -175,12 +171,10 @@ Bussin Napture fetches `index.html` at whatever path you give it. For example, i
 ```bash
 python -m http.server 3000
 ```
-
 2. CLI support with `./napture file:///home/path/to/folder`.
 3. Enter `file:///home/path/to/folder` in the search bar.
 
 # HTML guide
-
 The supported tags are: `head`, `title`, `link`, `meta`, `script`, `h1`-`h6`, `div`, `p`, `ul`, `ol`, `li`, `div`, `button`, `hr`, `img`, `input`, `textarea`, `button`, `select`, `option`. Keep in mind their syntax may be different if you're already familiar with HTML5 (i.e. `link` is used for the tab icon). Please check [registrar](https://github.com/face-hh/webx-registrar) or `/napture/test/index.html` for examples.
 
 # CSS guide
