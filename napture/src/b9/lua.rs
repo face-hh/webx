@@ -276,6 +276,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
     })?;
 
     globals.set("print", lua.create_function(print)?)?;
+    globals.set("get_parameters", lua.create_function(get_parameters)?)?;
     globals.set(
         "get",
         lua.create_function(move |lua, (class, multiple): (String, Option<bool>) | {

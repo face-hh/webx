@@ -413,6 +413,9 @@ fn fetch_dns(url: String) -> String {
             return json.ip
         } else {
             lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}. Returning original URL.", status.as_u16()));
+            if status.as_u16() == 404 {
+                return format!("https://github.com/the-broz/dingle-frontend?q={}", url)
+            }
             return url
         }
     } else {
