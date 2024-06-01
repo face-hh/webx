@@ -356,15 +356,23 @@ struct DomainInfo {
     ip: String,
 }
 
+
 fn fetch_dns(url: String) -> String {
-    let mut url = url.replace("buss://", "");
+    let mut dns = "api.buss.lol";
+
+    if(url.contains("bus2://")) {
+        dns = "buss.bubbleam.pl";
+    }
+
+    let mut url = url.replace("buss://", "").replace("bus2://", "");
 
     url = url.split("?").nth(0).unwrap_or(&url).to_owned();
     
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
 
     let clienturl = format!(
-        "https://api.buss.lol/domain/{}/{}",
+        "https://{}/domain/{}/{}",
+        dns,
         url.split('.').next().unwrap_or(""),
         url.split('.').nth(1).unwrap_or(""),
     );
