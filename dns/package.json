@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js",
+    "dev": "node --watch index.js",
     "start": "node index.js"
   },
   "author": "creeperita104",
@@ -19,7 +19,6 @@
     "mongodb": "^6.7.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.2",
     "prettier": "^3.2.5"
   }
 }
