@@ -195,7 +195,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
     let query_table = lua.create_table()?;
 
     let parts: Vec<&str> = taburl.splitn(2, '?').collect();
-    println!("{taburl}");
+
     if parts.len() == 2 {
         let query_params = parts[1];
 
@@ -261,8 +261,6 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
             };
 
             let errcode = Rc::new(RefCell::new(res.status().as_u16()));
-
-            println!("{:?}", res.headers().get("Content-Type").unwrap());
 
             let text = res.text().unwrap_or_default();
             let body = serde_json::from_str(&text);

@@ -26,6 +26,21 @@
     <url type="vcs-browser">https://github.com/face-hh/webx</url>
     <content_rating type="oars-1.1" />
     <releases>
+            <release version="1.2.2" date="2024-06-01">
+            <url type="details">https://github.com/face-hh/webx/releases/tag/v1.2.2</url>
+            <description>
+              <ul>
+                <li>You now have to solve a CAPTCHA to register a domain.</li>
+                <li>Added <code>set_source()</code> and <code>get_source(link)</code> on <code><img></code></li>
+                <li>HTTP requests that aren't JSON now return both <code>status</code> and <code>content</code>.</li>
+                <li>The current tab URL is available via <code>window.location</code></li>
+                <li>The query args are available via </code>window.query</code>. Syntax: <code>buss://dingle.it?q=hello</code></li>
+                <li>Removed <code>alt</code> from <code><img></code></li>
+                <li>Fixed <code>file://</code>, you can now open local projects with <code>file://C:\path\to\folder</code></li>
+                <li>Fixed memory leak when you enter a non-existent HTTPS website</li>
+              </ul>
+            </description>
+        </release>
             <release version="1.2.1" date="2024-05-31">
             <url type="details">https://github.com/face-hh/webx/releases/tag/v1.2.1</url>
             <description>

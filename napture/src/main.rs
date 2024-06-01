@@ -1,4 +1,4 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 mod b9;
 mod globals;
 mod imp;
@@ -311,7 +311,7 @@ fn make_tab(
         let dialog = gtk::AboutDialog::builder()
             .modal(true)
             .program_name("Bussin Napture")
-            .version("v1.2.1")
+            .version("v1.2.2")
             .website("https://github.com/face-hh/webx")
             .website_label("GitHub")
             .license_type(gtk::License::Apache20)

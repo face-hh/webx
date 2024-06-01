@@ -87,8 +87,6 @@ pub async fn build_ui(
         .build();
 
     let mut css: String = css::reset_css();
-
-    println!("{}", tab.url);
     
     let (head, body) = match parse_html(furl.to_string()).await {
         Ok(ok) => ok,
@@ -799,7 +797,7 @@ async fn fetch_from_github(url: String) -> String {
         url.split('/').nth(4).unwrap_or(""),
         url.split('/').last().unwrap_or(""),
     );
-    println!("{}", url);
+
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
