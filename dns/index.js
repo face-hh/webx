@@ -19,7 +19,7 @@ app.use(bodyParser.json())
 
 const TLD = [
     "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma",
-    "now", "it", "soy", "lol", "uwu"
+    "now", "it", "soy", "lol", "uwu", "wtf", "lmao", "xdd"
 ];
 
 
