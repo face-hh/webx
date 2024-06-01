@@ -1,0 +1,83 @@
+name: Build Napture Nightly
+
+on:
+  push:
+    branches: ['master']
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux-x86_64:
+    name: Build linux-x86_64
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Napture
+        run: |
+          cd napture
+          cargo build --release --verbose
+      - name: Pack Napture into AppImage
+        run: |
+          cd napture/target/release
+          mkdir -p io.github.face_hh.Napture.AppDir/usr/bin/
+          mkdir -p io.github.face_hh.Napture.AppDir/usr/share/metainfo/
+          cp webx io.github.face_hh.Napture.AppDir/usr/bin/nepture
+          cp ../../io.github.face_hh.Napture.metainfo.xml io.github.face_hh.Napture.AppDir/usr/share/metainfo/
+          cp ../../io.github.face_hh.Napture.desktop io.github.face_hh.Napture.AppDir/
+          cp ../../io.github.face_hh.Napture.svg io.github.face_hh.Napture.AppDir/
+          wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod a+x appimagetool-x86_64.AppImage
+          ./appimagetool-x86_64.AppImage io.github.face_hh.Napture.AppDir Napture-linux-x86_64.AppImage
+      - name: Upload Napture AppImage
+        uses: actions/upload-artifact@v2
+        with:
+          name: Napture-linux-x86_64
+          path: napture/target/release/Napture-linux-x86_64.AppImage
+  build-macos-universial:
+    name: Build macos-universial
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          brew install gtk4 graphene glib libadwaita lua create-dmg
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          arch -x86_64 brew install gtk4 graphene glib libadwaita lua
+      - name: Build Napture
+        run: |
+          rustup target add x86_64-apple-darwin
+          cd napture
+          RUSTFLAGS='-L /opt/homebrew/Cellar/' cargo build --release --target aarch64-apple-darwin
+          PKG_CONFIG='/usr/local/bin/pkg-config' RUSTFLAGS='-L /usr/local/Cellar/' cargo build --release --target x86_64-apple-darwin
+          lipo -create target/aarch64-apple-darwin/release/webx target/x86_64-apple-darwin/release/webx -output target/release/webx
+      - name: Make an app bundle
+        run: |
+          cd napture
+          mkdir -p target/release/Napture.app/Contents/MacOS
+          cp target/release/webx target/release/Napture.app/Contents/MacOS
+          cp ./Info.plist target/release/Napture.app/Contents
+          mkdir -p target/release/Napture.app/Contents/Resources/AppIcon.iconset
+
+          for SIZE in 16 32 64 128 256 512; do
+              sips -z $SIZE $SIZE ./file.png --out target/release/Napture.app/Contents/Resources/AppIcon.iconset/icon_${SIZE}x${SIZE}.png
+          done
+          for SIZE in 32 64 256 512; do
+              sips -z $SIZE $SIZE ./file.png --out target/release/Napture.app/Contents/Resources/AppIcon.iconset/icon_$(expr $SIZE / 2)x$(expr $SIZE / 2)x2.png
+          done
+
+          iconutil -c icns -o target/release/Napture.app/Contents/Resources/AppIcon.icns target/release/Napture.app/Contents/Resources/AppIcon.iconset
+          rm -rf target/release/Napture.app/Contents/Resources/AppIcon.iconset
+      - name: Sign the app
+        run: codesign --force --deep --sign - napture/target/release/Napture.app
+      - name: Pack Napture into DMG
+        run: |
+          cd napture/target/release
+          create-dmg Napture-macos-universial.dmg Napture.app
+      - name: Upload Napture DMG
+        uses: actions/upload-artifact@v2
+        with:
+          name: Napture-macos-universial
+          path: napture/target/release/Napture-macos-universial.dmg
