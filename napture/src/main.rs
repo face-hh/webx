@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 mod b9;
 mod globals;
 mod imp;
@@ -357,8 +357,10 @@ struct DomainInfo {
 }
 
 fn fetch_dns(url: String) -> String {
-    let url = url.replace("buss://", "");
+    let mut url = url.replace("buss://", "");
 
+    url = url.split("?").nth(0).unwrap_or(&url).to_owned();
+    
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
 
     let clienturl = format!(

@@ -183,13 +183,33 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
 }
 
 // todo: make this async if shit breaks
-pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {
+pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: String) -> LuaResult<()> {
     let lua = Lua::new_with(
         StdLib::COROUTINE | StdLib::STRING |
         StdLib::TABLE | StdLib::MATH,
         LuaOptions::new().catch_rust_panics(true)
     )?;
     let globals = lua.globals();
+
+    let window_table = lua.create_table()?;
+    let query_table = lua.create_table()?;
+
+    let parts: Vec<&str> = taburl.splitn(2, '?').collect();
+    println!("{taburl}");
+    if parts.len() == 2 {
+        let query_params = parts[1];
+
+        let pairs: Vec<&str> = query_params.split('&').collect();
+        for pair in pairs {
+            let key_value: Vec<&str> = pair.split('=').collect();
+            if key_value.len() == 2 {
+                let key = key_value[0];
+                let value = key_value[1];
+
+                query_table.set(key, value)?;
+            }
+        }
+    }
 
     let fetchtest = lua.create_async_function(|lua, params: LuaTable| async move {
         // I LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTSI LOVE MATCH STATEMENTS
@@ -279,6 +299,9 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
         lua.to_value(&json)
     })?;
 
+    window_table.set("link", taburl)?;
+    window_table.set("query", query_table)?;
+
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
         "get",
@@ -287,6 +310,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
         })?
     )?;
     globals.set("fetch", fetchtest)?;
+    globals.set("window", window_table)?;
 
     let ok = lua.load(luacode).eval::<LuaMultiValue>();
 
