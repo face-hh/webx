@@ -45,7 +45,7 @@ const limiter = rateLimit({
     limit: 1,
     skip: (_, res) => res.statusCode != 200,
     keyGenerator: function(req, _) {
-        return req.headers['x-forwarded-for'] || req.ip;
+        return req.ip;
     }
 })
 
