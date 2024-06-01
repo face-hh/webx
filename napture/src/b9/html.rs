@@ -52,10 +52,6 @@ async fn parse_html(url: String) -> Result<(Node, Node)> {
         false => Dom::parse(include_str!("../resources/not_found.html")),
     }?;
 
-    if url == "SERVER_ERROR" {
-        dom = Dom::parse(include_str!("../resources/servererror.html"))?;
-    }
-
     let head = match find_element_by_name(&dom.children, "head") {
         Some(head) => head,
         None => {
