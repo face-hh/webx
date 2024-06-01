@@ -411,12 +411,14 @@ fn fetch_dns(url: String) -> String {
         let status = response.status();
 
         if let Ok(json) = response.json::<DomainInfo>() {
-            return json.ip
+            json.ip
         } else {
             lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}. Returning original URL.", status.as_u16()));
             if status.as_u16() == 404 {
                 URI_PARAMETERS.lock().unwrap().insert("q".to_string(), url.clone());
                 return "https://github.com/face-hh/dingle-frontend".to_string();
+            }else{
+                return "SERVER_ERROR".to_string()
             }
             return url
         }

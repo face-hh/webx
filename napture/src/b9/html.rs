@@ -38,7 +38,6 @@ fn hashmap_to_query_string(params: &HashMap<String, String>) -> String {
 
 async fn parse_html(url: String) -> Result<(Node, Node)> {
     let uri_parameters = URI_PARAMETERS.lock().unwrap();
-
     let mut full_url = url.to_string();
     eprintln!("Full URL: {}", full_url);
     full_url.push_str("/index.html");
@@ -48,10 +47,14 @@ async fn parse_html(url: String) -> Result<(Node, Node)> {
     let html = fetch_file(full_url).await;
 
 
-    let dom = match !html.is_empty() {
+    let mut dom = match !html.is_empty() {
         true => Dom::parse(&html),
         false => Dom::parse(include_str!("../resources/not_found.html")),
     }?;
+
+    if url == "SERVER_ERROR" {
+        dom = Dom::parse(include_str!("../resources/servererror.html"))?;
+    }
 
     let head = match find_element_by_name(&dom.children, "head") {
         Some(head) => head,
