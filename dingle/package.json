@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "minisearch": "^6.3.0",
+    "mongodb": "^6.7.0"
+  }
+}
