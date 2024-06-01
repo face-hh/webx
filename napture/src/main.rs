@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"]
 mod b9;
 mod globals;
 mod imp;
@@ -129,7 +130,11 @@ fn handle_search_activate(
     let url = query.text().to_string();
     let dns_url = fetch_dns(url.clone());
 
-    tab_in_closure.url = dns_url;
+    if dns_url.is_empty() {
+        tab_in_closure.url = url.clone();
+    } else {
+        tab_in_closure.url = dns_url;
+    }
 
     query.set_text(&url.replace("buss://", ""));
     query.set_position(-1);
@@ -376,15 +381,15 @@ fn fetch_dns(url: String) -> String {
         if let Ok(json) = response.json::<DomainInfo>() {
             json.ip
         } else {
-            lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}. Returning original URL.", status.as_u16()));
-            url
+            lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}.", status.as_u16()));
+            String::new()
         }
     } else {
         lualog!(
             "debug",
-            "Failed to send HTTP request to DNS API. Returning original URL."
+            "Failed to send HTTP request to DNS API."
         );
-        url
+        String::new()
     }
 }
 

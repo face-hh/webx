@@ -2,10 +2,12 @@ require("dotenv").config();
 
 const express = require('express');
 const bodyParser = require('body-parser')
+const path = require('path');
 
 const { MongoClient } = require('mongodb');
 const { generateApiKey } = require('./utils');
 const Captcha = require("captcha-generator-alphanumeric").default;
+const fs = require('fs');
 
 let captchas = {};
 
@@ -16,6 +18,7 @@ app.use(bodyParser.urlencoded({
     extended: false
 }))
 app.use(bodyParser.json())
+app.use('/captcha-images', express.static(path.join(__dirname, 'captcha-images')));
 
 const TLD = [
     "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma",
@@ -65,10 +68,10 @@ app.post('/domain', async (req, res) => {
     console.log(captchas, "and your ip is... ", req.ip, " or ", req.connection.remoteAddress)
 
     if (captchas[req.ip]) {
-        if (!req.body.captcha) {
+        if (!newDomain.captcha) {
             return res.status(403).send("You need to solve the previous captcha and provide the \"captcha\" property. It will reset in 20 minutes.");
         } else {
-            let key = req.body.captcha;
+            let key = newDomain.captcha;
 
             if (captchas[req.ip] == key) {
                 return do_the_register_shit(newDomain, res, secretKey, req)
@@ -78,17 +81,17 @@ app.post('/domain', async (req, res) => {
         }
     } else {
         let captcha = new Captcha();
-        
+        let id = generateApiKey(10);
+
         captchas[req.ip] = captcha.value;
     
         setTimeout(() => {
             delete captchas[req.ip];
         }, 20 * 60 * 1000);
     
-        res.setHeader('Content-Type', 'image/png');
-        captcha.JPEGStream.pipe(res);
+        captcha.JPEGStream.pipe(fs.createWriteStream("captcha-images/" + id + ".jpg"));
 
-        return res.status(202);
+        return res.status(202).send(id);
     }    
 });
 
@@ -123,7 +126,7 @@ async function do_the_register_shit(newDomain, res, secretKey, req){
         if (["nigg", "sex", "porn"].includes(newDomain.name)) {
             return res.status(400).send("The given domain is offensive.")
         }
-    
+
         await db.insertOne(data);
         delete data._id;
 

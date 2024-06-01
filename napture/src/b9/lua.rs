@@ -4,6 +4,7 @@ use std::thread;
 
 use super::css::Styleable;
 use super::html::Tag;
+use glib::GString;
 use gtk::prelude::*;
 use mlua::{prelude::*, StdLib};
 
@@ -20,10 +21,12 @@ pub trait Luable: Styleable {
     fn get_contents_(&self) -> String;
     fn get_href_(&self) -> String;
     fn get_opacity_(&self) -> f64;
+    fn get_source_(&self) -> String;
 
     fn set_contents_(&self, contents: String);
     fn set_href_(&self, href: String);
     fn set_opacity_(&self, amount: f64);
+    fn set_source_(&self, source: String);
 
     fn _on_click(&self, func: &LuaOwnedFunction);
     fn _on_submit(&self, func: &LuaOwnedFunction);
@@ -59,6 +62,8 @@ fn get(
             let tags7 = Rc::clone(&tags);
             let tags8 = Rc::clone(&tags);
             let tags9 = Rc::clone(&tags);
+            let tags10 = Rc::clone(&tags);
+            let tags11 = Rc::clone(&tags);
 
             let table = lua.create_table()?;
 
@@ -127,6 +132,20 @@ fn get(
                 lua.create_function(move |_, amount: f64| {
                     tags9.borrow()[i].widget.set_opacity_(amount);
                     Ok(())
+                })?,
+            )?;
+            table.set(
+                "get_source",
+                lua.create_function(move |_, ()| {
+                    tags10.borrow()[i].widget.get_source_();
+                    Ok(())
+                })?,
+            )?;
+            table.set(
+                "set_source",
+                lua.create_function(move |_, src: String| {
+                    let ok = tags11.borrow()[i].widget.set_source_(src);
+                    Ok(ok)
                 })?,
             )?;
 
@@ -223,18 +242,22 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResu
 
             let errcode = Rc::new(RefCell::new(res.status().as_u16()));
 
-            let body: Result<serde_json::Value, reqwest::Error> = res.json();
+            println!("{:?}", res.headers().get("Content-Type").unwrap());
+
+            let text = res.text().unwrap_or_default();
+            let body = serde_json::from_str(&text);
 
             let result = match body {
                 Ok(body) => body,
                 Err(e) => {
                     let errcode_clone = Rc::clone(&errcode);
 
-                    lualog!("lua", format!("ERROR: failed to parse response body: {}", e));
+                    lualog!("lua", format!("INFO: failed to parse JSON from response body: {}", e));
                     let mut map: Map<String, serde_json::Value> = Map::new();
 
                     map.insert("status".to_owned(), serde_json::Value::Number(serde_json::Number::from_f64(*errcode_clone.borrow() as f64).unwrap()));
-                                        
+                    map.insert("content".to_owned(), serde_json::Value::String(text));
+
                     serde_json::Value::Object(map)
                 }
             };
@@ -303,6 +326,19 @@ impl Luable for gtk::Label {
         );
         "".to_string()
     }
+    fn get_source_(&self) -> String {
+        lualog!(
+            "warning",
+            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+        "".to_string()
+    }
+    fn set_source_(&self, _: String) {
+        lualog!(
+            "warning",
+            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
@@ -363,6 +399,19 @@ impl Luable for gtk::DropDown {
             "\"select\" component does not support the \"get_href\" method."
         );
         "".to_string()
+    }
+    fn get_source_(&self) -> String {
+        lualog!(
+            "warning",
+            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+        "".to_string()
+    }
+    fn set_source_(&self, _: String) {
+        lualog!(
+            "warning",
+            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
     }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
@@ -428,6 +477,19 @@ impl Luable for gtk::LinkButton {
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
     }
+    fn get_source_(&self) -> String {
+        lualog!(
+            "warning",
+            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+        "".to_string()
+    }
+    fn set_source_(&self, _: String) {
+        lualog!(
+            "warning",
+            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+    }
     fn set_contents_(&self, contents: String) {
         self.set_label(&contents);
         self.style();
@@ -482,6 +544,19 @@ impl Luable for gtk::Box {
     }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
+    }
+    fn get_source_(&self) -> String {
+        lualog!(
+            "warning",
+            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+        "".to_string()
+    }
+    fn set_source_(&self, _: String) {
+        lualog!(
+            "warning",
+            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
@@ -552,6 +627,19 @@ impl Luable for gtk::TextView {
     fn set_contents_(&self, contents: String) {
         self.buffer().set_text(&contents);
     }
+    fn get_source_(&self) -> String {
+        lualog!(
+            "warning",
+            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+        "".to_string()
+    }
+    fn set_source_(&self, _: String) {
+        lualog!(
+            "warning",
+            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+    }
     fn set_href_(&self, _: String) {
         lualog!(
             "warning",
@@ -617,6 +705,19 @@ impl Luable for gtk::Separator {
             "\"hr\" component does not support the \"set_content\" method."
         );
     }
+    fn get_source_(&self) -> String {
+        lualog!(
+            "warning",
+            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+        "".to_string()
+    }
+    fn set_source_(&self, _: String) {
+        lualog!(
+            "warning",
+            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+    }
     fn set_href_(&self, _: String) {
         lualog!(
             "warning",
@@ -679,6 +780,21 @@ impl Luable for gtk::Picture {
             "\"img\" component does not support the \"set_content\" method."
         );
     }
+    fn get_source_(&self) -> String {
+        self.alternative_text().unwrap_or(GString::new()).to_string()
+    }
+    fn set_source_(&self, source: String) {
+        let stream = match crate::b9::html::fetch_image_to_pixbuf(source.clone()) {
+            Ok(s) => s,
+            Err(e) => {
+                println!("ERROR: Failed to load image: {}", e);
+                return;
+            }
+        };
+
+        self.set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
+        self.set_alternative_text(Some(&source))
+    }
     fn set_href_(&self, _: String) {
         lualog!(
             "warning",
@@ -734,6 +850,19 @@ impl Luable for gtk::Entry {
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
+    }
+    fn get_source_(&self) -> String {
+        lualog!(
+            "warning",
+            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+        "".to_string()
+    }
+    fn set_source_(&self, _: String) {
+        lualog!(
+            "warning",
+            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
     }
     fn set_contents_(&self, contents: String) {
         self.buffer().set_text(contents);
@@ -806,6 +935,19 @@ impl Luable for gtk::Button {
     }
     fn set_contents_(&self, contents: String) {
         self.set_label(&contents);
+    }
+    fn get_source_(&self) -> String {
+        lualog!(
+            "warning",
+            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
+        "".to_string()
+    }
+    fn set_source_(&self, _: String) {
+        lualog!(
+            "warning",
+            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
+        );
     }
     fn set_href_(&self, _: String) {
         lualog!(

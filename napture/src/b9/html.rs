@@ -86,6 +86,8 @@ pub async fn build_ui(
 
     let mut css: String = css::reset_css();
 
+    println!("{}", tab.url);
+    
     let (head, body) = match parse_html(tab.url.clone()).await {
         Ok(ok) => ok,
         Err(e) => {
@@ -447,7 +449,7 @@ fn render_html(
                 }
             };
 
-            let stream = match fetch_image_to_pixbuf(url) {
+            let stream = match fetch_image_to_pixbuf(url.clone()) {
                 Ok(s) => s,
                 Err(e) => {
                     println!("ERROR: Failed to load image: {}", e);
@@ -459,14 +461,7 @@ fn render_html(
 
             let image = gtk::Picture::builder()
                 .css_name("img")
-                .alternative_text(
-                    element
-                        .attributes
-                        .get("alt")
-                        .unwrap_or(&Some(String::new()))
-                        .clone()
-                        .unwrap_or_default(),
-                )
+                .alternative_text(url)
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
                 .valign(gtk::Align::Start)
@@ -722,7 +717,7 @@ fn render_list(
     }
 }
 
-fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
+pub(crate) fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
     let handle = thread::spawn(move || {
         reqwest::blocking::get(url)
             .map_err(|e| e.to_string())
@@ -752,6 +747,7 @@ fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
 }
 
 async fn fetch_file(url: String) -> String {
+    println!("{url}");
     if url.starts_with("file://") {
         let path = url.replace("file://", "");
 
