@@ -11,6 +11,7 @@ use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Map;
+use crate::globals::URI_PARAMETERS;
 
 use crate::lualog;
 
@@ -162,6 +163,24 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
     println!("{}", output);
     Ok(())
 }
+
+fn get_parameters(lua: &Lua) -> LuaResult<Value> {
+    // Acquire a lock on URI_PARAMETERS
+    let uri_parameters = URI_PARAMETERS.lock().unwrap();
+
+    // Create a Lua table
+    let lua_table = lua.create_table()?;
+
+    // Populate the Lua table with query parameters
+    for (key, value) in uri_parameters.iter() {
+        lua_table.set(key.clone(), value.clone())?;
+    }
+
+    // Drop the lock on URI_PARAMETERS
+
+    Ok(Value::Table(lua_table))
+}
+
 
 // todo: make this async if shit breaks
 pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>) -> LuaResult<()> {

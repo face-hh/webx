@@ -11,6 +11,9 @@ use std::{cell::RefCell, fs, rc::Rc, thread};
 
 use gtk::{gdk::Display, gdk_pixbuf, gio, glib::Bytes, prelude::*, CssProvider};
 use html_parser::{Dom, Element, Node, Result};
+use crate::globals::URI_PARAMETERS;
+use std::collections::HashMap;
+
 
 use lua::Luable;
 
@@ -20,8 +23,23 @@ pub(crate) struct Tag {
     pub tied_variables: Vec<String>,
 }
 
+fn hashmap_to_query_string(params: &HashMap<String, String>) -> String {
+    let mut query_string = String::new();
+
+    for (key, value) in params.iter() {
+        if !query_string.is_empty() {
+            query_string.push('&');
+        }
+        query_string.push_str(&format!("{}={}", key, value));
+    }
+
+    query_string
+}
+
 async fn parse_html(url: String) -> Result<(Node, Node)> {
-    let html = fetch_file(url + "/index.html").await;
+    let uri_parameters = URI_PARAMETERS.lock().unwrap();
+
+    let html = fetch_file(format!("{}{}", url + "/index.html?",hashmap_to_query_string(&uri_parameters))).await;
 
     let dom = match !html.is_empty() {
         true => Dom::parse(&html),

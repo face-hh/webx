@@ -34,6 +34,7 @@ macro_rules! lualog {
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::collections::HashMap;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -49,6 +50,7 @@ use b9::css::Styleable;
 use glib::Object;
 
 use globals::LUA_LOGS;
+use crate::globals::URI_PARAMETERS;
 use gtk::gdk;
 use gtk::gdk::Display;
 use gtk::gio;
@@ -114,6 +116,28 @@ fn main() -> glib::ExitCode {
     app.run_with_args(&[""])
 }
 
+fn get_uri_parameters(uri: &str) -> (HashMap<String, String>, String) {
+    let mut params = HashMap::new();
+    let mut base_url = uri.to_string();
+
+    // Find the start of the query string
+    if let Some(start) = uri.find('?') {
+        // Split the query string into key-value pairs
+        let query_string = &uri[start + 1..];
+        for pair in query_string.split('&') {
+            let mut iter = pair.splitn(2, '=');
+            if let (Some(key), Some(value)) = (iter.next(), iter.next()) {
+                params.insert(key.to_string(), value.to_string());
+            }
+        }
+        // Get the base URL without parameters
+        base_url = uri[..start].to_string();
+    }
+
+    (params, base_url)
+}
+
+
 fn handle_search_activate(
     scroll_clone: Rc<RefCell<gtk::ScrolledWindow>>,
     previous_css_provider: Rc<RefCell<CssProvider>>,
@@ -127,7 +151,19 @@ fn handle_search_activate(
     let query = c.borrow_mut();
 
     let url = query.text().to_string();
-    let dns_url = fetch_dns(url.clone());
+    let (params, base_url) = get_uri_parameters(&url); // Extract parameters and get base URL
+
+    // Save the parameters to the global URI_PARAMETERS HashMap
+    {
+        let mut global_params = URI_PARAMETERS.lock().unwrap();
+        global_params.extend(params.clone());
+    }
+
+    let dns_url = fetch_dns(base_url.clone()); // Use base URL without parameters
+
+    for (key, value) in params.iter() {
+        println!("{}: {}", key, value);
+    }
 
     tab_in_closure.url = dns_url;
 
@@ -374,10 +410,10 @@ fn fetch_dns(url: String) -> String {
         let status = response.status();
 
         if let Ok(json) = response.json::<DomainInfo>() {
-            json.ip
+            return json.ip
         } else {
             lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}. Returning original URL.", status.as_u16()));
-            url
+            return url
         }
     } else {
         lualog!(
