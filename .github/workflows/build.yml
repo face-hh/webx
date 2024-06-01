@@ -17,6 +17,7 @@ jobs:
       - name: Install deps
         run: |
           sudo apt update
+          sudo apt upgrade -y
           sudo apt install -y build-essential pkg-config
           sudo apt install -y libpango1.0-dev libgtk-4-dev libgraphene-1.0-dev libadwaita-1-dev liblua5.4-dev
       - name: Build Napture
