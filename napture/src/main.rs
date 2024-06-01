@@ -60,6 +60,7 @@ use gtk::glib;
 use gtk::prelude::*;
 
 const APP_ID: &str = "io.github.face_hh.Napture";
+const DEFAULT_URL: &str = "dingle.it";
 
 #[derive(Clone, Debug)]
 struct Tab {
@@ -115,19 +116,17 @@ fn main() -> glib::ExitCode {
     app.run_with_args(&[""])
 }
 
-fn handle_search_activate(
-    scroll_clone: Rc<RefCell<gtk::ScrolledWindow>>,
-    previous_css_provider: Rc<RefCell<CssProvider>>,
+fn handle_search_update(
+    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    css_provider: Rc<RefCell<CssProvider>>,
     current_tab: Rc<RefCell<Tab>>,
-    query_: Rc<RefCell<gtk::SearchEntry>>,
+    searchbar: Rc<RefCell<gtk::SearchEntry>>,
 ) {
-    let previous_css_provider_clone = Rc::clone(&previous_css_provider);
-
     let mut tab_in_closure = current_tab.borrow_mut();
-    let c = query_.clone();
-    let query = c.borrow_mut();
+    let searchbar_clone = searchbar.clone();
+    let searchbar_mut = searchbar_clone.borrow_mut(); 
 
-    let url = query.text().to_string();
+    let url = searchbar_mut.text().to_string();
     let dns_url = fetch_dns(url.clone());
 
     if dns_url.is_empty() {
@@ -136,10 +135,10 @@ fn handle_search_activate(
         tab_in_closure.url = dns_url;
     }
 
-    query.set_text(&url.replace("buss://", ""));
-    query.set_position(-1);
+    searchbar_mut.set_text(&url.replace("buss://", ""));
+    searchbar_mut.set_position(-1);
 
-    if let Some(root) = query.root() {
+    if let Some(root) = searchbar_mut.root() {
         root.set_focus(None as Option<&gtk::Widget>)
     } else {
         println!("ERROR: Failed to set focus on search bar. Root is None.");
@@ -147,13 +146,13 @@ fn handle_search_activate(
 
     match b9::html::build_ui(
         tab_in_closure.clone(),
-        Some(previous_css_provider_clone.take()),
-        scroll_clone.clone(),
-        query_,
+        Some(css_provider.take()),
+        scroll.clone(),
+        searchbar,
     ) {
-        Ok((htmlview, provider)) => {
-            scroll_clone.borrow_mut().set_child(Some(&htmlview));
-            *previous_css_provider.borrow_mut() = provider;
+        Ok((htmlview, next_css_provider)) => {
+            scroll.borrow_mut().set_child(Some(&htmlview));
+            *css_provider.borrow_mut() = next_css_provider;
         }
         Err(e) => {
             tab_in_closure.label_widget.set_label(&e.to_string());
@@ -162,6 +161,14 @@ fn handle_search_activate(
 }
 
 fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
+    let default_dns_url = fetch_dns(DEFAULT_URL.to_string());
+
+    let default_tab_url = if default_dns_url.is_empty() {
+        DEFAULT_URL.to_string()
+    } else {
+        default_dns_url
+    };
+
     let tabs: Vec<Tab> = vec![];
 
     let window: Window = Object::builder().property("application", app).build();
@@ -171,6 +178,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let search = gtk::SearchEntry::builder()
         .css_name("search")
         .width_request(500)
+        .text(DEFAULT_URL)
         .build();
     let empty_label = gtk::Label::new(Some(""));
     let headerbar = gtk::HeaderBar::builder().build();
@@ -183,12 +191,18 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         "file.png",
         // cursor_pointer.as_ref(),
         tabs.clone(),
+        default_tab_url
     );
 
     let current_tab = tab1.clone();
 
+    let refresh_button = make_refresh_button();
+    let home_button = make_home_button();
+
     tabs_widget.append(&tab1.widget);
     tabs_widget.append(&search);
+    tabs_widget.append(&refresh_button);
+    tabs_widget.append(&home_button);
 
     headerbar.pack_start(&tabs_widget);
     headerbar.set_title_widget(Some(&empty_label));
@@ -198,8 +212,6 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let scroll = gtk::ScrolledWindow::builder().css_classes(vec!["body"]).build();
 
     scroll.style();
-
-    let scroll_clone = scroll.clone();
 
     let rc_css_provider = Rc::new(RefCell::new(CssProvider::new()));
     let rc_scroll = Rc::new(RefCell::new(scroll.clone()));
@@ -246,21 +258,59 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     window.set_default_size(500, 500);
     window.present();
-    
+
     if let Ok((htmlview, provider)) = b9::html::build_ui(tab1.clone(), None, rc_scroll.clone(), rc_search.clone()) {
-        scroll_clone.set_child(Some(&htmlview));
+        rc_scroll.clone().borrow_mut().set_child(Some(&htmlview));
         *rc_css_provider.borrow_mut() = provider;
     } else {
         println!("ERROR: HTML engine failed.");
     }
     
     // search bar
-    search.connect_activate(move |query| {
-        let pprevious_css_provider = Rc::clone(&rc_css_provider);
-        let scroll_clonee = Rc::clone(&rc_scroll);
-        let tabb = Rc::clone(&rc_tab);
+    let rc_scroll_search = rc_scroll.clone();
+    let rc_css_provider_search = rc_css_provider.clone();
+    let rc_tab_search = rc_tab.clone();
 
-        handle_search_activate(scroll_clonee, pprevious_css_provider, tabb, Rc::new(RefCell::new(query.clone())));
+    search.connect_activate(move |query| {
+        handle_search_update(
+            rc_scroll_search.clone(), 
+            rc_css_provider_search.clone(), 
+            rc_tab_search.clone(), 
+            Rc::new(RefCell::new(query.clone()))
+        );
+    });
+
+    // refresh button
+    let rc_scroll_refresh = rc_scroll.clone();
+    let rc_css_provider_refresh = rc_css_provider.clone();
+    let rc_tab_refresh = rc_tab.clone();
+    let rc_search_refresh = rc_search.clone();
+
+    refresh_button.connect_clicked(move |_button| {
+        handle_search_update(
+            rc_scroll_refresh.clone(), 
+            rc_css_provider_refresh.clone(), 
+            rc_tab_refresh.clone(), 
+            rc_search_refresh.clone()
+        );
+    });
+
+    // home button
+    let rc_scroll_home = rc_scroll.clone();
+    let rc_css_provider_home = rc_css_provider.clone();
+    let rc_tab_home = rc_tab.clone();
+    let rc_search_home = rc_search.clone();
+
+    home_button.connect_clicked(move |_button| {
+        let rc_search = rc_search_home.clone();
+        rc_search.borrow_mut().set_text(DEFAULT_URL);
+
+        handle_search_update(
+            rc_scroll_home.clone(), 
+            rc_css_provider_home.clone(), 
+            rc_tab_home.clone(), 
+            rc_search_home.clone()
+        );
     });
 }
 
@@ -272,6 +322,7 @@ fn make_tab(
     icon: &str,
     // cursor_pointer: Option<&Cursor>,
     mut tabs: Vec<Tab>,
+    default_url: String
 ) -> Tab {
     // let tabid = gen_tab_id();
 
@@ -327,7 +378,7 @@ fn make_tab(
     tab.append(&tabname);
 
     let res = Tab {
-        url: "https://github.com/face-hh/dingle-frontend".to_string(),
+        url: default_url,
         widget: tab,
         // id: tabid,
         label_widget: tabname,
@@ -350,6 +401,20 @@ fn make_tab(
 
 //     Uuid::new_v4().to_string()
 // }
+
+fn make_refresh_button() -> gtk::Button {
+    let button = gtk::Button::from_icon_name("view-refresh");
+    button.add_css_class("refresh-button");
+
+    button
+}
+
+fn make_home_button() -> gtk::Button {
+    let button = gtk::Button::from_icon_name("go-home");
+    button.add_css_class("home-button");
+
+    button
+}
 
 #[derive(Deserialize)]
 struct DomainInfo {
