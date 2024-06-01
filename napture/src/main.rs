@@ -309,7 +309,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             rc_scroll_home.clone(), 
             rc_css_provider_home.clone(), 
             rc_tab_home.clone(), 
-            rc_search_home.clone()
+            rc_search
         );
     });
 }
