@@ -17,7 +17,8 @@ jobs:
       - name: Install deps
         run: |
           sudo apt update
-          sudo apt install -y libpango1.0-dev libgtk-4-dev libgraphene-1.0-dev libadwaita-1-dev liblua5.4-dev pkg-config
+          sudo apt install -y build-essential pkg-config
+          sudo apt install -y libpango1.0-dev libgtk-4-dev libgraphene-1.0-dev libadwaita-1-dev liblua5.4-dev
       - name: Build Napture
         run: |
           cd napture
@@ -35,9 +36,9 @@ jobs:
           chmod a+x appimagetool-x86_64.AppImage
           ./appimagetool-x86_64.AppImage io.github.face_hh.Napture.AppDir Napture-linux-x86_64.AppImage
       - name: Upload Napture AppImage
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: Napture-linux-x86_64
+          name: Napture-linux-x86_64.AppImage
           path: napture/target/release/Napture-linux-x86_64.AppImage
   build-macos-universial:
     name: Build macos-universial
@@ -81,7 +82,7 @@ jobs:
           cd napture/target/release
           create-dmg Napture-macos-universial.dmg Napture.app
       - name: Upload Napture DMG
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: Napture-macos-universial
+          name: Napture-macos-universial.dmg
           path: napture/target/release/Napture-macos-universial.dmg
