@@ -417,7 +417,7 @@ fn fetch_dns(url: String) -> String {
             if status.as_u16() == 404 {
                 URI_PARAMETERS.lock().unwrap().insert("q".to_string(), url.clone());
                 return "https://github.com/face-hh/dingle-frontend".to_string();
-            }else{
+            }else if status.as_u16() != 200 {
                 return "SERVER_ERROR".to_string()
             }
             return url
