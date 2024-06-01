@@ -16,7 +16,7 @@ else
 fi
 
 # Install deps using Homebrew
-brew install gtk4 graphene glib libadwaita lua || exit 1
+brew install gtk4 graphene glib libadwaita lua pkg-config || exit 1
 
 # Assuming the script is in the same directory as "napture"
 cd "$(dirname "$0")/napture" || exit 1
