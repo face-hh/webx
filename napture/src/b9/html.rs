@@ -39,7 +39,14 @@ fn hashmap_to_query_string(params: &HashMap<String, String>) -> String {
 async fn parse_html(url: String) -> Result<(Node, Node)> {
     let uri_parameters = URI_PARAMETERS.lock().unwrap();
 
-    let html = fetch_file(format!("{}{}", url + "/index.html?",hashmap_to_query_string(&uri_parameters))).await;
+    let mut full_url = url.to_string();
+    eprintln!("Full URL: {}", full_url);
+    full_url.push_str("/index.html");
+    if !full_url.starts_with("https://github.com") {
+        full_url.push_str(&hashmap_to_query_string(&uri_parameters)); // we can only send parameters to non-github URLs.
+    }
+    let html = fetch_file(full_url).await;
+
 
     let dom = match !html.is_empty() {
         true => Dom::parse(&html),

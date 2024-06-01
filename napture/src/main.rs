@@ -156,6 +156,7 @@ fn handle_search_activate(
     // Save the parameters to the global URI_PARAMETERS HashMap
     {
         let mut global_params = URI_PARAMETERS.lock().unwrap();
+        global_params.clear();
         global_params.extend(params.clone());
     }
 
@@ -414,7 +415,8 @@ fn fetch_dns(url: String) -> String {
         } else {
             lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}. Returning original URL.", status.as_u16()));
             if status.as_u16() == 404 {
-                return format!("https://github.com/the-broz/dingle-frontend?q={}", url)
+                URI_PARAMETERS.lock().unwrap().insert("q".to_string(), url.clone());
+                return "https://github.com/the-broz/dingle-frontend".to_string();
             }
             return url
         }

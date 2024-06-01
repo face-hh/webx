@@ -164,21 +164,18 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
     Ok(())
 }
 
-fn get_parameters(lua: &Lua) -> LuaResult<Value> {
-    // Acquire a lock on URI_PARAMETERS
+fn get_parameters(lua: &Lua, _: ()) -> LuaResult<LuaTable<>> {
     let uri_parameters = URI_PARAMETERS.lock().unwrap();
 
-    // Create a Lua table
     let lua_table = lua.create_table()?;
 
-    // Populate the Lua table with query parameters
+    // do some funky shit
     for (key, value) in uri_parameters.iter() {
         lua_table.set(key.clone(), value.clone())?;
     }
 
-    // Drop the lock on URI_PARAMETERS
 
-    Ok(Value::Table(lua_table))
+    Ok(lua_table)
 }
 
 
