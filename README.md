@@ -52,20 +52,20 @@ home.packages = with pkgs; [
 Then you could just launch it using `webx` in your terminal.
 
 ## Linux
-- For now, you have to download [Rust](https://www.rust-lang.org/tools/install). Then, you just need to open `install-linux` as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux`, then you should be able to install).
+- For now, you have to download <a href="https://www.rust-lang.org/tools/install" target="_blank">Rust</a>. Then, you just need to open `install-linux` as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux`, then you should be able to install).
 ## Windows
 - Install the executable from the release tab. It's a self-extractor with WinRAR because it has a lot of DLLs.
 
 # Download and Compile
 ## Linux
-Install [Rust](https://www.rust-lang.org/tools/install) if you haven't already.
+Install <a href="https://www.rust-lang.org/tools/install" target="_blank">Rust</a> if you haven't already.
 It should work by default, but if you're getting errors such as "missing PC files", you should Google it. Most likely you just have to install a library
 
 ## Windows
 Welcome to Gaming OS 🙂
-1. Download [Rust](https://www.rust-lang.org/tools/install)
+1. Download <a href="https://www.rust-lang.org/tools/install" target="_blank">Rust</a>
 2. Download GNU target: `rustup toolchain install stable-gnu && rustup default stable-gnu`
-3. Download [MSYS32](https://www.msys2.org/)
+3. Download <a href="https://www.msys2.org" target="_blank">MSYS32</a>
 4. Open MSYS32 MINGW32
 5. Run: `pacman -Syu` just in case.
 6. Run `pacman -S mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua`
