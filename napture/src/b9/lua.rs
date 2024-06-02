@@ -4,6 +4,7 @@ use std::thread;
 
 use super::css::Styleable;
 use super::html::Tag;
+use chrono::Utc;
 use glib::GString;
 use gtk::prelude::*;
 use mlua::{prelude::*, StdLib};
@@ -192,6 +193,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
     let globals = lua.globals();
 
     let window_table = lua.create_table()?;
+    let json_table = lua.create_table()?;
     let query_table = lua.create_table()?;
 
     let parts: Vec<&str> = taburl.splitn(2, '?').collect();
@@ -263,42 +265,55 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
             let errcode = Rc::new(RefCell::new(res.status().as_u16()));
 
             let text = res.text().unwrap_or_default();
-            let body = serde_json::from_str(&text);
 
-            let result = match body {
-                Ok(body) => body,
-                Err(e) => {
-                    let errcode_clone = Rc::clone(&errcode);
-
-                    lualog!("lua", format!("INFO: failed to parse JSON from response body: {}", e));
-                    let mut map: Map<String, serde_json::Value> = Map::new();
-
-                    map.insert("status".to_owned(), serde_json::Value::Number(serde_json::Number::from_f64(*errcode_clone.borrow() as f64).unwrap()));
-                    map.insert("content".to_owned(), serde_json::Value::String(text));
-
-                    serde_json::Value::Object(map)
-                }
-            };
-
-            result
+            text
         });
 
-        let json = match handle.join() {
-            Ok(json) => json,
+        let result = match handle.join() {
+            Ok(result) => result,
             Err(_) => {
                 lualog!(
                     "error",
                     format!("Failed to join request thread at fetch request. Originates from the Lua runtime. Returning null.")
                 );
-                serde_json::Value::Null
+                "null".to_string()
             }
         };
 
-        lua.to_value(&json)
+        lua.to_value(&result)
+    })?;
+
+    let json_stringify = lua.create_function(|lua, table: LuaTable| {
+        match serde_json::to_string(&table) {
+            Ok(value) => Ok(lua.to_value(&value)?),
+            Err(_) => {
+                lualog!(
+                    "error",
+                    format!("Failed to stringify JSON. Returning null.")
+                );
+                Ok(lua.null())
+            }
+        }
+    })?;
+
+    let json_parse = lua.create_function(|lua, json: String| {
+        match serde_json::from_str::<serde_json::Value>(&json) {
+            Ok(value) => Ok(lua.to_value(&value)?),
+            Err(_) => {
+                lualog!(
+                    "error",
+                    format!("Failed to parse JSON. Returning null.")
+                );
+                Ok(lua.null())
+            }
+        }
     })?;
 
     window_table.set("link", taburl)?;
     window_table.set("query", query_table)?;
+
+    json_table.set("stringify", json_stringify)?;
+    json_table.set("parse", json_parse)?;
 
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
@@ -308,7 +323,14 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
         })?
     )?;
     globals.set("fetch", fetchtest)?;
+    globals.set("json", json_table)?;
     globals.set("window", window_table)?;
+    globals.set(
+        "time",
+        lua.create_function(move |_, () | {
+            Ok(Utc::now().timestamp())
+        })?
+    )?;
 
     let ok = lua.load(luacode).eval::<LuaMultiValue>();
 
