@@ -412,8 +412,11 @@ impl Styleable for gtk::TextView {
                     let width = properties.width;
                     let height = properties.height;
 
-                    if width != 0 && height != 0 {
-                        self.set_size_request(width, height);
+                    if width > 0 || height > 0 {
+                        let normalized_width = if width > 0 { width } else { -1 };
+                        let normalized_height = if height > 0 { height } else { -1 };
+
+                        self.set_size_request(normalized_width, normalized_height);
                     }
 
                     self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
@@ -505,8 +508,11 @@ impl Styleable for gtk::Entry {
                     let width = properties.width;
                     let height = properties.height;
                     
-                    if width != 0 && height != 0 {
-                        self.set_size_request(width, height);
+                    if width > 0 || height > 0 {
+                        let normalized_width = if width > 0 { width } else { -1 };
+                        let normalized_height = if height > 0 { height } else { -1 };
+
+                        self.set_size_request(normalized_width, normalized_height);
                     }
 
                     self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
