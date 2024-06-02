@@ -1,0 +1,55 @@
+<html>
+
+<head>
+    <title>Bussin Registrar</title>
+    <link href="https://i.imgur.com/mna6WM2.png">
+
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Register your buss:// domain for free!">
+
+    <link href="styles.css">
+</head>
+
+<body>
+    <div class="introduction">
+        <h1 class="header">Welcome!</h1>
+        <h4>What do you wish to do?</h4>
+        <h6>Currently broken on pre-built Windows executables, images won't work.</h6>
+    </div>
+
+    <hr>
+
+    <div class="list">
+        <div class="item">
+            <p class="item-title">Publish</p>
+            <input type="text" placeholder="Domain name... (i.e. 'google')" class="publish-input-domain">
+            <input type="text" placeholder="TLD... (i.e. 'lol')" class="publish-input-tld">
+            <input type="text" placeholder="IP... (i.e. '127.3.1.21' OR 'https://github.com/x/xx')" class="publish-input-ip">
+
+            <button class="done-1">Done</button>
+        </div>
+
+        <div class="item">
+            <p class="item-title">Update</p>
+            <input type="text" placeholder="Domain key... (i.e. '9bviW7tWuFoc8UdLuYdJAT1Z')" class="update-input-key">
+            <input type="text" placeholder="IP... (i.e. '127.3.1.21' OR 'https://github.com/x/xx')" class="update-input-ip">
+            <button class="done-2">Done</button>
+        </div>
+
+        <div class="item">
+            <p class="item-title">Delete</p>
+            <input type="text" placeholder="Domain key... (i.e. '9bviW7tWuFoc8UdLuYdJAT1Z')" class="delete-input-key">
+            <button class="done-3">Done</button>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="list2">
+        <p class="tlds">Loading...</p>
+
+        <h2 class="result">Result will appear here after you press Done.</h2>
+    </div>
+</body>
+
+</html>

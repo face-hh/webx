@@ -53,6 +53,8 @@ Then you could just launch it using `webx` in your terminal.
 
 ## Linux
 - For now, you have to download [Rust](https://www.rust-lang.org/tools/install). Then, you just need to open `install-linux` as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux`, then you should be able to install).
+## macOS
+- For now, you have to download [Rust](https://www.rust-lang.org/tools/install) and [Homebrew](https://brew.sh). Then, you just need to open `install-macos` as an executable (if you can't execute it, first do `chmod +x ./install-macos`, then you should be able to install).
 ## Windows
 - Install the executable from the release tab. It's a self-extractor with WinRAR because it has a lot of DLLs.
 
@@ -72,6 +74,63 @@ Welcome to Gaming OS 🙂
 7. Go to `Settings` -> `Search` and open `Advanced system settings` -> Click on `Environment variables` (or just search "path")
 8. Select `Path` -> Click on `Edit` -> Add the following three entries: `C:\msys64\mingw64\include`, `C:\msys64\mingw64\bin`, and `C:\msys64\mingw64\lib`.
 9. Open a terminal in the folder with `napture/`, run `cargo run`.
+
+## MacOS (Apple Silicon)
+1. Install [Rust](https://www.rust-lang.org/tools/install)
+2. Install [Homebrew](https://brew.sh/)
+3. Install PKG_CONFIG_PATH and ensure it's set in your path
+
+```bash
+brew install pkg-config
+which pkg-config
+```
+
+3.1. Should return something like `/opt/homebrew/bin/pkg-config`. If it doesn't, add it to your path.
+
+4. Install GTK and Necessary Libraries
+
+```bash
+brew install glib
+brew install gobject-introspection
+brew install graphene
+brew install gdk-pixbuf
+brew install pango
+brew install gtk+4
+brew install libadwaita
+brew install lua@5.4
+
+brew --prefix glib
+brew --prefix gobject-introspection
+brew --prefix graphene
+brew --prefix gdk-pixbuf
+brew --prefix pango
+brew --prefix gtk4
+brew --prefix libadwaita
+brew --prefix lua@5.4
+```
+
+4.1 Validate if the libraries are installed adequately and set in PKG_CONFIG_PATH, command below should return the path to the libraries without any errors.
+
+```bash
+pkg-config --libs --cflags glib-2.0
+pkg-config --libs --cflags gobject-2.0
+pkg-config --libs --cflags graphene-gobject-1.0
+pkg-config --libs --cflags gdk-pixbuf-2.0
+pkg-config --libs --cflags pango
+pkg-config --libs --cflags gtk4
+pkg-config --libs --cflags libadwaita-1
+pkg-config --libs --cflags lua-5.4
+```
+
+5. Run `cargo run` in the `napture/` directory.
+
+```bash
+cd napture
+
+cargo build
+# or
+cargo run
+```
 
 # Register website
 Please follow [How to code a Buss site](https://facedev.gitbook.io/bussin-web-x-how-to-make-a-website/) for a better visual guide.
