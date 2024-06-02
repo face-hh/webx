@@ -67,7 +67,7 @@ app.post('/domain', async (req, res) => {
     if (!limiter.hasTokenSync(req.ip)) {
         return res.status(429).send("Try again in an hour")
     }
-    if (!globallimiter.hasTokenSync("Global")) {
+    if (!globallimiter.consumeSync("Global")) {
         return res.status(429).send("The DNS is under attack, try again in 10 minutes or use a diferent registrar")
     }
 
@@ -83,7 +83,7 @@ app.post('/domain', async (req, res) => {
 });
 
 app.post('/domainapi/:apiKey', async (req, res) => {
-    if (!apilimiter.hasTokenSync(req.params.apiKey)) {
+    if (!apilimiter.consumeSync(req.params.apiKey)) {
         return res.status(429).send("The hourly limit for your API key has been reached")
     }
 
