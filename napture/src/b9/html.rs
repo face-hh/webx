@@ -790,11 +790,15 @@ async fn fetch_file(url: String) -> String {
 
 async fn fetch_from_github(url: String) -> String {
     let client: reqwest::ClientBuilder = reqwest::Client::builder();
+    let branch = if url.contains("tree") {
+        url.split('/').nth(6).unwrap_or("main")
+    } else { "main" };
 
     let url = format!(
-        "https://raw.githubusercontent.com/{}/{}/main/{}",
+        "https://raw.githubusercontent.com/{}/{}/{}/{}",
         url.split('/').nth(3).unwrap_or(""),
         url.split('/').nth(4).unwrap_or(""),
+        branch,
         url.split('/').last().unwrap_or(""),
     );
 
