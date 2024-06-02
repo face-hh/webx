@@ -99,7 +99,7 @@ async function do_the_register_shit(newDomain, res, secretKey, req){
     if (
         !newDomain.name.match(/^[a-zA-Z\-]+$/) ||
         !TLD.includes(newDomain.tld) ||
-        newDomain.name.length > 24
+        newDomain.name.length > 47
     ) {
         return res.status(400).send("Invalid name, non-existant TLD, or name too long (24 chars).");
     }
