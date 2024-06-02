@@ -138,33 +138,6 @@ app.get('/domain/:name/:tld', async (req, res) => {
     }
 });
 
-app.get('/domain/:name/:domain', async (req, res) => {
-    const {
-        name,
-        tld
-    } = req.params;
-    if (!name || !tld) {
-        return res.status(400).send();
-    }
-
-    try {
-        const result = await db.getDomainByDomain(name, tld);
-        if (result) {
-            res.json({
-                id: null,
-                domain: result.domain,
-                name: result.name,
-                ip: result.ip
-            });
-        } else {
-            res.status(404).send();
-        }
-    } catch (err) {
-        res.status(404).send();
-    }
-});
-
-
 app.put('/domain/:key', async (req, res) => {
     const key = req.params.key;
     if (!key) {
