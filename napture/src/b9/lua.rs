@@ -12,7 +12,7 @@ use mlua::{prelude::*, StdLib};
 use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use serde_json::Map;
+use std::sync::{Arc, Mutex};
 
 use crate::lualog;
 
@@ -309,6 +309,50 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
         }
     })?;
 
+    let require = lua.create_async_function(|lua, module: String| async move {
+        let uri = if module.starts_with("http://") || module.starts_with("https://") {
+            module
+        } else {
+            format!("{}/{}", &taburl, module)
+        };
+        lualog!("info", format!("Fetching {}", uri));
+
+        let handle = thread::spawn(move || {
+            let client = reqwest::blocking::Client::new();
+
+            let req = client.get(uri);
+
+            let res = match req.send() {
+                Ok(res) => res,
+                Err(e) => {
+                    return format!("Failed to send request: {}", e).into();
+                }
+            };
+
+            let errcode = Rc::new(RefCell::new(res.status().as_u16()));
+
+            let text = res.text().unwrap_or_default();
+
+            text
+        });
+
+        let result = match handle.join() {
+            Ok(result) => result,
+            Err(_) => {
+                lualog!(
+                    "error",
+                    format!("Failed to join request thread at fetch request. Originates from the Lua runtime. Returning null.")
+                );
+                "null".to_string()
+            }
+        };
+
+        let load = lua.load(&result);
+        let result = load.eval::<LuaValue>();
+
+        result
+    })?;
+
     window_table.set("link", taburl)?;
     window_table.set("query", query_table)?;
 
@@ -325,6 +369,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
     globals.set("fetch", fetchtest)?;
     globals.set("json", json_table)?;
     globals.set("window", window_table)?;
+    globals.set("require", require)?;
     globals.set(
         "time",
         lua.create_function(move |_, () | {
