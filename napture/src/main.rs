@@ -50,6 +50,7 @@ use b9::css::Styleable;
 use glib::Object;
 
 use globals::LUA_LOGS;
+use globals::DNS_SERVER;
 use gtk::gdk;
 use gtk::gdk::Display;
 use gtk::gio;
@@ -224,6 +225,12 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             display_lua_logs(&app_clone);
         }
 
+        if b == (gdk::ModifierType::SHIFT_MASK | gdk::ModifierType::CONTROL_MASK)
+            && key == gdk::Key::S
+        {
+            display_settings_page(&app_clone);
+        }
+
         glib::Propagation::Proceed
     });
 
@@ -364,7 +371,8 @@ fn fetch_dns(url: String) -> String {
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
 
     let clienturl = format!(
-        "https://api.buss.lol/domain/{}/{}",
+        "https://{}/domain/{}/{}",
+        DNS_SERVER.lock().unwrap().as_str(),
         url.split('.').next().unwrap_or(""),
         url.split('.').nth(1).unwrap_or(""),
     );
@@ -441,6 +449,74 @@ fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
 
     window.set_child(Some(&scroll));
     let labell = gtk::Label::new(Some("Napture logs"));
+    let empty_label = gtk::Label::new(Some(""));
+    let headerbar = gtk::HeaderBar::builder().build();
+
+    headerbar.pack_start(&labell);
+    headerbar.set_title_widget(Some(&empty_label));
+
+    window.set_titlebar(Some(&headerbar));
+
+    window.present();
+}
+
+fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
+    let window: Window = Object::builder()
+        .property("application", glib::Value::from(&*app.borrow_mut()))
+        .build();
+
+    window.set_default_size(500, 300);
+
+    let gtkbox = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(6)
+        .margin_top(12)
+        .margin_bottom(12)
+        .margin_start(12)
+        .margin_end(12)
+        .build();
+
+    let label = gtk::Label::builder()
+        .halign(gtk::Align::Start)
+        .valign(gtk::Align::Start)
+        .build();
+
+    label.set_use_markup(true);
+    label.set_markup("Settings");
+
+    gtkbox.append(&label);
+
+    let dns_label = gtk::Label::builder()
+        .halign(gtk::Align::Start)
+        .valign(gtk::Align::Start)
+        .build();
+
+    dns_label.set_use_markup(true);
+    dns_label.set_markup("DNS Server:");
+
+    gtkbox.append(&dns_label);
+
+    let dns_entry = gtk::Entry::builder()
+        .halign(gtk::Align::Start)
+        .valign(gtk::Align::Start)
+        .build();
+
+    dns_entry.set_text(DNS_SERVER.lock().unwrap().as_str());
+
+    gtkbox.append(&dns_entry);
+
+    dns_entry.connect_changed(move |entry| {
+        // set the DNS server to the new value
+        DNS_SERVER.lock().unwrap().clear();
+        DNS_SERVER.lock().unwrap().push_str(&entry.text());
+    });
+
+    let scroll = gtk::ScrolledWindow::builder().build();
+
+    scroll.set_child(Some(&gtkbox));
+
+    window.set_child(Some(&scroll));
+    let labell = gtk::Label::new(Some(" Napture settings"));
     let empty_label = gtk::Label::new(Some(""));
     let headerbar = gtk::HeaderBar::builder().build();
 
