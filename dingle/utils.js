@@ -5,6 +5,7 @@ const fs = require('fs');
 let GLOBAL_DOCS = [];
 const needle_docs = [];
 const existing_ips = [];
+const to_remove = [];
 
 const fields = ['title', 'text', 'description'];
 const storeFields = ['description', 'url', 'title']
@@ -50,10 +51,11 @@ async function get_records(db) {
 
     for(let i = 0; i < domains.length; i++) {
         let domain = domains[i];
-        console.clear()
+        //console.clear()
         console.log(`${i}/${domains.length} (${((i / domains.length) * 100).toFixed(2)}%)`)
 //        console.log(`Now at ${domain.name}.${domain.tld} (located at ${domain.ip.startsWith("https://") || domain.ip.startsWith("http://")})`);
         if (!(domain.ip.startsWith("https://") || domain.ip.startsWith("http://")) || existing_ips.includes(domain.ip)) {
+            to_remove.push(domain._id);
             continue;
         }
 
@@ -61,11 +63,17 @@ async function get_records(db) {
 
         let content = await fetchWebsite(domain.ip);
 
-        if(!content) continue;
+        if(!content) {
+            to_remove.push(domain._id);
+            continue;
+        }
 
         let res = extractContent(content);
 
-        if (res.descriptions == '') continue;
+        if (res.descriptions == '') {
+            to_remove.push(domain._id);
+            continue;
+        }
         
         needle_docs.push(
             {
@@ -86,8 +94,19 @@ async function get_records(db) {
     miniSearch.addAll(GLOBAL_DOCS);
 
     fs.writeFileSync("save.json", JSON.stringify(GLOBAL_DOCS));
+    fs.writeFileSync("to_remove.json", JSON.stringify(to_remove));
 
     return miniSearch
+}
+
+function letsHTMLplusplus(htmlString) {
+    const lines = htmlString.split('\n');
+    
+    const filteredLines = lines.filter(line => !line.includes('<script'));
+    
+    const result = filteredLines.join('\n');
+    
+    return result;
 }
 
 /**
@@ -97,11 +116,16 @@ async function get_records(db) {
  * @returns {{ title: string, descriptions: string[] }} - An object containing the title and descriptions.
  */
 function extractContent(html) {
+    html = letsHTMLplusplus(html)
+
     const $ = cheerio.load(html);
     const title = $('title').text();
 
+    fs.writeFileSync("FKGEPAKG", html);
+
     const descriptions = [];
     $('h1, h2, h3, h4, h5, h6, p, a').each((i, element) => {
+        console.log($(element).text())
         descriptions.push(filter($(element).text()));
     });
     const meta = $('meta[name="description"]').attr('content');
