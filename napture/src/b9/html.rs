@@ -647,7 +647,7 @@ fn render_a(
 
         searchbar.borrow_mut().set_text(&uri);
 
-        crate::handle_search_activate(scroll, css_prov, current_tab, searchbar);
+        crate::handle_search_update(scroll, css_prov, current_tab, searchbar);
 
         glib::Propagation::Stop
     });
