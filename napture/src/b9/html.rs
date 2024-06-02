@@ -13,6 +13,7 @@ use gtk::{gdk::Display, gdk_pixbuf, gio, glib::Bytes, prelude::*, CssProvider};
 use html_parser::{Dom, Element, Node, Result};
 
 use lua::Luable;
+use url::Url;
 
 pub(crate) struct Tag {
     pub classes: Vec<String>,
@@ -20,8 +21,16 @@ pub(crate) struct Tag {
     pub tied_variables: Vec<String>,
 }
 
-async fn parse_html(url: String) -> Result<(Node, Node)> {
-    let html = fetch_file(url + "/index.html").await;
+async fn parse_html(mut url: String) -> Result<(Node, Node)> {
+    if let Ok(mut uri) = Url::parse(&url) {
+       if let Ok(mut segments) = uri.path_segments_mut() {
+           segments.pop_if_empty();
+           segments.push("index.html");
+       }
+       url = uri.into();
+    }
+
+    let html = fetch_file(url).await;
 
     let dom = match !html.is_empty() {
         true => Dom::parse(&html),
@@ -70,7 +79,7 @@ pub async fn build_ui(
     scroll: Rc<RefCell<gtk::ScrolledWindow>>,
     searchbar: Rc<RefCell<gtk::SearchEntry>>,
 ) -> Result<(gtk::Box, CssProvider)> {
-    let furl = tab.url.split("?").nth(0).unwrap_or(&tab.url);
+    let furl = tab.url.split("?").nth(0).unwrap_or(&tab.url).strip_suffix("/").unwrap_or(&tab.url);
 
     css::reset_css();
 
@@ -790,16 +799,22 @@ async fn fetch_file(url: String) -> String {
 
 async fn fetch_from_github(url: String) -> String {
     let client: reqwest::ClientBuilder = reqwest::Client::builder();
+
     let branch = if url.contains("tree") {
         url.split('/').nth(6).unwrap_or("main")
     } else { "main" };
+
+    let path = (if url.contains("tree") {
+        url.split('/').skip(7).collect::<Vec<&str>>()
+    } else {
+        url.split('/').skip(5).collect::<Vec<&str>>()
+    }).join("/");
 
     let url = format!(
         "https://raw.githubusercontent.com/{}/{}/{}/{}",
         url.split('/').nth(3).unwrap_or(""),
         url.split('/').nth(4).unwrap_or(""),
-        branch,
-        url.split('/').last().unwrap_or(""),
+        branch, path,
     );
 
     let client = match client.build() {

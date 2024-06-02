@@ -440,7 +440,8 @@ fn fetch_dns(url: String) -> String {
         "https://{}/domain/{}/{}",
         DNS_SERVER.lock().unwrap().as_str(),
         url.split('.').next().unwrap_or(""),
-        url.split('.').nth(1).unwrap_or(""),
+        url.split('.').nth(1).unwrap_or("")
+            .split('/').next().unwrap_or(""),
     );
 
     let client = match client.build() {
@@ -455,7 +456,9 @@ fn fetch_dns(url: String) -> String {
         let status = response.status();
 
         if let Ok(json) = response.json::<DomainInfo>() {
-            json.ip
+            let path = url.split_once('/')
+                .unwrap_or(("", "")).1;
+            json.ip + &format!("/{}", path)
         } else {
             lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}.", status.as_u16()));
             String::new()
