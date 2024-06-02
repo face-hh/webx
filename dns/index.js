@@ -22,8 +22,8 @@ app.use('/captcha-images', express.static(path.join(__dirname, 'captcha-images')
 
 const TLD = [
     "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma",
-    "now", "it", "soy", "lol", "uwu"
-];
+    "now", "it", "soy", "lol", "uwu", "skibidi", "ohio", "gyat", "baby", "gronk", "livvydune", "giant", "domains", "large", "wow", "florida", "sh", "er", "face", "fat", "giant"
+]
 
 
 /**
