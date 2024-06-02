@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-function generateApiKey(length) {
+function generateSecretKey(length) {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let key = '';
 
@@ -13,5 +13,5 @@ function generateApiKey(length) {
 }
 
 module.exports = {
-    generateApiKey
+    generateSecretKey
 }
