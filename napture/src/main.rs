@@ -323,6 +323,7 @@ fn make_tab(
             .website_label("GitHub")
             .license_type(gtk::License::Apache20)
             .authors(["facedev"])
+            .comments("Available shortcuts:\nNapture logs - CTRL SHIFT P\nNapture settings - CTRL SHIFT S\nGTK Inspector - CTRL SHIFT I")
             .logo(&logo)
             .build();
 
@@ -476,15 +477,20 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
         .margin_end(12)
         .build();
 
+    let line = gtk::Separator::builder()
+        .orientation(gtk::Orientation::Horizontal)
+        .build();
+
     let label = gtk::Label::builder()
         .halign(gtk::Align::Start)
         .valign(gtk::Align::Start)
         .build();
 
     label.set_use_markup(true);
-    label.set_markup("Settings");
+    label.set_markup("<span size=\"16pt\" font_weight=\"heavy\">DNS</span>");
 
     gtkbox.append(&label);
+    gtkbox.append(&line);
 
     let dns_label = gtk::Label::builder()
         .halign(gtk::Align::Start)
