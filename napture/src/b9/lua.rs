@@ -39,6 +39,16 @@ pub trait Luable: Styleable {
 //     Ok(())
 // }
 
+fn set_timeout(_lua: &Lua, func: LuaOwnedFunction, ms: u64) -> LuaResult<()> {
+    glib::spawn_future_local(async move {
+        glib::timeout_future(std::time::Duration::from_millis(ms)).await;
+        if let Err(e) = func.call::<_, ()>(()) {
+            lualog!("error", format!("error calling function in set_timeout: {}", e));
+        }
+    });
+    Ok(())
+}
+
 fn get(
     lua: &Lua,
     class: String,
@@ -305,6 +315,12 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
         "get",
         lua.create_function(move |lua, (class, multiple): (String, Option<bool>) | {
             get(lua, class, tags.clone(), multiple.unwrap_or(false))
+        })?
+    )?;
+    globals.set(
+        "set_timeout",
+        lua.create_function(move |lua, (func, ms): (LuaOwnedFunction, u64) | {
+           set_timeout(lua, func, ms)
         })?
     )?;
     globals.set("fetch", fetchtest)?;
