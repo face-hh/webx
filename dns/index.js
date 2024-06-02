@@ -18,11 +18,10 @@ app.use(bodyParser.urlencoded({
     extended: false
 }))
 app.use(bodyParser.json())
-app.use('/captcha-images', express.static(path.join(__dirname, 'captcha-images')));
 
 const TLD = [
     "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma",
-    "now", "it", "soy", "lol", "uwu"
+    "now", "it", "soy", "lol", "uwu", "ohio"
 ];
 
 
@@ -65,34 +64,8 @@ app.post('/domain', async (req, res) => {
     if (!newDomain.tld || !newDomain.ip || !newDomain.name) {
         return res.status(400).send();
     }
-    console.log(captchas, "and your ip is... ", req.ip, " or ", req.connection.remoteAddress)
 
-    if (captchas[req.ip]) {
-        if (!newDomain.captcha) {
-            return res.status(403).send("You need to solve the previous captcha and provide the \"captcha\" property. It will reset in 20 minutes.");
-        } else {
-            let key = newDomain.captcha;
-
-            if (captchas[req.ip] == key) {
-                return do_the_register_shit(newDomain, res, secretKey, req)
-            }
-
-            return res.status(400).send("The captcha is invalid")
-        }
-    } else {
-        let captcha = new Captcha();
-        let id = generateApiKey(10);
-
-        captchas[req.ip] = captcha.value;
-    
-        setTimeout(() => {
-            delete captchas[req.ip];
-        }, 20 * 60 * 1000);
-    
-        captcha.JPEGStream.pipe(fs.createWriteStream("captcha-images/" + id + ".jpg"));
-
-        return res.status(202).send(id);
-    }    
+    return do_the_register_shit(newDomain, res, secretKey, req) 
 });
 
 async function do_the_register_shit(newDomain, res, secretKey, req){
