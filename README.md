@@ -61,19 +61,12 @@ Then you could just launch it using `webx` in your terminal.
 # Download and Compile
 ## Linux
 Install [Rust](https://www.rust-lang.org/tools/install) if you haven't already.
-It should work by default, but if you're getting errors such as "missing PC files", you should Google it. Most likely you just have to install a library
+It should work by default, but if you're getting errors such as "missing .PC files", you should Google it. Most likely you just have to install a library
 
 ## Windows
-Welcome to Gaming OS 🙂
-1. Download [Rust](https://www.rust-lang.org/tools/install)
-2. Download GNU target: `rustup toolchain install stable-gnu && rustup default stable-gnu`
-3. Download [MSYS32](https://www.msys2.org/)
-4. Open MSYS32 MINGW32
-5. Run: `pacman -Syu` just in case.
-6. Run `pacman -S mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua`
-7. Go to `Settings` -> `Search` and open `Advanced system settings` -> Click on `Environment variables` (or just search "path")
-8. Select `Path` -> Click on `Edit` -> Add the following three entries: `C:\msys64\mingw64\include`, `C:\msys64\mingw64\bin`, and `C:\msys64\mingw64\lib`.
-9. Open a terminal in the folder with `napture/`, run `cargo run`.
+1. Download this repo as a zip and extract it.
+2. Run `windows-compiler.bat` by @neoapps-dev
+3. that's it.
 
 ## MacOS (Apple Silicon)
 1. Install [Rust](https://www.rust-lang.org/tools/install)
