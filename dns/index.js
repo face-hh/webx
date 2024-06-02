@@ -44,6 +44,11 @@ const apilimiter = new FastRateLimit({
   ttl       : 60 * 60  // time-to-live value of token bucket (in seconds)
 });
 
+const globallimiter = new FastRateLimit({
+  threshold : 100, // available tokens over timespan
+  ttl       : 10 * 60  // time-to-live value of token bucket (in seconds)
+});
+
 app.set('trust proxy', 1);
 
 async function connectToMongo() {
@@ -61,6 +66,9 @@ app.get('/', (_, res) => {
 app.post('/domain', async (req, res) => {
     if (!limiter.hasTokenSync(req.ip)) {
         return res.status(429).send("Try again in an hour")
+    }
+    if (!globallimiter.hasTokenSync("Global")) {
+        return res.status(429).send("The DNS is under attack, try again in 10 minutes or use a diferent registrar")
     }
 
     const secretKey = generateSecretKey(24);
