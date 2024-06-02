@@ -5,7 +5,7 @@ const bodyParser = require('body-parser')
 const path = require('path');
 
 const { MongoClient } = require('mongodb');
-const { generateApiKey } = require('./utils');
+const { generateSecretKey } = require('./utils');
 const Captcha = require("captcha-generator-alphanumeric").default;
 const fs = require('fs');
 
@@ -13,6 +13,7 @@ let captchas = {};
 
 const app = express();
 const port = 8000;
+const apiKeysEnabled = false
 
 app.use(bodyParser.urlencoded({
     extended: false
@@ -38,6 +39,11 @@ const limiter = new FastRateLimit({
   ttl       : 60 * 60  // time-to-live value of token bucket (in seconds)
 });
 
+const apilimiter = new FastRateLimit({
+  threshold : 100, // available tokens over timespan
+  ttl       : 60 * 60  // time-to-live value of token bucket (in seconds)
+});
+
 app.set('trust proxy', 1);
 
 async function connectToMongo() {
@@ -57,7 +63,27 @@ app.post('/domain', async (req, res) => {
         return res.status(429).send("Try again in an hour")
     }
 
-    const secretKey = generateApiKey(24);
+    const secretKey = generateSecretKey(24);
+
+    const newDomain = req.body;
+
+    if (!newDomain.tld || !newDomain.ip || !newDomain.name) {
+        return res.status(400).send();
+    }
+
+    return do_the_register_shit(newDomain, res, secretKey, req) 
+});
+
+app.post('/domainapi/:apiKey', async (req, res) => {
+    if (!apilimiter.hasTokenSync(req.params.apiKey)) {
+        return res.status(429).send("The hourly limit for your API key has been reached")
+    }
+
+    if (!apiKeysEnabled) {
+        return res.status(403).send("API Keys are not enabled on this server")
+    }
+
+    const secretKey = generateSecretKey(24);
 
     const newDomain = req.body;
 
@@ -96,8 +122,10 @@ async function do_the_register_shit(newDomain, res, secretKey, req){
             return res.status(409).send();
         }
 
-        if (["nigg", "sex", "porn"].includes(newDomain.name)) {
-            return res.status(400).send("The given domain is offensive.")
+        const offensiveWords = ["nigg", "sex", "porn"];
+
+        if (offensiveWords.some(word => newDomain.name.includes(word))) {
+            return res.status(400).send("The given domain is offensive.");
         }
 
         await db.insertOne(data);
