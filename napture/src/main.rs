@@ -54,7 +54,8 @@ use gtk::gdk;
 use gtk::gdk::Display;
 use gtk::gio;
 use gtk::CssProvider;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use std::fs;
 
 use gtk::glib;
 use gtk::prelude::*;
@@ -362,11 +363,14 @@ fn fetch_dns(url: String) -> String {
     url = url.split("?").nth(0).unwrap_or(&url).to_owned();
     
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
+    
+    let config_data = fs::read_to_string("config.json").expect("Unable to read file");
+    let config: Config = serde_json::from_str(&config_data).expect("Unable to parse JSON");
 
     let clienturl = format!(
-        "https://api.buss.lol/domain/{}/{}",
+        "{2}/{}/{}",
         url.split('.').next().unwrap_or(""),
-        url.split('.').nth(1).unwrap_or(""),
+        url.split('.').nth(1).unwrap_or(""), config.dns,
     );
 
     let client = match client.build() {
