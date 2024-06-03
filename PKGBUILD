@@ -1,7 +1,7 @@
 pkgname=napture
 pkgver=1.2.2
 pkgrel=1
-pkgdesc="Napture is a simple browser using a modified version of the http protocol called buss, it uses Lua instead of JavaScript and has support for most HTML and CSS tags, it uses a custom DNS found at api.buss.lol."
+pkgdesc="An alternative for the World Wide Web"
 arch=('x86_64')
 url="https://github.com/face-hh/webx"
 license=('Apache-2.0')
