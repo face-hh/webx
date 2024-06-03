@@ -56,7 +56,7 @@ pub fn list(path: &String, silent: bool) -> Result<(), Error> {
 }
 
 pub fn save(path: &String, filename: &String) -> Result<(), Error> {
-    let db = sled::open(&path)?;
+    let db = sled::open(path)?;
     let out = File::create(filename)?;
     let mut table = Table::new();
 

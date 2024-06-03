@@ -4,6 +4,7 @@
 
 # rust
 target
+storage
 
 # maid
 .maid/cache

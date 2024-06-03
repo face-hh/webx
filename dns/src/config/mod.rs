@@ -22,6 +22,7 @@ impl Config {
             server: Server {
                 address: "127.0.0.1".into(),
                 port: 8080,
+                key_db: "storage".into(),
                 mongo: Mongo {
                     connection: "".into(),
                     app_name: "DomainApp".into(),

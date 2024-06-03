@@ -46,19 +46,29 @@ enum Commands {
 #[derive(Subcommand)]
 enum Key {
     /// List all keys
+    #[command(visible_alias = "ls")]
     List,
+    /// Export all keys
+    #[command(visible_alias = "save")]
+    Export {
+        /// Exported file name
+        filename: String,
+    },
+    /// Get API key info
+    #[command(visible_alias = "i")]
+    Info {
+        /// Key name
+        name: String,
+    },
     /// Create privileged API key
+    #[command(visible_alias = "mk")]
     Create {
         /// Key name
         name: String,
     },
     /// Remove API key
+    #[command(visible_alias = "rm")]
     Delete {
-        /// Key name
-        name: String,
-    },
-    /// Get API key info
-    Info {
         /// Key name
         name: String,
     },
@@ -84,10 +94,11 @@ fn main() {
             }
         }
         Commands::Key { command } => match command {
-            Key::List => cli::list(),
-            Key::Create { name } => cli::create(name),
-            Key::Remove { name } => cli::remove(name),
-            Key::Info { name } => cli::info(name),
+            Key::List => cli::list(&cli),
+            Key::Info { name } => cli::info(&cli, name),
+            Key::Create { name } => cli::create(&cli, name),
+            Key::Delete { name } => cli::remove(&cli, name),
+            Key::Export { filename } => cli::export(&cli, filename),
         },
     };
 }

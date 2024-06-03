@@ -13,6 +13,7 @@ pub struct Server {
     pub(crate) address: String,
     pub(crate) port: u64,
     pub(crate) mongo: Mongo,
+    pub(crate) key_db: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
