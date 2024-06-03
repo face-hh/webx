@@ -65,7 +65,7 @@ It should work by default, but if you're getting errors such as "missing .PC fil
 
 ## Windows
 1. Download this repo as a zip and extract it.
-2. Run `windows-compiler.bat` by @neoapps-dev
+2. Run `windows-compiler.bat`
 3. that's it.
 
 ## MacOS (Apple Silicon)
