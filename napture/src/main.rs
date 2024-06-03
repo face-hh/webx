@@ -1,8 +1,9 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 mod b9;
 mod globals;
 mod imp;
 mod parser;
+mod historymod;
 
 #[macro_export]
 macro_rules! lualog {
@@ -47,6 +48,9 @@ static LOGO_PNG: &[u8] = include_bytes!("../file.png");
 
 use b9::css;
 use b9::css::Styleable;
+use gtk::SignalListItemFactory;
+use historymod::History;
+use historymod::HistoryObject;
 use glib::Object;
 
 use globals::DNS_SERVER;
@@ -164,7 +168,7 @@ fn handle_search_update(
 fn update_buttons(
     go_back: &gtk::Button,
     go_forward: &gtk::Button,
-    history: &Rc<RefCell<b9::history::History>>,
+    history: &Rc<RefCell<History>>,
 ) {
     let history = history.borrow();
     go_back.set_sensitive(!history.is_empty() && !history.on_history_start());
@@ -172,7 +176,7 @@ fn update_buttons(
 }
 
 fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
-    let history = Rc::new(RefCell::new(b9::history::History::new()));
+    let history = Rc::new(RefCell::new(History::new()));
 
     let default_dns_url = fetch_dns(DEFAULT_URL.to_string());
     let default_tab_url = if default_dns_url.is_empty() {
@@ -236,9 +240,11 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let app_ = Rc::new(RefCell::new(app.clone()));
 
     let event_controller = gtk::EventControllerKey::new();
+    let history_ = Rc::clone(&history);
 
     event_controller.connect_key_pressed(move |_, key, _a, b| {
         let app_clone = Rc::clone(&app_);
+        let history_clone = Rc::clone(&history_);
 
         if b == (gdk::ModifierType::SHIFT_MASK | gdk::ModifierType::CONTROL_MASK)
             && key == gdk::Key::P
@@ -250,6 +256,16 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             && key == gdk::Key::S
         {
             display_settings_page(&app_clone);
+        }
+
+        if b == (gdk::ModifierType::SHIFT_MASK | gdk::ModifierType::CONTROL_MASK)
+            && key == gdk::Key::H
+        {
+            history_clone.borrow_mut().add_to_history("https://google.com".to_string());
+            history_clone.borrow_mut().add_to_history("https://re.com".to_string());
+            history_clone.borrow_mut().add_to_history("https://aa.com".to_string());
+            
+            display_history_page(&app_clone, history_clone);
         }
 
         glib::Propagation::Proceed
@@ -497,7 +513,7 @@ fn make_go_back_button() -> gtk::Button {
     button.add_css_class("go-back-button");
 
     //if history.is_empty or already at the beginning of the history, disable the
-    let history = Rc::new(RefCell::new(b9::history::History::new()));
+    let history = Rc::new(RefCell::new(History::new()));
     if history.borrow_mut().is_empty() || history.borrow_mut().on_history_end() {
         button.set_sensitive(false);
     }
@@ -510,7 +526,7 @@ fn make_go_forward_button() -> gtk::Button {
     button.add_css_class("go-forward-button");
 
     //if history.is_empty or already at the beginning of the history, disable the
-    let history = Rc::new(RefCell::new(b9::history::History::new()));
+    let history = Rc::new(RefCell::new(History::new()));
     if history.borrow_mut().is_empty() || history.borrow_mut().on_history_start() {
         button.set_sensitive(false);
     }
@@ -695,3 +711,78 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
 
     window.present();
 }
+
+fn display_history_page(app: &Rc<RefCell<adw::Application>>, history: Rc<RefCell<History>>) {
+        let window: Window = Object::builder()
+            .property("application", glib::Value::from(&*app.borrow_mut()))
+            .build();
+    
+        window.set_default_size(500, 300);
+        let vector: Vec<HistoryObject> = history.borrow().clone().items.into_iter().rev().map(|item| HistoryObject::new(item.url, item.position as i32)).collect();
+
+        // Create new model
+        let model = gio::ListStore::new::<HistoryObject>();
+    
+        // Add the vector to the model
+        model.extend_from_slice(&vector);
+        // ANCHOR_END: model
+    
+        // ANCHOR: factory_setup
+        let factory = SignalListItemFactory::new();
+        factory.connect_setup(move |_, list_item| {
+            let label = gtk::Label::new(None);
+            list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .set_child(Some(&label));
+        });
+        // ANCHOR_END: factory_setup
+    
+        // ANCHOR: factory_bind
+        factory.connect_bind(move |_, list_item| {
+            // Get `HistoryObject` from `ListItem`
+            let history_object = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .item()
+                .and_downcast::<HistoryObject>()
+                .expect("The item has to be an `HistoryObject`.");
+    
+            // Get `Label` from `ListItem`
+            let label = list_item
+                .downcast_ref::<gtk::ListItem>()
+                .expect("Needs to be ListItem")
+                .child()
+                .and_downcast::<gtk::Label>()
+                .expect("The child has to be a `Label`.");
+    
+            // Set "label" to "number"
+            label.set_label(&history_object.url().to_string());
+        });
+        // ANCHOR_END: factory_bind
+    
+        // ANCHOR: selection_list
+        let selection_model = gtk::SingleSelection::new(Some(model));
+        let list_view = gtk::ListView::new(Some(selection_model), Some(factory));
+        // ANCHOR_END: selection_list
+    
+        // ANCHOR: scrolled_window
+        let scrolled_window = gtk::ScrolledWindow::builder()
+            .hscrollbar_policy(gtk::PolicyType::Never) // Disable horizontal scrolling
+            .min_content_width(360)
+            .child(&list_view)
+            .build();    
+
+        let labell = gtk::Label::new(Some(" Napture settings"));
+        let empty_label = gtk::Label::new(Some(""));
+        let headerbar = gtk::HeaderBar::builder().build();
+    
+        headerbar.pack_start(&labell);
+        headerbar.set_title_widget(Some(&empty_label));
+    
+        window.set_child(Some(&scrolled_window));
+
+            window.set_titlebar(Some(&headerbar));
+    
+        window.present();
+    }
