@@ -1,6 +1,7 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod b9;
 mod globals;
+mod historymod;
 mod imp;
 mod parser;
 
@@ -34,6 +35,8 @@ macro_rules! lualog {
 }
 
 use std::cell::RefCell;
+use std::fs;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 glib::wrapper! {
@@ -48,9 +51,13 @@ static LOGO_PNG: &[u8] = include_bytes!("../file.png");
 use b9::css;
 use b9::css::Styleable;
 use glib::Object;
+use gtk::SignalListItemFactory;
+use historymod::History;
+use historymod::HistoryObject;
 
-use globals::LUA_LOGS;
+use globals::APPDATA_PATH;
 use globals::DNS_SERVER;
+use globals::LUA_LOGS;
 use gtk::gdk;
 use gtk::gdk::Display;
 use gtk::gio;
@@ -59,6 +66,8 @@ use serde::Deserialize;
 
 use gtk::glib;
 use gtk::prelude::*;
+
+use directories::ProjectDirs;
 
 const APP_ID: &str = "io.github.face_hh.Napture";
 const DEFAULT_URL: &str = "dingle.it";
@@ -73,8 +82,10 @@ struct Tab {
 }
 
 fn main() -> glib::ExitCode {
-    let args = Rc::new(RefCell::new(std::env::args().collect::<Vec<String>>()));
+    init_config();
 
+    let args = Rc::new(RefCell::new(std::env::args().collect::<Vec<String>>()));
+    let config = Rc::new(RefCell::new(get_config()));
     let app = adw::Application::builder().application_id(APP_ID).build();
 
     app.connect_startup(|_| {
@@ -109,9 +120,11 @@ fn main() -> glib::ExitCode {
 
         css::load_css_into_app(&content);
     });
+
     app.connect_activate(move |app| {
         let args_clone = Rc::clone(&args);
-        build_ui(app, args_clone)
+        let config_clone = Rc::clone(&config);
+        build_ui(app, args_clone, config_clone);
     });
 
     app.run_with_args(&[""])
@@ -125,7 +138,7 @@ fn handle_search_update(
 ) {
     let mut tab_in_closure = current_tab.borrow_mut();
     let searchbar_clone = searchbar.clone();
-    let searchbar_mut = searchbar_clone.borrow_mut(); 
+    let searchbar_mut = searchbar_clone.borrow_mut();
 
     let url = searchbar_mut.text().to_string();
     let dns_url = fetch_dns(url.clone());
@@ -161,9 +174,20 @@ fn handle_search_update(
     };
 }
 
-fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
-    let default_dns_url = fetch_dns(DEFAULT_URL.to_string());
+fn update_buttons(go_back: &gtk::Button, go_forward: &gtk::Button, history: &Rc<RefCell<History>>) {
+    let history = history.borrow();
+    go_back.set_sensitive(!history.is_empty() && !history.on_history_start());
+    go_forward.set_sensitive(!history.is_empty() && !history.on_history_end());
+}
 
+fn get_time() -> String {
+    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string()
+}
+
+fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<RefCell<serde_json::Value>>) {
+    let history = Rc::new(RefCell::new(History::new()));
+
+    let default_dns_url = fetch_dns(DEFAULT_URL.to_string());
     let default_tab_url = if default_dns_url.is_empty() {
         DEFAULT_URL.to_string()
     } else {
@@ -186,20 +210,20 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     let tabs_widget = gtk::Box::builder().css_name("tabs").spacing(6).build();
 
-    let mut tab1 = make_tab(
-        // tabs_widget.clone(),
-        "New Tab",
-        "file.png",
-        // cursor_pointer.as_ref(),
-        tabs.clone(),
-        default_tab_url
-    );
+    history
+        .borrow_mut()
+        .add_to_history(default_tab_url.clone(), get_time(), true);
 
+    let mut tab1 = make_tab("New Tab", "file.png", tabs.clone(), default_tab_url);
     let current_tab = tab1.clone();
 
     let refresh_button = make_refresh_button();
     let home_button = make_home_button();
+    let go_back = make_go_back_button();
+    let go_forward = make_go_forward_button();
 
+    tabs_widget.append(&go_back);
+    tabs_widget.append(&go_forward);
     tabs_widget.append(&tab1.widget);
     tabs_widget.append(&search);
     tabs_widget.append(&refresh_button);
@@ -210,8 +234,9 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     window.set_titlebar(Some(&headerbar));
 
-    let scroll = gtk::ScrolledWindow::builder().css_classes(vec!["body"]).build();
-
+    let scroll = gtk::ScrolledWindow::builder()
+        .css_classes(vec!["body"])
+        .build();
     scroll.style();
 
     let rc_css_provider = Rc::new(RefCell::new(CssProvider::new()));
@@ -227,9 +252,11 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let app_ = Rc::new(RefCell::new(app.clone()));
 
     let event_controller = gtk::EventControllerKey::new();
+    let history_ = Rc::clone(&history);
 
     event_controller.connect_key_pressed(move |_, key, _a, b| {
         let app_clone = Rc::clone(&app_);
+        let history_clone = Rc::clone(&history_);
 
         if b == (gdk::ModifierType::SHIFT_MASK | gdk::ModifierType::CONTROL_MASK)
             && key == gdk::Key::P
@@ -241,6 +268,12 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             && key == gdk::Key::S
         {
             display_settings_page(&app_clone);
+        }
+
+        if b == (gdk::ModifierType::SHIFT_MASK | gdk::ModifierType::CONTROL_MASK)
+            && key == gdk::Key::H
+        {
+            display_history_page(&app_clone, history_clone);
         }
 
         glib::Propagation::Proceed
@@ -266,58 +299,135 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     window.set_default_size(500, 500);
     window.present();
 
-    if let Ok((htmlview, provider)) = b9::html::build_ui(tab1.clone(), None, rc_scroll.clone(), rc_search.clone()) {
+    if let Some(past_history) = &config.borrow()["history"].as_array() {
+        for entry in past_history.iter() {
+            if let Some(res) = entry.as_object() {
+                if let (Some(raw_url), Some(raw_date)) = (res.get("url"), res.get("date")) {
+                    if let (Some(url), Some(date)) = (raw_url.as_str(), raw_date.as_str()) {
+                        history.borrow_mut().add_to_history(url.to_owned(), date.to_owned(), false);
+                    }
+                }
+            }
+        }
+    }
+
+    if let Some(dns) = &config.borrow()["dns"].as_str() {
+        *DNS_SERVER.lock().unwrap() = dns.to_string();
+    }
+
+    if let Ok((htmlview, provider)) =
+        b9::html::build_ui(tab1.clone(), None, rc_scroll.clone(), rc_search.clone())
+    {
         rc_scroll.clone().borrow_mut().set_child(Some(&htmlview));
         *rc_css_provider.borrow_mut() = provider;
     } else {
         println!("ERROR: HTML engine failed.");
     }
-    
+
     // search bar
     let rc_scroll_search = rc_scroll.clone();
     let rc_css_provider_search = rc_css_provider.clone();
     let rc_tab_search = rc_tab.clone();
-
-    search.connect_activate(move |query| {
-        handle_search_update(
-            rc_scroll_search.clone(), 
-            rc_css_provider_search.clone(), 
-            rc_tab_search.clone(), 
-            Rc::new(RefCell::new(query.clone()))
-        );
+    search.connect_activate({
+        let history = history.clone();
+        let go_forward = go_forward.clone();
+        let go_back = go_back.clone();
+        move |query| {
+            update_buttons(&go_back, &go_forward, &history);
+            handle_search_update(
+                rc_scroll_search.clone(),
+                rc_css_provider_search.clone(),
+                rc_tab_search.clone(),
+                Rc::new(RefCell::new(query.clone())),
+            );
+            history
+                .borrow_mut()
+                .add_to_history(query.text().to_string(), get_time(), true);
+        }
     });
 
-    // refresh button
     let rc_scroll_refresh = rc_scroll.clone();
     let rc_css_provider_refresh = rc_css_provider.clone();
     let rc_tab_refresh = rc_tab.clone();
     let rc_search_refresh = rc_search.clone();
-
-    refresh_button.connect_clicked(move |_button| {
-        handle_search_update(
-            rc_scroll_refresh.clone(), 
-            rc_css_provider_refresh.clone(), 
-            rc_tab_refresh.clone(), 
-            rc_search_refresh.clone()
-        );
+    refresh_button.connect_clicked({
+        let history = history.clone();
+        history
+            .borrow_mut()
+            .add_to_history(rc_search_refresh.borrow().text().to_string(), get_time(), true);
+        move |_button| {
+            handle_search_update(
+                rc_scroll_refresh.clone(),
+                rc_css_provider_refresh.clone(),
+                rc_tab_refresh.clone(),
+                rc_search_refresh.clone(),
+            );
+        }
     });
 
-    // home button
     let rc_scroll_home = rc_scroll.clone();
     let rc_css_provider_home = rc_css_provider.clone();
     let rc_tab_home = rc_tab.clone();
     let rc_search_home = rc_search.clone();
+    home_button.connect_clicked({
+        let history = history.clone();
+        let go_forward = go_forward.clone();
+        let go_back = go_back.clone();
+        move |_button| {
+            rc_search_home.borrow_mut().set_text(DEFAULT_URL);
+            history
+                .borrow_mut()
+                .add_to_history(DEFAULT_URL.to_string(), get_time(), true);
+            update_buttons(&go_back, &go_forward, &history);
+            handle_search_update(
+                rc_scroll_home.clone(),
+                rc_css_provider_home.clone(),
+                rc_tab_home.clone(),
+                rc_search_home.clone(),
+            );
+        }
+    });
 
-    home_button.connect_clicked(move |_button| {
-        let rc_search = rc_search_home.clone();
-        rc_search.borrow_mut().set_text(DEFAULT_URL);
+    let rc_scroll_back = rc_scroll.clone();
+    let rc_css_provider_back = rc_css_provider.clone();
+    let rc_tab_back = rc_tab.clone();
+    let rc_search_back = rc_search.clone();
+    go_back.connect_clicked({
+        let history = history.clone();
+        let go_forward = go_forward.clone();
+        let go_back = go_back.clone();
+        move |_| {
+            history.borrow_mut().go_back();
+            update_buttons(&go_back, &go_forward, &history);
+            let current_url = history.borrow().current().unwrap().url.clone();
+            rc_search_back.borrow_mut().set_text(&current_url);
+            handle_search_update(
+                rc_scroll_back.clone(),
+                rc_css_provider_back.clone(),
+                rc_tab_back.clone(),
+                rc_search_back.clone(),
+            );
+        }
+    });
 
-        handle_search_update(
-            rc_scroll_home.clone(), 
-            rc_css_provider_home.clone(), 
-            rc_tab_home.clone(), 
-            rc_search
-        );
+    let rc_scroll_forward = rc_scroll.clone();
+    let rc_css_provider_forward = rc_css_provider.clone();
+    go_forward.connect_clicked({
+        let history = history.clone();
+        let go_forward = go_forward.clone();
+        let go_back = go_back.clone();
+        move |_| {
+            history.borrow_mut().go_forward();
+            update_buttons(&go_back, &go_forward, &history);
+            let current_url = history.borrow().current().unwrap().url.clone();
+            rc_search.borrow_mut().set_text(&current_url);
+            handle_search_update(
+                rc_scroll_forward.clone(),
+                rc_css_provider_forward.clone(),
+                rc_tab.clone(),
+                rc_search.clone(),
+            );
+        }
     });
 }
 
@@ -329,7 +439,7 @@ fn make_tab(
     icon: &str,
     // cursor_pointer: Option<&Cursor>,
     mut tabs: Vec<Tab>,
-    default_url: String
+    default_url: String,
 ) -> Tab {
     // let tabid = gen_tab_id();
 
@@ -424,6 +534,32 @@ fn make_home_button() -> gtk::Button {
     button
 }
 
+fn make_go_back_button() -> gtk::Button {
+    let button = gtk::Button::from_icon_name("go-previous");
+    button.add_css_class("go-back-button");
+
+    //if history.is_empty or already at the beginning of the history, disable the
+    let history = Rc::new(RefCell::new(History::new()));
+    if history.borrow_mut().is_empty() || history.borrow_mut().on_history_end() {
+        button.set_sensitive(false);
+    }
+
+    button
+}
+
+fn make_go_forward_button() -> gtk::Button {
+    let button = gtk::Button::from_icon_name("go-next");
+    button.add_css_class("go-forward-button");
+
+    //if history.is_empty or already at the beginning of the history, disable the
+    let history = Rc::new(RefCell::new(History::new()));
+    if history.borrow_mut().is_empty() || history.borrow_mut().on_history_start() {
+        button.set_sensitive(false);
+    }
+
+    button
+}
+
 #[derive(Deserialize)]
 struct DomainInfo {
     ip: String,
@@ -433,7 +569,7 @@ fn fetch_dns(url: String) -> String {
     let mut url = url.replace("buss://", "");
 
     url = url.split("?").nth(0).unwrap_or(&url).to_owned();
-    
+
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
 
     let clienturl = format!(
@@ -457,14 +593,17 @@ fn fetch_dns(url: String) -> String {
         if let Ok(json) = response.json::<DomainInfo>() {
             json.ip
         } else {
-            lualog!("debug", format!("Failed to parse response body from DNS API. Error code: {}.", status.as_u16()));
+            lualog!(
+                "debug",
+                format!(
+                    "Failed to parse response body from DNS API. Error code: {}.",
+                    status.as_u16()
+                )
+            );
             String::new()
         }
     } else {
-        lualog!(
-            "debug",
-            "Failed to send HTTP request to DNS API."
-        );
+        lualog!("debug", "Failed to send HTTP request to DNS API.");
         String::new()
     }
 }
@@ -577,9 +716,12 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
     gtkbox.append(&dns_entry);
 
     dns_entry.connect_changed(move |entry| {
+        let dns = &entry.text();
+
         // set the DNS server to the new value
         DNS_SERVER.lock().unwrap().clear();
-        DNS_SERVER.lock().unwrap().push_str(&entry.text());
+        DNS_SERVER.lock().unwrap().push_str(&dns);
+        set_config(String::from("dns"), serde_json::Value::String(dns.to_string()), false)
     });
 
     let scroll = gtk::ScrolledWindow::builder().build();
@@ -597,4 +739,152 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
     window.set_titlebar(Some(&headerbar));
 
     window.present();
+}
+
+fn display_history_page(app: &Rc<RefCell<adw::Application>>, history: Rc<RefCell<History>>) {
+    let window: Window = Object::builder()
+        .property("application", glib::Value::from(&*app.borrow_mut()))
+        .build();
+
+    window.set_default_size(500, 300);
+    let vector: Vec<HistoryObject> = history
+        .borrow()
+        .clone()
+        .items
+        .into_iter()
+        .rev()
+        .map(|item| HistoryObject::new(item.url, item.position as i32, item.date))
+        .collect();
+
+    let model = gio::ListStore::new::<HistoryObject>();
+
+    model.extend_from_slice(&vector);
+
+    let factory = SignalListItemFactory::new();
+    factory.connect_setup(move |_, list_item| {
+        let label = gtk::Label::new(None);
+        list_item
+            .downcast_ref::<gtk::ListItem>()
+            .expect("Needs to be ListItem")
+            .set_child(Some(&label));
+    });
+
+    factory.connect_bind(move |_, list_item| {
+        let history_object = list_item
+            .downcast_ref::<gtk::ListItem>()
+            .expect("Needs to be ListItem")
+            .item()
+            .and_downcast::<HistoryObject>()
+            .expect("The item has to be an `HistoryObject`.");
+
+        let label = list_item
+            .downcast_ref::<gtk::ListItem>()
+            .expect("Needs to be ListItem")
+            .child()
+            .and_downcast::<gtk::Label>()
+            .expect("The child has to be a `Label`.");
+
+        label.set_halign(gtk::Align::Start);
+
+        label.set_use_markup(true);
+        label.set_markup(&format!(
+            "<span color=\"grey\">{}</span>. <span color=\"cyan\">{}</span> | <span>{}</span>",
+            &history_object.position() + 1,
+            &history_object.date(),
+            &history_object.url().to_string()
+        ));
+    });
+
+    let selection_model = gtk::SingleSelection::new(Some(model));
+    let list_view = gtk::ListView::new(Some(selection_model), Some(factory));
+
+    let scrolled_window = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Never) // Disable horizontal scrolling
+        .min_content_width(360)
+        .margin_bottom(10)
+        .margin_end(10)
+        .margin_start(10)
+        .margin_top(10)
+        .child(&list_view)
+        .build();
+
+    let labell = gtk::Label::new(Some(" Napture settings"));
+    let empty_label = gtk::Label::new(Some(""));
+    let headerbar = gtk::HeaderBar::builder().build();
+
+    headerbar.pack_start(&labell);
+    headerbar.set_title_widget(Some(&empty_label));
+
+    window.set_child(Some(&scrolled_window));
+    window.set_titlebar(Some(&headerbar));
+
+    window.present();
+}
+
+fn init_config() {
+    if let Some(proj_dirs) = ProjectDirs::from("com", "Bussin", "Napture") {
+        let dir = proj_dirs.data_dir();
+        let exists = &dir.join("config.json").exists();
+
+        if *exists {
+            let mut path = APPDATA_PATH.lock().unwrap();
+            *path = dir.to_str().unwrap().to_string();
+        } else {
+            if let Err(error) = fs::create_dir_all(&dir) {
+                println!("FATAL: COULD NOT CREATE APPDATA FOLDER, STACK: {}", error);
+            } else {
+                println!("Created config folder in AppData: {:?}", &dir.as_os_str());
+
+                if let Err(error2) = fs::write(
+                    PathBuf::from(&dir).join("config.json"),
+                    format!(
+                        "{{\"history\": [],\"dns\": \"{}\" }}",
+                        DNS_SERVER.lock().unwrap()
+                    ),
+                ) {
+                    println!(
+                        "FATAL: COULD NOT CREATE CONFIG IN APPDATA, STACK: {}",
+                        error2
+                    );
+                }
+
+                let mut path = APPDATA_PATH.lock().unwrap();
+                *path = dir.to_str().unwrap().to_string();
+            }
+        }
+    }
+}
+
+fn get_config() -> serde_json::Value {
+    let json_path = PathBuf::from(APPDATA_PATH.lock().unwrap().clone()).join("config.json");
+    let contents = fs::read_to_string(&json_path).expect("Failed to read configuration for theme.");
+
+    println!("{:?}", json_path);
+    let json_contents: serde_json::Value = serde_json::from_str(&contents).expect("Failed to parse JSON");
+
+    json_contents
+}
+
+fn set_config(property: String, value: serde_json::Value, array: bool) {
+    let json_path = PathBuf::from(APPDATA_PATH.lock().unwrap().clone()).join("config.json");
+    let contents = fs::read_to_string(&json_path).expect("Failed to read configuration for theme.");
+
+    let mut json_contents: serde_json::Value = serde_json::from_str(&contents).expect("Failed to parse JSON");
+
+    if array {
+        if json_contents[property.clone()].is_array() {
+            json_contents[property].as_array_mut().unwrap().push(value);
+        }
+    } else {
+        json_contents[property] = value;
+    }
+
+    if let Ok(updated_json) = serde_json::to_string_pretty(&json_contents) {
+        match fs::write(&json_path, &updated_json) {
+            Ok(_) => {},
+            Err(err) => {
+                eprintln!("ERROR: Failed to save config to disk. Error: {}", err);
+            }
+        }
+    }
 }
