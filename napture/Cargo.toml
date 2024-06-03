@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 adw = { version = "0.6.0", package = "libadwaita", features = ["v1_5"] }
 chrono = "0.4.38"
+directories = "5.0.1"
 glib = "0.19.4"
 gtk = { version = "0.8.1", package = "gtk4", features = ["v4_14"] }
 html_parser = "0.7.0"
