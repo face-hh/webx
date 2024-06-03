@@ -1,5 +1,5 @@
-use super::{models::*, DB};
-use crate::{config::Config, secret};
+use super::models::*;
+use crate::{config::Config, secret, DB};
 use futures::stream::StreamExt;
 use mongodb::bson::doc;
 
@@ -16,6 +16,36 @@ pub(crate) async fn index() -> impl Responder {
 }
 
 pub(crate) async fn create_domain(domain: web::Json<Domain>, config: Data<Config>) -> impl Responder {
+    let secret_key = secret::generate(31);
+    let mut domain = domain.into_inner();
+    domain.secret_key = Some(secret_key.clone());
+
+    if !config.tld_list().contains(&domain.tld.as_str()) || !domain.name.chars().all(|c| c.is_alphabetic() || c == '-') || domain.name.len() > 24 {
+        return HttpResponse::BadRequest().body("Invalid name, non-existent TLD, or name too long (24 chars).");
+    }
+
+    if config.offen_words().iter().any(|word| domain.name.contains(word)) {
+        return HttpResponse::BadRequest().body("The given domain is offensive.");
+    }
+
+    let collection = DB.lock().await;
+    let collection = collection.as_ref().unwrap();
+    let existing_domain = collection.find_one(doc! { "name": &domain.name, "tld": &domain.tld }, None).await.unwrap();
+
+    if existing_domain.is_some() {
+        return HttpResponse::Conflict().finish();
+    }
+
+    let insert_result = collection.insert_one(domain.clone(), None).await;
+
+    match insert_result {
+        Ok(_) => HttpResponse::Ok().json(domain),
+        Err(_) => HttpResponse::Conflict().finish(),
+    }
+}
+
+#[actix_web::post("/domain")]
+pub(crate) async fn elevated_domain(domain: web::Json<Domain>, config: Data<Config>) -> impl Responder {
     let secret_key = secret::generate(31);
     let mut domain = domain.into_inner();
     domain.secret_key = Some(secret_key.clone());

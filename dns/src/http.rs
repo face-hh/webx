@@ -13,12 +13,11 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
     let config = Config::new().set_path(&cli.config).read();
     let backend = InMemoryBackend::builder().build();
 
-    // generate api keys and store in kv db, be more leinent with ratelimit on those users
     config.connect_to_mongo(&crate::DB).await;
 
     let app = move || {
         let config = Config::new().set_path(&cli.config).read();
-        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 10).real_ip_key().build();
+        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(360), 5).real_ip_key().build();
         let middleware = rate_limit::RateLimiter::builder(backend.clone(), input).add_headers().build();
 
         App::new()
@@ -29,6 +28,7 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
             .service(routes::delete_domain)
             .service(routes::get_domains)
             .service(routes::get_tlds)
+            .service(routes::elevated_domain)
             .route("/domain", web::post().wrap(middleware).to(routes::create_domain))
     };
 

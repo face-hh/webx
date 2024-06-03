@@ -1,5 +1,7 @@
+mod cli;
 mod config;
 mod http;
+mod kv;
 mod secret;
 
 use clap::{Parser, Subcommand};
@@ -30,11 +32,36 @@ struct Cli {
     config: String,
 }
 
-// add pmc restore command
 #[derive(Subcommand)]
 enum Commands {
     /// Start the daemon
     Start,
+    /// Manage API keys
+    Key {
+        #[command(subcommand)]
+        command: Key,
+    },
+}
+
+#[derive(Subcommand)]
+enum Key {
+    /// List all keys
+    List,
+    /// Create privileged API key
+    Create {
+        /// Key name
+        name: String,
+    },
+    /// Remove API key
+    Delete {
+        /// Key name
+        name: String,
+    },
+    /// Get API key info
+    Info {
+        /// Key name
+        name: String,
+    },
 }
 
 fn main() {
@@ -56,5 +83,11 @@ fn main() {
                 log::error!("Failed to start server: {err}")
             }
         }
+        Commands::Key { command } => match command {
+            Key::List => cli::list(),
+            Key::Create { name } => cli::create(name),
+            Key::Remove { name } => cli::remove(name),
+            Key::Info { name } => cli::info(name),
+        },
     };
 }
