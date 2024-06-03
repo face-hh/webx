@@ -2060,6 +2060,7 @@ dependencies = [
 name = "webx"
 version = "1.2.2"
 dependencies = [
+ "base64",
  "chrono",
  "glib",
  "glib-build-tools",

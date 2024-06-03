@@ -734,21 +734,40 @@ fn render_list(
 }
 
 pub(crate) fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
-    let handle = thread::spawn(move || {
-        reqwest::blocking::get(url)
-            .map_err(|e| e.to_string())
-            .and_then(|res| res.bytes().map_err(|e| e.to_string()))
-            .unwrap_or_else(|e| {
-                lualog!("error", format!("Failed to fetch image: {}", e));
-                Vec::new().into()
-            })
-    });
+    let img_data: Vec<u8> = if url.starts_with("data:") {
+        let (_, data) = url.split_once("data:").unwrap();
+        let (mime, data) = data.split_once(",").unwrap_or(("", ""));
+        let properties = mime.split(";").collect::<String>();
 
-    let img_data = match handle.join() {
-        Ok(data) => data,
-        Err(_) => {
-            lualog!("error", "Failed to join fetch_image_to_pixbuf thread.");
-            Vec::new().into()
+        if properties.contains("base64") {
+            use base64::prelude::*;
+            match BASE64_STANDARD.decode(data) {
+                Ok(data) => data,
+                Err(e) => {
+                    lualog!("error", format!("invalid base64: {}", e));
+                    Vec::new()
+                }
+            }
+        } else {
+            Vec::new()
+        }
+    } else {
+        let handle = thread::spawn(move || {
+            reqwest::blocking::get(url)
+                .map_err(|e| e.to_string())
+                .and_then(|res| res.bytes().map_err(|e| e.to_string()))
+                .unwrap_or_else(|e| {
+                    lualog!("error", format!("Failed to fetch image: {}", e));
+                    Vec::new().into()
+                })
+        });
+
+        match handle.join() {
+            Ok(data) => data.to_vec(),
+            Err(_) => {
+                lualog!("error", "Failed to join fetch_image_to_pixbuf thread.");
+                Vec::new()
+            }
         }
     };
 
