@@ -11,6 +11,7 @@ This is a simple Domain Management API built with Express.js and MongoDB. It pro
 - [Endpoints](#endpoints)
   - [GET /](#get-)
   - [POST /domain](#post-domain)
+  - [POST /domainapi/:apiKey](#post-domainapiapikey)
   - [GET /domain/:name/:tld](#get-domainnametld)
   - [PUT /domain/:key](#put-domainkey)
   - [DELETE /domain/:id](#delete-domainid)
@@ -68,6 +69,41 @@ Creates a new domain entry.
   }
   ```
 - `400 Bad Request` if the request body is invalid.
+- `409 Conflict` if the domain already exists.
+- `429 Too Many Requests` if the rate limit is exceeded.
+
+### POST /domainapi/:apiKey
+
+Creates a new domain entry using an API Key. This is disabled by default as you will need to come up with your own way of validating and distributing API Keys.
+
+**Request:**
+
+- Method: `POST`
+- URL: `/domainapi/:apiKey`
+- Headers: 
+  - `Content-Type: application/json`
+- Body:
+  ```json
+  {
+    "tld": "example_tld",
+    "ip": "example_ip",
+    "name": "example_name"
+  }
+  ```
+
+**Response:**
+
+- `200 OK` if the domain is successfully created.
+  ```json
+  {
+    "tld": "example_tld",
+    "ip": "example_ip",
+    "name": "example_name",
+    "secret_key": "generated_secret_key"
+  }
+  ```
+- `400 Bad Request` if the request body is invalid.
+- `403 Not allowed` if the API key system is disabled.
 - `409 Conflict` if the domain already exists.
 - `429 Too Many Requests` if the rate limit is exceeded.
 
