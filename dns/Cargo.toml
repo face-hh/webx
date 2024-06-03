@@ -4,15 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-actix-extensible-rate-limit = "0.3.1"
 actix-web = "4.6.0"
 colored = "2.1.0"
 futures = "0.3.30"
 lazy_static = "1.4.0"
 macros-rs = "1.2.1"
 mongodb = "2.8.2"
+toml = "0.8.13"
 
 rand = { version = "0.8.5", features = ["small_rng"] }
 serde = { version = "1.0.203", features = ["derive"] }
 tokio = { version = "1.38.0", features = ["full"] }
-toml = "0.8.13"
+rate-limit = { version = "0.3.1", package = "actix-extensible-rate-limit" }
+clap = { version = "4.5.4", features = ["derive"] }
+clap-verbosity-flag = "2.2.0"
+pretty_env_logger = "0.5.0"
+log = "0.4.21"
