@@ -49,6 +49,7 @@ use b9::css;
 use b9::css::Styleable;
 use glib::Object;
 
+use globals::HOME_LOCATION;
 use globals::LUA_LOGS;
 use globals::DNS_SERVER;
 use gtk::gdk;
@@ -162,10 +163,11 @@ fn handle_search_update(
 }
 
 fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
-    let default_dns_url = fetch_dns(DEFAULT_URL.to_string());
+    let home_loc = HOME_LOCATION.lock().unwrap().to_string();
+    let default_dns_url = fetch_dns(home_loc.clone());
 
     let default_tab_url = if default_dns_url.is_empty() {
-        DEFAULT_URL.to_string()
+        home_loc.clone()
     } else {
         default_dns_url
     };
@@ -310,7 +312,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     home_button.connect_clicked(move |_button| {
         let rc_search = rc_search_home.clone();
-        rc_search.borrow_mut().set_text(DEFAULT_URL);
+        rc_search.borrow_mut().set_text(HOME_LOCATION.lock().unwrap().as_str());
 
         handle_search_update(
             rc_scroll_home.clone(), 
@@ -542,6 +544,8 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
         .margin_end(12)
         .build();
 
+    // start DNS settings
+
     let line = gtk::Separator::builder()
         .orientation(gtk::Orientation::Horizontal)
         .build();
@@ -580,6 +584,48 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
         // set the DNS server to the new value
         DNS_SERVER.lock().unwrap().clear();
         DNS_SERVER.lock().unwrap().push_str(&entry.text());
+    });
+
+    // end DNS settings
+    // start home location settings
+
+    let label2 = gtk::Label::builder()
+        .halign(gtk::Align::Start)
+        .valign(gtk::Align::Start)
+        .build();
+
+    label2.set_use_markup(true);
+    label2.set_markup("<span size=\"16pt\" font_weight=\"heavy\">Home</span>");
+
+    let line2 = gtk::Separator::builder()
+        .orientation(gtk::Orientation::Horizontal)
+        .build();
+
+    gtkbox.append(&label2);
+    gtkbox.append(&line2);
+
+    let home_label = gtk::Label::builder()
+        .halign(gtk::Align::Start)
+        .valign(gtk::Align::Start)
+        .build();
+
+    home_label.set_use_markup(true);
+    home_label.set_markup("Home location:");
+
+    gtkbox.append(&home_label);
+
+    let home_entry = gtk::Entry::builder()
+        .halign(gtk::Align::Start)
+        .valign(gtk::Align::Start)
+        .build();
+
+    home_entry.set_text(HOME_LOCATION.lock().unwrap().as_str());
+
+    gtkbox.append(&home_entry);
+
+    home_entry.connect_changed(move |entry| {
+        HOME_LOCATION.lock().unwrap().clear();
+        HOME_LOCATION.lock().unwrap().push_str(&entry.text());
     });
 
     let scroll = gtk::ScrolledWindow::builder().build();
