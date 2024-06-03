@@ -12,7 +12,6 @@ use mlua::{prelude::*, StdLib};
 use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use std::sync::{Arc, Mutex};
 
 use crate::lualog;
 
@@ -310,17 +309,15 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
     })?;
 
     let require = lua.create_async_function(|lua, module: String| async move {
-        let uri = if module.starts_with("http://") || module.starts_with("https://") {
-            module
-        } else {
-            format!("{}/{}", &taburl, module)
-        };
-        lualog!("info", format!("Fetching {}", uri));
+        if !module.starts_with("http://") && !module.starts_with("https://") {
+            lualog!("error", "Module argument must be a URL.");
+            return Ok(lua.null());
+        }
 
         let handle = thread::spawn(move || {
             let client = reqwest::blocking::Client::new();
 
-            let req = client.get(uri);
+            let req = client.get(module);
 
             let res = match req.send() {
                 Ok(res) => res,
