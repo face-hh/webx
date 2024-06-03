@@ -1,6 +1,6 @@
 extern crate html_parser;
 
-use crate::{lualog, Tab};
+use crate::{lualog, Tab, globals::LUA_TIMEOUTS};
 
 use super::{
     css::{self, Styleable},
@@ -82,6 +82,13 @@ pub async fn build_ui(
     let furl = tab.url.split("?").nth(0).unwrap_or(&tab.url).strip_suffix("/").unwrap_or(&tab.url);
 
     css::reset_css();
+
+    {
+        let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
+        for timeout in timeouts.drain(..) { 
+            timeout.destroy();
+        }
+    }
 
     let tags = Rc::new(RefCell::new(Vec::new()));
 

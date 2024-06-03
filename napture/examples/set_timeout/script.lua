@@ -1,5 +1,6 @@
 local timeout_btn = get("timeout_btn")
 local timeout_btn2 = get("timeout_btn2")
+local timeout_btn3 = get("timeout_btn3")
 local reset_btn = get("reset_btn")
 local text = get("text")
 
@@ -12,6 +13,16 @@ end)
 timeout_btn2.on_click(function()
   set_timeout(function()
     text.set_content("Different Text")
+  end, 3000)
+end)
+
+timeout_btn3.on_click(function()
+  local timeout = set_timeout(function()
+    print("this should never be ran")
+  end, 5000)
+  set_timeout(function()
+    clear_timeout(timeout)
+    print("timeout cleared")
   end, 3000)
 end)
 

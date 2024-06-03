@@ -51,6 +51,7 @@ use glib::Object;
 
 use globals::LUA_LOGS;
 use globals::DNS_SERVER;
+use globals::LUA_TIMEOUTS;
 use gtk::gdk;
 use gtk::gdk::Display;
 use gtk::gio;
@@ -318,6 +319,14 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             rc_tab_home.clone(), 
             rc_search
         );
+    });
+
+    glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || { // every 5 seconds remove "stale" timeouts
+        let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
+        timeouts.retain(|source| {
+            !source.is_destroyed()
+        });
+        glib::ControlFlow::Continue
     });
 }
 
