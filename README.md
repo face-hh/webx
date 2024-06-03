@@ -52,9 +52,9 @@ home.packages = with pkgs; [
 Then you could just launch it using `webx` in your terminal.
 
 ## Linux
-- For now, you have to download [Rust](https://www.rust-lang.org/tools/install). Then, you just need to open `install-linux` as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux`, then you should be able to install).
+- For now, you have to download [Rust](https://www.rust-lang.org/tools/install). Then, you just need to open `install-linux.sh` in the `napture` folder as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux.sh`, then you should be able to install).
 ## macOS
-- For now, you have to download [Rust](https://www.rust-lang.org/tools/install) and [Homebrew](https://brew.sh). Then, you just need to open `install-macos` as an executable (if you can't execute it, first do `chmod +x ./install-macos`, then you should be able to install).
+- For now, you have to download [Rust](https://www.rust-lang.org/tools/install) and [Homebrew](https://brew.sh). Then, you just need to open `install-macos.sh` in the `napture` folder as an executable (if you can't execute it, first do `chmod +x ./install-macos.sh`, then you should be able to install).
 ## Windows
 - Install the executable from the release tab. It's a self-extractor with WinRAR because it has a lot of DLLs.
 
