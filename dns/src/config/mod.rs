@@ -62,10 +62,14 @@ impl Config {
     }
 
     pub async fn connect_to_mongo(&self, mongo: &crate::DB) {
-        let mut client_options = ClientOptions::parse(&self.server.mongo.connection).await.unwrap();
+        let mut client_options = ClientOptions::parse(&self.server.mongo.connection).await.unwrap_or_default();
         client_options.app_name = Some(self.server.mongo.app_name.clone());
 
-        let client = Client::with_options(client_options).unwrap();
+        let client = match Client::with_options(client_options) {
+            Ok(client) => client,
+            Err(err) => crashln!("Failed to connect to MongoDB.\n{}", string!(err).white()),
+        };
+
         let db = client.database(&self.server.mongo.db_name);
         let collection = db.collection::<Domain>("domains");
 
