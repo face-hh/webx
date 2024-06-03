@@ -38,10 +38,6 @@ else
 fi
 
 
-
-# Assuming the script is in the same directory as "napture"
-cd "$(dirname "$0")/napture" || exit 1
-
 # Build Napture
 cargo build --release || exit 1
 

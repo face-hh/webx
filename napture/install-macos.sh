@@ -18,9 +18,6 @@ fi
 # Install deps using Homebrew
 brew install gtk4 graphene glib libadwaita lua pkg-config || exit 1
 
-# Assuming the script is in the same directory as "napture"
-cd "$(dirname "$0")/napture" || exit 1
-
 # Specifies required environment variable HOMEBREW_CELLAR when it is not set
 arch_name=$(uname -m)
 if [ "$arch_name" = "x86_64" ]; then
