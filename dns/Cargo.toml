@@ -1,0 +1,15 @@
+[package]
+name = "webx_dns"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-extensible-rate-limit = "0.3.1"
+actix-web = "4.6.0"
+dotenv = "0.15.0"
+futures = "0.3.30"
+lazy_static = "1.4.0"
+mongodb = "2.8.2"
+rand = { version = "0.8.5", features = ["small_rng"] }
+serde = { version = "1.0.203", features = ["derive"] }
+tokio = { version = "1.38.0", features = ["full"] }
