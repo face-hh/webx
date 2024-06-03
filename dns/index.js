@@ -1,30 +1,29 @@
 require("dotenv").config();
 
 const express = require('express');
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
 const path = require('path');
-
 const { MongoClient } = require('mongodb');
 const { generateSecretKey } = require('./utils');
 const Captcha = require("captcha-generator-alphanumeric").default;
 const fs = require('fs');
+const axios = require('axios');
 
 let captchas = {};
 
 const app = express();
 const port = 6969;
-const apiKeysEnabled = false
+const apiKeysEnabled = false;
 
 app.use(bodyParser.urlencoded({
     extended: false
-}))
-app.use(bodyParser.json())
+}));
+app.use(bodyParser.json());
 
 const TLD = [
     "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma",
     "now", "it", "soy", "lol", "uwu", "ohio"
 ];
-
 
 /**
  * The MongoDB collection for storing domain information
@@ -35,18 +34,18 @@ let db;
 const FastRateLimit = require("fast-ratelimit").FastRateLimit;
 
 const limiter = new FastRateLimit({
-  threshold : 1, // available tokens over timespan
-  ttl       : 60 * 60  // time-to-live value of token bucket (in seconds)
+    threshold: 1, // available tokens over timespan
+    ttl: 60 * 60  // time-to-live value of token bucket (in seconds)
 });
 
 const apilimiter = new FastRateLimit({
-  threshold : 100, // available tokens over timespan
-  ttl       : 60 * 60  // time-to-live value of token bucket (in seconds)
+    threshold: 100, // available tokens over timespan
+    ttl: 60 * 60  // time-to-live value of token bucket (in seconds)
 });
 
 const globallimiter = new FastRateLimit({
-  threshold : 100, // available tokens over timespan
-  ttl       : 10 * 60  // time-to-live value of token bucket (in seconds)
+    threshold: 100, // available tokens over timespan
+    ttl: 10 * 60  // time-to-live value of token bucket (in seconds)
 });
 
 app.set('trust proxy', 1);
@@ -65,10 +64,10 @@ app.get('/', (_, res) => {
 
 app.post('/domain', async (req, res) => {
     if (!limiter.hasTokenSync(req.ip)) {
-        return res.status(429).send("Try again in an hour")
+        return res.status(429).send("Try again in an hour");
     }
     if (!globallimiter.consumeSync("Global")) {
-        return res.status(429).send("The DNS is under attack, try again in 10 minutes or use a diferent registrar")
+        return res.status(429).send("The DNS is under attack, try again in 10 minutes or use a different registrar");
     }
 
     const secretKey = generateSecretKey(24);
@@ -79,16 +78,16 @@ app.post('/domain', async (req, res) => {
         return res.status(400).send();
     }
 
-    return do_the_register_shit(newDomain, res, secretKey, req) 
+    return do_the_register_shit(newDomain, res, secretKey, req); 
 });
 
 app.post('/domainapi/:apiKey', async (req, res) => {
     if (!apilimiter.consumeSync(req.params.apiKey)) {
-        return res.status(429).send("The hourly limit for your API key has been reached")
+        return res.status(429).send("The hourly limit for your API key has been reached");
     }
 
     if (!apiKeysEnabled) {
-        return res.status(403).send("API Keys are not enabled on this server")
+        return res.status(403).send("API Keys are not enabled on this server");
     }
 
     const secretKey = generateSecretKey(24);
@@ -99,16 +98,16 @@ app.post('/domainapi/:apiKey', async (req, res) => {
         return res.status(400).send();
     }
 
-    return do_the_register_shit(newDomain, res, secretKey, req) 
+    return do_the_register_shit(newDomain, res, secretKey, req); 
 });
 
-async function do_the_register_shit(newDomain, res, secretKey, req){
+async function do_the_register_shit(newDomain, res, secretKey, req) {
     if (
         !newDomain.name.match(/^[a-zA-Z\-]+$/) ||
         !TLD.includes(newDomain.tld) ||
         newDomain.name.length > 24
     ) {
-        return res.status(400).send("Invalid name, non-existant TLD, or name too long (24 chars).");
+        return res.status(400).send("Invalid name, non-existent TLD, or name too long (24 chars).");
     }
 
     newDomain.name = newDomain.name.toLowerCase();
@@ -139,18 +138,39 @@ async function do_the_register_shit(newDomain, res, secretKey, req){
         await db.insertOne(data);
         delete data._id;
 
-        limiter.consumeSync(req.ip)
+        limiter.consumeSync(req.ip);
+        
+        await sendDiscordWebhook(newDomain); // Call the webhook function
+
         res.status(200).json(data);
     } catch (err) {
         res.status(409).send();
     }
 }
 
+async function sendDiscordWebhook(newDomain) {
+    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+    const webhookData = {
+        username: 'that was not so sigma of you',
+        embeds: [
+            {
+                title: "New domain created!",
+                description: `Domain: ${newDomain.name}.${newDomain.tld}`,
+                color: 0x00FF00 // Green color
+            }
+        ]
+    };
+
+    try {
+        await axios.post(webhookUrl, webhookData);
+        console.log('Webhook sent successfully');
+    } catch (error) {
+        console.error('Error sending webhook:', error);
+    }
+}
+
 app.get('/domain/:name/:tld', async (req, res) => {
-    const {
-        name,
-        tld
-    } = req.params;
+    const { name, tld } = req.params;
     if (!name || !tld) {
         return res.status(400).send();
     }
@@ -180,9 +200,7 @@ app.put('/domain/:key', async (req, res) => {
         return res.status(400).send();
     }
 
-    const {
-        ip
-    } = req.body;
+    const { ip } = req.body;
     if (!ip) {
         return res.status(400).send();
     }
@@ -224,7 +242,7 @@ app.delete('/domain/:id', async (req, res) => {
     } else {
         res.status(404).send();
     }
-})
+});
 
 app.get('/domains', async (_, res) => {
     try {
