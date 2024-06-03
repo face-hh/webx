@@ -1,0 +1,20 @@
+{
+  "name": "buss-dns",
+  "version": "1.0.0",
+  "description": "idk + idc change this",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "creeperita104",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "captcha-generator-alphanumeric": "^1.10.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "fast-ratelimit": "^3.0.1",
+    "mongodb": "^6.7.0",
+    "openai": "^4.47.2"
+  }
+}

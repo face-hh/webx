@@ -1,2 +1,22 @@
-/target
+# jetbrains
+.idea
+.fleet
+
+# rust
+target
+
+# maid
+.maid/cache
+.maid/temp
+.maid/server.toml
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# misc
 .DS_Store
+*.pem
+config.toml

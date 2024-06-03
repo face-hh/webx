@@ -1,3 +1,4 @@
+mod config;
 mod secret;
 
 use actix_extensible_rate_limit::{
@@ -5,8 +6,12 @@ use actix_extensible_rate_limit::{
     RateLimiter,
 };
 
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use dotenv::dotenv;
+use actix_web::{
+    web::{self, Data},
+    App, HttpResponse, HttpServer, Responder,
+};
+
+use config::Config;
 use futures::stream::StreamExt;
 use lazy_static::lazy_static;
 use mongodb::{bson::doc, options::ClientOptions, Client, Collection};
@@ -30,18 +35,15 @@ struct ResponseDomain {
 }
 
 lazy_static! {
-    static ref TLD: Vec<&'static str> = vec!["mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu", "ohio"];
-    static ref OFFENSIVE_WORDS: Vec<&'static str> = vec!["nigg", "sex", "porn"];
     static ref DB: TokioMutex<Option<Collection<Domain>>> = TokioMutex::new(None);
 }
 
-async fn connect_to_mongo() {
-    dotenv().ok();
-    let mongo_uri = std::env::var("MONGOURI").expect("MONGOURI must be set");
-    let mut client_options = ClientOptions::parse(&mongo_uri).await.unwrap();
-    client_options.app_name = Some("DomainApp".to_string());
+async fn connect_to_mongo(config: &Config) {
+    let mut client_options = ClientOptions::parse(&config.server.mongo.connection).await.unwrap();
+    client_options.app_name = Some(config.server.mongo.app_name.clone());
+
     let client = Client::with_options(client_options).unwrap();
-    let db = client.database("mydb");
+    let db = client.database(&config.server.mongo.db_name);
     let collection = db.collection::<Domain>("domains");
 
     let mut db_lock = DB.lock().await;
@@ -53,20 +55,20 @@ async fn connect_to_mongo() {
 #[actix_web::get("/")]
 async fn index() -> impl Responder {
     HttpResponse::Ok().body(
-        "Hello, world! The available endpoints are:\nGET /domains,\nGET /domain/{name}/{tld},\nPOST /domain,\nPUT /domain/{key},\nDELETE /domain/{key},\nGET /tlds.\nRatelimits provided in headers.\n",
+        "Hello, world! The available endpoints are:\nGET /domains,\nGET /domain/{name}/{tld},\nPOST /domain,\nPUT /domain/{key},\nDELETE /domain/{key},\nGET /tlds.\nRatelimits are as follows: 10 requests per 60s.\n",
     )
 }
 
-async fn create_domain(domain: web::Json<Domain>) -> impl Responder {
+async fn create_domain(domain: web::Json<Domain>, config: Data<Config>) -> impl Responder {
     let secret_key = secret::generate(31);
     let mut domain = domain.into_inner();
     domain.secret_key = Some(secret_key.clone());
 
-    if !TLD.contains(&domain.tld.as_str()) || !domain.name.chars().all(|c| c.is_alphabetic() || c == '-') || domain.name.len() > 24 {
+    if !config.tld_list().contains(&domain.tld.as_str()) || !domain.name.chars().all(|c| c.is_alphabetic() || c == '-') || domain.name.len() > 24 {
         return HttpResponse::BadRequest().body("Invalid name, non-existent TLD, or name too long (24 chars).");
     }
 
-    if OFFENSIVE_WORDS.iter().any(|word| domain.name.contains(word)) {
+    if config.offen_words().iter().any(|word| domain.name.contains(word)) {
         return HttpResponse::BadRequest().body("The given domain is offensive.");
     }
 
@@ -171,15 +173,16 @@ async fn get_domains() -> impl Responder {
 }
 
 #[actix_web::get("/tlds")]
-async fn get_tlds() -> impl Responder { HttpResponse::Ok().json(&*TLD) }
+async fn get_tlds(config: Data<Config>) -> impl Responder { HttpResponse::Ok().json(&*config.tld_list()) }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let config = config::read();
     let backend = InMemoryBackend::builder().build();
 
-    connect_to_mongo().await;
+    connect_to_mongo(&config).await;
     // migrate to logger crate
-    println!("listening on 127.0.0.1:8000");
+    println!("listening on {}", config.get_address());
 
     // generate api keys and store in kv db, be more leinent with ratelimit on those users
 
@@ -189,11 +192,13 @@ async fn main() -> std::io::Result<()> {
 
     // maybe use other db formats like postgres for storing the data WIP
 
-    HttpServer::new(move || {
+    let app = move || {
+        let config = config::read();
         let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 10).real_ip_key().build();
         let middleware = RateLimiter::builder(backend.clone(), input).add_headers().build();
 
         App::new()
+            .app_data(Data::new(config))
             .service(index)
             .service(get_domain)
             .service(update_domain)
@@ -201,8 +206,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_domains)
             .service(get_tlds)
             .route("/domain", web::post().wrap(middleware).to(create_domain))
-    })
-    .bind("127.0.0.1:8000")?
-    .run()
-    .await
+    };
+
+    HttpServer::new(app).bind(config.get_address())?.run().await
 }
