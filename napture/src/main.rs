@@ -251,10 +251,12 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         {
             display_settings_page(&app_clone);
         }
+
         glib::Propagation::Proceed
     });
 
     window.add_controller(event_controller);
+
     scroll.set_vexpand(true);
 
     let nav = gtk::Box::builder()
@@ -267,7 +269,9 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         .build();
 
     nav.append(&scroll);
+
     window.set_child(Some(&nav));
+
     window.set_default_size(500, 500);
     window.present();
 
@@ -280,6 +284,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         println!("ERROR: HTML engine failed.");
     }
 
+    // search bar
     let rc_scroll_search = rc_scroll.clone();
     let rc_css_provider_search = rc_css_provider.clone();
     let rc_tab_search = rc_tab.clone();
