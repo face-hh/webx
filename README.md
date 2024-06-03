@@ -1,27 +1,22 @@
 # Bussin Web X
 
 An alternative to the World Wide Web (`http(s)://`), with:
-
 - its own **custom browser** written in Rust with [GTK](https://gtk.org/),
-- custom HTML, CSS and **_Lua_** engine (yup, **no javascript! 🎉**),
+- custom HTML, CSS and ***Lua*** engine (yup, **no javascript! 🎉**),
 - custom **DNS** allowing Top-Level domains such as `rizz`, `sigma`, `lol`, `dev`, etc,
 - and **search engine** at `buss://dingle.it`.
 
-![Preview of buss://register.it, the frontend for registering domains](.github/assets/image.png)
+![Preview of buss://register.it, the frontend for registering domains](.github_assets/image.png)
 
 # File structure
-
 - `/napture` - The source code for the **browser** Bussin Napture, used to view buss:// sites.
 - `/dns` - The source code for the **DNS** (Domain Name System), used for the API at `https://api.buss.lol`
 - `/dingle` - The source code for the official **search engine** (API) of Web X. For the frontend, check [dingle frontend repo](https://github.com/face-hh/dingle-frontend)
 - [registrar](https://github.com/face-hh/webx-registrar) - The source code for `buss://register.it`, frontend for `https://api.buss.lol` made for Bussin Web X. This can also serve as an example for how buss:// sites are made.
 
 # Download and Install
-
 ## Arch Linux
-
 - `yay -S napture`, it's available on AUR.
-
 ## Nix[OS]
 
 **Flakes**: The repository provides a flake which exposes an overlay providing the webx package, so you could just add the input in your flake.nix file
@@ -57,28 +52,19 @@ home.packages = with pkgs; [
 Then you could just launch it using `webx` in your terminal.
 
 ## Linux
-
 - For now, you have to download [Rust](https://www.rust-lang.org/tools/install). Then, you just need to open `install-linux` as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux`, then you should be able to install).
-
 ## macOS
-
 - For now, you have to download [Rust](https://www.rust-lang.org/tools/install) and [Homebrew](https://brew.sh). Then, you just need to open `install-macos` as an executable (if you can't execute it, first do `chmod +x ./install-macos`, then you should be able to install).
-
 ## Windows
-
 - Install the executable from the release tab. It's a self-extractor with WinRAR because it has a lot of DLLs.
 
 # Download and Compile
-
 ## Linux
-
 Install [Rust](https://www.rust-lang.org/tools/install) if you haven't already.
 It should work by default, but if you're getting errors such as "missing PC files", you should Google it. Most likely you just have to install a library
 
 ## Windows
-
 Welcome to Gaming OS 🙂
-
 1. Download [Rust](https://www.rust-lang.org/tools/install)
 2. Download GNU target: `rustup toolchain install stable-gnu && rustup default stable-gnu`
 3. Download [MSYS32](https://www.msys2.org/)
@@ -90,7 +76,6 @@ Welcome to Gaming OS 🙂
 9. Open a terminal in the folder with `napture/`, run `cargo run`.
 
 ## MacOS (Apple Silicon)
-
 1. Install [Rust](https://www.rust-lang.org/tools/install)
 2. Install [Homebrew](https://brew.sh/)
 3. Install PKG_CONFIG_PATH and ensure it's set in your path
@@ -148,7 +133,6 @@ cargo run
 ```
 
 # Register website
-
 Please follow [How to code a Buss site](https://facedev.gitbook.io/bussin-web-x-how-to-make-a-website/) for a better visual guide.
 
 So you wish to publish a website to Web X? Great! Let's go through the rules:
@@ -169,41 +153,34 @@ By publishing content to this platform ("Bussin Napture"/"Bussin Web X"), you ag
 Now, to register a website, navigate to `buss://register.it` **through Bussin Napture**.
 
 You will see this interface.
-![Preview of buss://register.it, the frontend for registering domains](.github/assets/image.png)
+![Preview of buss://register.it, the frontend for registering domains](.github_assets/image.png)
 
 What you need is the **Publish** section.
-
 - for the domain name, choose whatever you want. (example: `duckduckgo`)
 - for the TLD, choose one displayed above the `Result will appear...` label. (example: `rizz`)
 - for the IP, you can either use:
-  - an IP that serves `/index.html` on port 80
-  - a GitHub repository that has `index.html`, **outside any folder**. (example: [registrar](https://github.com/face-hh/webx-registrar)), **_with the `main` default branch_**.
+   - an IP that serves `/index.html` on port 80
+   - a GitHub repository that has `index.html`, **outside any folder**. (example: [registrar](https://github.com/face-hh/webx-registrar)), ***with the `main` default branch***.
 
 Don't worry! The IP doesn't have to be valid, and you can save the domain for later!
 
 **WARNING**: After creating the domain, you'll be shown a **secret key**. Please make sure to save it as you will need it to Update/Delete your domain.
 
 # Run website locally
-
 Bussin Napture fetches `index.html` at whatever path you give it. For example, if you enter `http://localhost:3000`, Napture will fetch `http://localhost:3000/index.html`. From the index.html, if you have further `<link>` or `<script>` imports, they will be fetched at `http://localhost:3000/file.(css|lua)`.
 
 1. To locally test a website, you can use something like [Python](https://www.python.org/):
-
 ```bash
 python -m http.server 3000
 ```
-
 2. CLI support with `./napture file:///home/path/to/folder`.
 3. Enter `file:///home/path/to/folder` in the search bar.
 
 # HTML guide
-
 The supported tags are: `head`, `title`, `link`, `meta`, `script`, `h1`-`h6`, `div`, `p`, `ul`, `ol`, `li`, `div`, `button`, `hr`, `img`, `input`, `textarea`, `button`, `select`, `option`. Keep in mind their syntax may be different if you're already familiar with HTML5 (i.e. `link` is used for the tab icon). Please check [registrar](https://github.com/face-hh/webx-registrar) or `/napture/test/index.html` for examples.
 
 # CSS guide
-
 The supported properties are:
-
 - `border-color`
 - `border-width`
 - `border-style`
@@ -233,9 +210,7 @@ The supported properties are:
 Properties whose value type wasn't specified are either measured in `px`, or are colors (`#fff`, `red`, etc.)
 
 # Lua guide
-
 For those coming from the traditional web...
-
 ```diff
 - 1. const test = document.querySelector(".classExample");
 - 2. test.textContent = "abc";
