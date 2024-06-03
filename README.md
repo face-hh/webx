@@ -61,7 +61,7 @@ Then you could just launch it using `webx` in your terminal.
 # Download and Compile
 ## Linux
 Install [Rust](https://www.rust-lang.org/tools/install) if you haven't already.
-It should work by default, but if you're getting errors such as "missing PC files", you should Google it. Most likely you just have to install a library
+It should work by default, but if you're getting errors such as "missing PC files", you should Google it. Most likely you just have to install a library.
 
 ## Windows
 Welcome to Gaming OS 🙂
