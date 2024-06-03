@@ -46,6 +46,8 @@ async fn connect_to_mongo() {
 
     let mut db_lock = DB.lock().await;
     *db_lock = Some(collection);
+
+    println!("connected to mongodb");
 }
 
 #[actix_web::get("/")]
@@ -55,9 +57,8 @@ async fn index() -> impl Responder {
     )
 }
 
-#[actix_web::post("/domain")]
 async fn create_domain(domain: web::Json<Domain>) -> impl Responder {
-    let secret_key = secret::generate(21);
+    let secret_key = secret::generate(31);
     let mut domain = domain.into_inner();
     domain.secret_key = Some(secret_key.clone());
 
@@ -177,20 +178,29 @@ async fn main() -> std::io::Result<()> {
     let backend = InMemoryBackend::builder().build();
 
     connect_to_mongo().await;
+    // migrate to logger crate
+    println!("listening on 127.0.0.1:8000");
+
+    // generate api keys and store in kv db, be more leinent with ratelimit on those users
+
+    /* cli:
+     server <start/generate-key/--config (config.toml:default)>
+    */
+
+    // maybe use other db formats like postgres for storing the data WIP
 
     HttpServer::new(move || {
-        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(3600), 5).real_ip_key().build();
+        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 10).real_ip_key().build();
         let middleware = RateLimiter::builder(backend.clone(), input).add_headers().build();
 
         App::new()
-            .wrap(middleware)
             .service(index)
-            .service(create_domain)
             .service(get_domain)
             .service(update_domain)
             .service(delete_domain)
             .service(get_domains)
             .service(get_tlds)
+            .route("/domain", web::post().wrap(middleware).to(create_domain))
     })
     .bind("127.0.0.1:8000")?
     .run()
