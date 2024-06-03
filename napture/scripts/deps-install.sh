@@ -8,7 +8,7 @@ if [ -f /etc/os-release ]; then
     if [[ $PRETTY_NAME == "Ubuntu 24.04 LTS" ]]; then
         echo  "Installing dependencies..."
         sudo apt-get update
-        sudo apt-get install curl git build-essential libssl-dev libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev liblua5.4-dev
+        sudo apt-get install -y curl git build-essential libssl-dev libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev liblua5.4-dev
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
         echo "Dependencies installed."
     else
