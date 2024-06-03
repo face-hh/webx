@@ -21,16 +21,40 @@ pub(crate) struct Tag {
     pub tied_variables: Vec<String>,
 }
 
+fn decode_html_entities<T: AsRef<str>>(s: T) -> String {
+    use html_escape::decode_html_entities;
+    decode_html_entities(s.as_ref()).to_string()
+}
+
 async fn parse_html(mut url: String) -> Result<(Node, Node)> {
+    let mut is_html = true;
+    let mut file_name = String::new();
+
     if let Ok(mut uri) = Url::parse(&url) {
+       let last_seg = {
+           uri.path_segments()
+               .map(|seg| seg.last().unwrap_or(""))
+               .unwrap_or("").to_string()
+       };
        if let Ok(mut segments) = uri.path_segments_mut() {
-           segments.pop_if_empty();
-           segments.push("index.html");
+           if !last_seg.contains(".") {
+               segments.pop_if_empty();
+               segments.push("index.html");
+           } else {
+               if !last_seg.ends_with(".html") {
+                   is_html = false;
+               }
+           }
+           file_name += &last_seg;
        }
        url = uri.into();
     }
 
-    let html = fetch_file(url).await;
+    let mut html = fetch_file(url).await;
+
+    if !is_html {
+        html = format!("<html><head>{}</head><body><p>{}</p></body></html>", file_name, html_escape::encode_double_quoted_attribute(&html));
+    }
 
     let dom = match !html.is_empty() {
         true => Dom::parse(&html),
@@ -230,7 +254,7 @@ async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell
             if let Some(contents) = contents {
                 tab.borrow()
                     .label_widget
-                    .set_label(contents.text().unwrap_or(""))
+                    .set_label(&decode_html_entities(contents.text().unwrap_or("")))
             }
         }
         "link" => {
@@ -536,16 +560,16 @@ fn render_html(
                     if el.name.as_str() == "option" {
                         // TODO: keep track of value
                         if let Some(node) = el.children.first() {
-                            strings.push(node.text().unwrap_or(""))
+                            strings.push(decode_html_entities(node.text().unwrap_or("")))
                         } else {
-                            strings.push("")
+                            strings.push("".to_string())
                         }
                     }
                 }
             }
 
             let dropdown = gtk::DropDown::builder()
-                .model(&gtk::StringList::new(&strings[..]))
+                .model(&gtk::StringList::new(&strings.iter().map(|s| &**s).collect::<Vec<&str>>()))
                 .css_name("select")
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
@@ -574,7 +598,7 @@ fn render_html(
 
             textview
                 .buffer()
-                .set_text(element.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""));
+                .set_text(&decode_html_entities(element.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")));
 
             html_view.append(&textview);
 
@@ -587,12 +611,12 @@ fn render_html(
         "button" => {
             let button = gtk::Button::builder()
                 .label(
-                    element
+                    &decode_html_entities(element
                         .children
                         .first()
                         .unwrap_or(&Node::Text("".to_owned()))
                         .text()
-                        .unwrap_or(""),
+                        .unwrap_or("")),
                 )
                 .css_name("button")
                 .css_classes(element.classes.clone())
@@ -635,7 +659,7 @@ fn render_a(
     };
 
     let link_button = gtk::LinkButton::builder()
-        .label(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""))
+        .label(&decode_html_entities(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")))
         .uri(uri)
         .css_name("a")
         .css_classes(el.classes.clone())
@@ -703,7 +727,7 @@ fn render_list(
                         .build();
 
                     let label = gtk::Label::builder()
-                        .label(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""))
+                        .label(&decode_html_entities(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")))
                         .css_name("li")
                         .css_classes(el.classes.clone())
                         .halign(gtk::Align::Start)
@@ -887,7 +911,7 @@ async fn fetch_from_github(url: String) -> String {
 
 fn render_p(child: &Node, element: &Element, label_box: &gtk::Box, css: &mut String, tags: &Rc<RefCell<Vec<Tag>>>){
     let label = gtk::Label::builder()
-        .label(child.text().unwrap_or(""))
+        .label(&decode_html_entities(child.text().unwrap_or("")))
         .css_name(element.name.as_str())
         .css_classes(element.classes.clone())
         .halign(gtk::Align::Start)
