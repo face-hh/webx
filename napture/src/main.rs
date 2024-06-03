@@ -62,7 +62,6 @@ use gtk::glib;
 use gtk::prelude::*;
 
 const APP_ID: &str = "io.github.face_hh.Napture";
-const DEFAULT_URL: &str = "dingle.it";
 
 #[derive(Clone, Debug)]
 struct Tab {
@@ -181,7 +180,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let search = gtk::SearchEntry::builder()
         .css_name("search")
         .width_request(500)
-        .text(DEFAULT_URL)
+        .text(home_loc)
         .build();
     let empty_label = gtk::Label::new(Some(""));
     let headerbar = gtk::HeaderBar::builder().build();
