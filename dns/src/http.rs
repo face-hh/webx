@@ -2,11 +2,27 @@ mod models;
 mod routes;
 
 use crate::config::Config;
-use actix_web::{web, web::Data, App, HttpServer};
+use actix_web::{web, web::Data, App, HttpRequest, HttpServer};
+use anyhow::{anyhow, Error};
 use rate_limit::backend::{memory::InMemoryBackend, SimpleInputFunctionBuilder};
 use std::time::Duration;
 
 pub use models::Domain;
+
+pub fn get_token<'a>(req: &'a HttpRequest) -> Result<(&'a str, &'a str), Error> {
+    let header = match req.headers().get("authorization") {
+        Some(res) => res.to_str().unwrap_or(""),
+        None => return Err(anyhow!("Missing header authorization")),
+    };
+
+    let chunks: Vec<&'a str> = header.split(":").collect();
+
+    if chunks.len() == 2 {
+        Ok((chunks[0], chunks[1]))
+    } else {
+        Err(anyhow!("Header '{}' does not contain exactly one colon", header))
+    }
+}
 
 #[actix_web::main]
 pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
@@ -17,7 +33,7 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
 
     let app = move || {
         let config = Config::new().set_path(&cli.config).read();
-        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(360), 5).real_ip_key().build();
+        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(300), 3).real_ip_key().build();
         let middleware = rate_limit::RateLimiter::builder(backend.clone(), input).add_headers().build();
 
         App::new()
