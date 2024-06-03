@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
+    #[serde(skip)]
+    pub config_path: String,
     pub(crate) server: Server,
     pub(crate) settings: Settings,
 }

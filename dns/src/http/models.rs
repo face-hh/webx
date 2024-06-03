@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub(crate) struct Domain {
+pub struct Domain {
     pub(crate) tld: String,
     pub(crate) ip: String,
     pub(crate) name: String,
