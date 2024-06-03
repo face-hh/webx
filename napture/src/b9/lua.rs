@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::thread;
 
 use super::css::Styleable;
-use super::html::Tag;
+use super::html::{fetch_media_file, Tag};
 use glib::GString;
 use gtk::prelude::*;
 use mlua::{prelude::*, StdLib};
@@ -39,12 +39,7 @@ pub trait Luable: Styleable {
 //     Ok(())
 // }
 
-fn get(
-    lua: &Lua,
-    class: String,
-    tags: Rc<RefCell<Vec<Tag>>>,
-    multi: bool
-) -> LuaResult<LuaTable<>> {
+fn get(lua: &Lua, class: String, tags: Rc<RefCell<Vec<Tag>>>, multi: bool) -> LuaResult<LuaTable> {
     let global_table = lua.create_table()?;
 
     let tags_ref = tags.borrow();
@@ -183,11 +178,14 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
 }
 
 // todo: make this async if shit breaks
-pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: String) -> LuaResult<()> {
+pub(crate) async fn run(
+    luacode: String,
+    tags: Rc<RefCell<Vec<Tag>>>,
+    taburl: String,
+) -> LuaResult<()> {
     let lua = Lua::new_with(
-        StdLib::COROUTINE | StdLib::STRING |
-        StdLib::TABLE | StdLib::MATH,
-        LuaOptions::new().catch_rust_panics(true)
+        StdLib::COROUTINE | StdLib::STRING | StdLib::TABLE | StdLib::MATH,
+        LuaOptions::new().catch_rust_panics(true),
     )?;
     let globals = lua.globals();
 
@@ -303,9 +301,9 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
         "get",
-        lua.create_function(move |lua, (class, multiple): (String, Option<bool>) | {
+        lua.create_function(move |lua, (class, multiple): (String, Option<bool>)| {
             get(lua, class, tags.clone(), multiple.unwrap_or(false))
-        })?
+        })?,
     )?;
     globals.set("fetch", fetchtest)?;
     globals.set("window", window_table)?;
@@ -803,7 +801,9 @@ impl Luable for gtk::Picture {
         );
     }
     fn get_source_(&self) -> String {
-        self.alternative_text().unwrap_or(GString::new()).to_string()
+        self.alternative_text()
+            .unwrap_or(GString::new())
+            .to_string()
     }
     fn set_source_(&self, source: String) {
         let stream = match crate::b9::html::fetch_image_to_pixbuf(source.clone()) {
@@ -848,6 +848,64 @@ impl Luable for gtk::Picture {
             "warning",
             "\"img\" component does not support the \"input\" event."
         );
+    }
+}
+
+// video
+impl Luable for gtk::Video {
+    fn get_css_name(&self) -> String {
+        self.css_name().to_string()
+    }
+
+    fn get_contents_(&self) -> String {
+        "".to_string()
+    }
+
+    fn get_href_(&self) -> String {
+        todo!()
+    }
+
+    fn get_opacity_(&self) -> f64 {
+        todo!()
+    }
+
+    fn get_source_(&self) -> String {
+        todo!()
+    }
+
+    fn set_source_(&self, source: String) {
+        let file = match fetch_media_file(source.clone()) {
+            Ok(s) => s,
+            Err(e) => {
+                println!("ERROR: Failed to load video: {}", e);
+                return;
+            }
+        };
+        self.set_file(Some(&file));
+    }
+
+    fn set_contents_(&self, contents: String) {
+        todo!()
+    }
+
+    fn set_href_(&self, href: String) {
+        todo!()
+    }
+
+    fn set_opacity_(&self, amount: f64) {
+        todo!()
+    }
+
+    fn _on_click(&self, func: &OwnedFunction) {
+        todo!()
+    }
+
+    fn _on_submit(&self, func: &OwnedFunction) {
+        todo!()
+    }
+
+    fn _on_input(&self, func: &OwnedFunction) {
+        todo!()
     }
 }
 

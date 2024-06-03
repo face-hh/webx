@@ -484,6 +484,45 @@ impl Styleable for gtk::Picture {
     }
 }
 
+// video
+impl Styleable for gtk::Video {
+    fn style(&self) -> String {
+        let guard = match CSS_RULES.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                println!("FATAL: failed to lock CSS_RULES mutex! Aborting function at GtkVideo.");
+                return String::new();
+            }
+        };
+
+        if let Some(css) = guard.as_ref() {
+            let mut classes = self.css_classes();
+            let mut final_css = "".to_string();
+
+            classes.push(self.css_name());
+
+            for class in classes {
+                if let Some(rules) = css.get(&class.to_string()) {
+                    let properties: Properties = get_properties(rules);
+
+                    self.set_margin_top(properties.margin_top.parse::<i32>().unwrap_or(0));
+                    self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
+                    self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
+                    self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
+
+                    self.set_opacity(properties.opacity);
+
+                    final_css += &compute_styling(class, &properties);
+                }
+            }
+
+            final_css
+        } else {
+            String::new()
+        }
+    }
+}
+
 // input
 impl Styleable for gtk::Entry {
     fn style(&self) -> String {
@@ -507,7 +546,7 @@ impl Styleable for gtk::Entry {
 
                     let width = properties.width;
                     let height = properties.height;
-                    
+
                     if width > 0 || height > 0 {
                         let normalized_width = if width > 0 { width } else { -1 };
                         let normalized_height = if height > 0 { height } else { -1 };
@@ -558,7 +597,7 @@ impl Styleable for gtk::Button {
                     self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
-                    
+
                     self.set_opacity(properties.opacity);
 
                     final_css += &compute_styling(class, &properties);
@@ -658,7 +697,7 @@ fn compute_styling(class: GString, properties: &Properties) -> String {
     if properties.border_style != "none" {
         borders.push_str(&format!("border-style: {};", properties.border_style));
     }
-    
+
     format!(
         "
 .{} {{
@@ -726,8 +765,8 @@ fn get_properties(rules: &[(String, String)]) -> Properties {
         .parse::<i32>()
         .unwrap_or(0);
     let opacity = get_rule(rules, "opacity", "1.0")
-    .parse::<f64>()
-    .unwrap_or(1.0);
+        .parse::<f64>()
+        .unwrap_or(1.0);
 
     Properties {
         direction,
@@ -757,6 +796,6 @@ fn get_properties(rules: &[(String, String)]) -> Properties {
         padding,
         gap,
         font_size,
-        opacity
+        opacity,
     }
 }

@@ -7,9 +7,16 @@ use super::{
     lua,
 };
 
-use std::{cell::RefCell, fs, rc::Rc, thread};
+use std::{cell::RefCell, fs, io::Write, rc::Rc, thread};
 
-use gtk::{gdk::Display, gdk_pixbuf, gio, glib::Bytes, prelude::*, CssProvider};
+use gtk::{
+    gdk::Display,
+    gdk_pixbuf,
+    gio::{self, File},
+    glib::Bytes,
+    prelude::*,
+    CssProvider,
+};
 use html_parser::{Dom, Element, Node, Result};
 
 use lua::Luable;
@@ -87,7 +94,7 @@ pub async fn build_ui(
         .build();
 
     let mut css: String = css::reset_css();
-    
+
     let (head, body) = match parse_html(furl.to_string()).await {
         Ok(ok) => ok,
         Err(e) => {
@@ -208,7 +215,12 @@ pub async fn build_ui(
     Ok((html_view, provider))
 }
 
-async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell<&Tab>>, furl: &String) {
+async fn render_head(
+    element: &Element,
+    contents: Option<&Node>,
+    tab: Rc<RefCell<&Tab>>,
+    furl: &String,
+) {
     match element.name.as_str() {
         "title" => {
             if let Some(contents) = contents {
@@ -480,6 +492,78 @@ fn render_html(
             wrapper.append(&image);
             html_view.append(&wrapper);
         }
+        "video" => {
+            let url = match element.attributes.get("src") {
+                Some(Some(url)) => url.clone(),
+                _ => {
+                    println!("INFO: <video> tag must have a src attribute");
+                    return;
+                }
+            };
+
+            let file = match fetch_media_file(url.clone()) {
+                Ok(s) => s,
+                Err(e) => {
+                    println!("ERROR: Failed to load video: {}", e);
+                    return;
+                }
+            };
+
+            let video = gtk::Video::builder()
+                .css_name("video")
+                .css_classes(element.classes.clone())
+                .halign(gtk::Align::Start)
+                .valign(gtk::Align::Start)
+                .file(&file)
+                .build();
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(video.clone()),
+                tied_variables: Vec::new(),
+            });
+
+            css.push_str(&video.style());
+
+            let wrapper = gtk::Box::builder().build();
+            wrapper.append(&video);
+
+            html_view.append(&wrapper);
+        }
+        // Copies the video tag, couldn't think of a better way to copy it
+        "audio" => {
+            let url = match element.attributes.get("src") {
+                Some(Some(url)) => url.clone(),
+                _ => {
+                    println!("INFO: <audio> tag must have a src attribute");
+                    return;
+                }
+            };
+
+            let file = match fetch_media_file(url.clone()) {
+                Ok(s) => s,
+                Err(e) => {
+                    println!("ERROR: Failed to load audio: {}", e);
+                    return;
+                }
+            };
+
+            let audio = gtk::Video::builder()
+                .css_name("audio")
+                .css_classes(element.classes.clone())
+                .halign(gtk::Align::Start)
+                .valign(gtk::Align::Start)
+                .file(&file)
+                .build();
+            tags.borrow_mut().push(Tag {
+                classes: element.classes.clone(),
+                widget: Box::new(audio.clone()),
+                tied_variables: Vec::new(),
+            });
+
+            css.push_str(&audio.style());
+
+            html_view.append(&audio);
+        }
         "input" => {
             let input_type = match element.attributes.get("type") {
                 Some(Some(t)) => t.to_string(),
@@ -556,9 +640,14 @@ fn render_html(
 
             css.push_str(&textview.style());
 
-            textview
-                .buffer()
-                .set_text(element.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""));
+            textview.buffer().set_text(
+                element
+                    .children
+                    .first()
+                    .unwrap_or(&Node::Text(String::new()))
+                    .text()
+                    .unwrap_or(""),
+            );
 
             html_view.append(&textview);
 
@@ -619,7 +708,13 @@ fn render_a(
     };
 
     let link_button = gtk::LinkButton::builder()
-        .label(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""))
+        .label(
+            el.children
+                .first()
+                .unwrap_or(&Node::Text(String::new()))
+                .text()
+                .unwrap_or(""),
+        )
         .uri(uri)
         .css_name("a")
         .css_classes(el.classes.clone())
@@ -687,7 +782,13 @@ fn render_list(
                         .build();
 
                     let label = gtk::Label::builder()
-                        .label(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""))
+                        .label(
+                            el.children
+                                .first()
+                                .unwrap_or(&Node::Text(String::new()))
+                                .text()
+                                .unwrap_or(""),
+                        )
                         .css_name("li")
                         .css_classes(el.classes.clone())
                         .halign(gtk::Align::Start)
@@ -746,12 +847,16 @@ pub(crate) fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
     }
 }
 
+pub(crate) fn fetch_media_file(url: String) -> Result<File> {
+    Ok(File::for_uri(&url))
+}
+
 async fn fetch_file(url: String) -> String {
     println!("Attempting to navigate to {url}...");
 
     if url.starts_with("file://") {
         let path = url.replace("file://", "");
-        
+
         match fs::read_to_string(&format!("{}", path)) {
             Ok(text) => text,
             Err(_) => {
@@ -840,7 +945,13 @@ async fn fetch_from_github(url: String) -> String {
     }
 }
 
-fn render_p(child: &Node, element: &Element, label_box: &gtk::Box, css: &mut String, tags: &Rc<RefCell<Vec<Tag>>>){
+fn render_p(
+    child: &Node,
+    element: &Element,
+    label_box: &gtk::Box,
+    css: &mut String,
+    tags: &Rc<RefCell<Vec<Tag>>>,
+) {
     let label = gtk::Label::builder()
         .label(child.text().unwrap_or(""))
         .css_name(element.name.as_str())
