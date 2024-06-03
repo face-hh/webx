@@ -5,7 +5,8 @@ pkgdesc="An alternative for the World Wide Web"
 arch=('x86_64')
 url="https://github.com/face-hh/webx"
 license=('Apache-2.0')
-depends=('glib2' 'cargo' 'gtk4' 'libadwaita' 'lua')
+depends=('glib2' 'gtk4' 'libadwaita' 'lua')
+makedepends=('cargo')
 source=("git+${url}.git#tag=v${pkgver}")
 sha256sums=('SKIP')
 build() {
