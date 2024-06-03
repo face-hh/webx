@@ -12,7 +12,7 @@ const fs = require('fs');
 let captchas = {};
 
 const app = express();
-const port = 8000;
+const port = 6969;
 const apiKeysEnabled = false
 
 app.use(bodyParser.urlencoded({
@@ -130,7 +130,7 @@ async function do_the_register_shit(newDomain, res, secretKey, req){
             return res.status(409).send();
         }
 
-        const offensiveWords = ["nigg", "sex", "porn"];
+        const offensiveWords = ["nigg", "sex", "porn", "igg"];
 
         if (offensiveWords.some(word => newDomain.name.includes(word))) {
             return res.status(400).send("The given domain is offensive.");
