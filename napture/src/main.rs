@@ -175,6 +175,10 @@ fn update_buttons(
     go_forward.set_sensitive(!history.is_empty() && !history.on_history_end());
 }
 
+fn get_time() -> String {
+    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string()
+}
+
 fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let history = Rc::new(RefCell::new(History::new()));
 
@@ -201,7 +205,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     let tabs_widget = gtk::Box::builder().css_name("tabs").spacing(6).build();
 
-    history.borrow_mut().add_to_history(default_tab_url.clone());
+    history.borrow_mut().add_to_history(default_tab_url.clone(), get_time());
     let mut tab1 = make_tab("New Tab", "file.png", tabs.clone(), default_tab_url);
     let current_tab = tab1.clone();
 
@@ -261,9 +265,9 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         if b == (gdk::ModifierType::SHIFT_MASK | gdk::ModifierType::CONTROL_MASK)
             && key == gdk::Key::H
         {
-            history_clone.borrow_mut().add_to_history("https://google.com".to_string());
-            history_clone.borrow_mut().add_to_history("https://re.com".to_string());
-            history_clone.borrow_mut().add_to_history("https://aa.com".to_string());
+            history_clone.borrow_mut().add_to_history("https://google.com".to_string(), get_time());
+            history_clone.borrow_mut().add_to_history("https://re.com".to_string(), get_time());
+            history_clone.borrow_mut().add_to_history("https://aa.com".to_string(), get_time());
             
             display_history_page(&app_clone, history_clone);
         }
@@ -318,7 +322,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             );
             history
                 .borrow_mut()
-                .add_to_history(query.text().to_string());
+                .add_to_history(query.text().to_string(), get_time());
         }
     });
 
@@ -330,7 +334,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         let history = history.clone();
         history
             .borrow_mut()
-            .add_to_history(rc_search_refresh.borrow().text().to_string());
+            .add_to_history(rc_search_refresh.borrow().text().to_string(), get_time());
         move |_button| {
             handle_search_update(
                 rc_scroll_refresh.clone(),
@@ -351,7 +355,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         let go_back = go_back.clone();
         move |_button| {
             rc_search_home.borrow_mut().set_text(DEFAULT_URL);
-            history.borrow_mut().add_to_history(DEFAULT_URL.to_string());
+            history.borrow_mut().add_to_history(DEFAULT_URL.to_string(), get_time());
             update_buttons(&go_back, &go_forward, &history);
             handle_search_update(
                 rc_scroll_home.clone(),
@@ -718,16 +722,12 @@ fn display_history_page(app: &Rc<RefCell<adw::Application>>, history: Rc<RefCell
             .build();
     
         window.set_default_size(500, 300);
-        let vector: Vec<HistoryObject> = history.borrow().clone().items.into_iter().rev().map(|item| HistoryObject::new(item.url, item.position as i32)).collect();
+        let vector: Vec<HistoryObject> = history.borrow().clone().items.into_iter().rev().map(|item| HistoryObject::new(item.url, item.position as i32, item.date)).collect();
 
-        // Create new model
         let model = gio::ListStore::new::<HistoryObject>();
     
-        // Add the vector to the model
         model.extend_from_slice(&vector);
-        // ANCHOR_END: model
     
-        // ANCHOR: factory_setup
         let factory = SignalListItemFactory::new();
         factory.connect_setup(move |_, list_item| {
             let label = gtk::Label::new(None);
@@ -736,11 +736,8 @@ fn display_history_page(app: &Rc<RefCell<adw::Application>>, history: Rc<RefCell
                 .expect("Needs to be ListItem")
                 .set_child(Some(&label));
         });
-        // ANCHOR_END: factory_setup
     
-        // ANCHOR: factory_bind
         factory.connect_bind(move |_, list_item| {
-            // Get `HistoryObject` from `ListItem`
             let history_object = list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem")
@@ -748,28 +745,29 @@ fn display_history_page(app: &Rc<RefCell<adw::Application>>, history: Rc<RefCell
                 .and_downcast::<HistoryObject>()
                 .expect("The item has to be an `HistoryObject`.");
     
-            // Get `Label` from `ListItem`
             let label = list_item
                 .downcast_ref::<gtk::ListItem>()
                 .expect("Needs to be ListItem")
                 .child()
                 .and_downcast::<gtk::Label>()
                 .expect("The child has to be a `Label`.");
-    
-            // Set "label" to "number"
-            label.set_label(&history_object.url().to_string());
+            
+            label.set_halign(gtk::Align::Start);
+
+            label.set_use_markup(true);
+            label.set_markup(&format!("<span color=\"grey\">{}</span>. <span color=\"cyan\">{}</span> | <span>{}</span>", &history_object.position() + 1, &history_object.date(), &history_object.url().to_string()));
         });
-        // ANCHOR_END: factory_bind
-    
-        // ANCHOR: selection_list
+
         let selection_model = gtk::SingleSelection::new(Some(model));
         let list_view = gtk::ListView::new(Some(selection_model), Some(factory));
-        // ANCHOR_END: selection_list
-    
-        // ANCHOR: scrolled_window
+
         let scrolled_window = gtk::ScrolledWindow::builder()
             .hscrollbar_policy(gtk::PolicyType::Never) // Disable horizontal scrolling
             .min_content_width(360)
+            .margin_bottom(10)
+            .margin_end(10)
+            .margin_start(10)
+            .margin_top(10)
             .child(&list_view)
             .build();    
 
@@ -781,8 +779,7 @@ fn display_history_page(app: &Rc<RefCell<adw::Application>>, history: Rc<RefCell
         headerbar.set_title_widget(Some(&empty_label));
     
         window.set_child(Some(&scrolled_window));
-
-            window.set_titlebar(Some(&headerbar));
+        window.set_titlebar(Some(&headerbar));
     
         window.present();
     }

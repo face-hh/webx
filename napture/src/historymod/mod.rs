@@ -9,8 +9,8 @@ glib::wrapper! {
 }
 
 impl HistoryObject {
-    pub fn new(url: String, position: i32) -> Self {
-        Object::builder().property("url", url).property("position", position).build()
+    pub fn new(url: String, position: i32, date: String) -> Self {
+        Object::builder().property("url", url).property("position", position).property("date", date).build()
     }
 }
 
@@ -19,12 +19,13 @@ use std::collections::VecDeque;
 #[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct HistoryItem {
     pub(crate) position: i32,
+    pub(crate) date: String,
     pub(crate) url: String,
 }
 
 impl HistoryItem {
-    pub(crate) fn new(position: i32, url: String) -> HistoryItem {
-        HistoryItem { position, url }
+    pub(crate) fn new(position: i32, url: String, date: String) -> HistoryItem {
+        HistoryItem { position, url, date }
     }
 }
 
@@ -46,13 +47,13 @@ impl History {
         self.items.is_empty()
     }
 
-    pub(crate) fn add_to_history(&mut self, url: String) {
+    pub(crate) fn add_to_history(&mut self, url: String, date: String) {
         while self.items.len() > self.current_position + 1 {
             self.items.pop_back();
         }
 
         let new_position = self.items.len();
-        self.items.push_back(HistoryItem::new(new_position as i32, url));
+        self.items.push_back(HistoryItem::new(new_position as i32, url, date));
         self.current_position = new_position;
 
         println!("Added to history: {:?}", self.items.back().unwrap());

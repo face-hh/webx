@@ -12,6 +12,7 @@ use super::HistoryItem;
 pub struct HistoryObject {
     #[property(name = "url", get, set, type = String, member = url)]
     #[property(name = "position", get, set, type = i32, member = position)]
+    #[property(name = "date", get, set, type = String, member = date)]
     history: RefCell<HistoryItem>
 }
 
