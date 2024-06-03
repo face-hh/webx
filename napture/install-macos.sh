@@ -53,7 +53,7 @@ codesign --force --deep --sign - target/release/Napture.app || exit 1
 
 echo "Installing Napture..."
 
-rm -rf /Applications/Napture.app
+rm -rf /Applications/Napture.app || true
 mv target/release/Napture.app /Applications || exit 1
 
 echo "Napture installation completed."
