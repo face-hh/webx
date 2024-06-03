@@ -265,7 +265,10 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
 
             let text = res.text().unwrap_or_default();
 
-            text
+            match serde_json::from_str::<serde_json::Value>(&text) {
+                Ok(json) => json,
+                Err(_) => serde_json::Value::String(text),
+            }
         });
 
         let result = match handle.join() {
@@ -275,7 +278,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
                     "error",
                     format!("Failed to join request thread at fetch request. Originates from the Lua runtime. Returning null.")
                 );
-                "null".to_string()
+                serde_json::Value::String("null".to_string())
             }
         };
 
