@@ -8,7 +8,7 @@ use glib::GString;
 use gtk::prelude::*;
 use mlua::{prelude::*, StdLib};
 
-use mlua::{Lua, LuaSerdeExt, OwnedFunction, Value};
+use mlua::{OwnedFunction, Value};
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Map;

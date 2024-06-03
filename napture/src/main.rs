@@ -58,7 +58,6 @@ use gtk::gio;
 use gtk::CssProvider;
 use serde::Deserialize;
 
-use gtk::glib;
 use gtk::prelude::*;
 
 const APP_ID: &str = "io.github.face_hh.Napture";
@@ -163,10 +162,14 @@ fn handle_search_update(
 }
 
 fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
-    let default_dns_url = fetch_dns(DEFAULT_URL.to_string());
+    let default_url = if let Some(dev_build) = args.borrow().get(1) { // cli
+        dev_build.to_string()
+    } else { DEFAULT_URL.to_string() };
+
+    let default_dns_url = fetch_dns(default_url.clone());
 
     let default_tab_url = if default_dns_url.is_empty() {
-        DEFAULT_URL.to_string()
+        default_url.clone()
     } else {
         default_dns_url
     };
@@ -180,14 +183,14 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let search = gtk::SearchEntry::builder()
         .css_name("search")
         .width_request(500)
-        .text(DEFAULT_URL)
+        .text(default_url.clone())
         .build();
     let empty_label = gtk::Label::new(Some(""));
     let headerbar = gtk::HeaderBar::builder().build();
 
     let tabs_widget = gtk::Box::builder().css_name("tabs").spacing(6).build();
 
-    let mut tab1 = make_tab(
+    let tab1 = make_tab(
         // tabs_widget.clone(),
         "New Tab",
         "file.png",
@@ -219,11 +222,6 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
     let rc_scroll = Rc::new(RefCell::new(scroll.clone()));
     let rc_tab = Rc::new(RefCell::new(current_tab.clone()));
     let rc_search = Rc::new(RefCell::new(search.clone()));
-
-    // CLI command
-    if let Some(dev_build) = args.borrow().get(1) {
-        tab1.url = dev_build.to_string();
-    }
 
     let app_ = Rc::new(RefCell::new(app.clone()));
 
