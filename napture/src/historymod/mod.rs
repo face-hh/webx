@@ -3,6 +3,7 @@ mod imp;
 use glib::Object;
 use gtk::glib;
 use serde::{Deserialize, Serialize};
+use serde_json::Map;
 
 glib::wrapper! {
     pub struct HistoryObject(ObjectSubclass<imp::HistoryObject>);
@@ -10,11 +11,17 @@ glib::wrapper! {
 
 impl HistoryObject {
     pub fn new(url: String, position: i32, date: String) -> Self {
-        Object::builder().property("url", url).property("position", position).property("date", date).build()
+        Object::builder()
+            .property("url", url)
+            .property("position", position)
+            .property("date", date)
+            .build()
     }
 }
 
 use std::collections::VecDeque;
+
+use crate::set_config;
 
 #[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct HistoryItem {
@@ -25,7 +32,11 @@ pub(crate) struct HistoryItem {
 
 impl HistoryItem {
     pub(crate) fn new(position: i32, url: String, date: String) -> HistoryItem {
-        HistoryItem { position, url, date }
+        HistoryItem {
+            position,
+            url,
+            date,
+        }
     }
 }
 
@@ -47,16 +58,32 @@ impl History {
         self.items.is_empty()
     }
 
-    pub(crate) fn add_to_history(&mut self, url: String, date: String) {
+    pub(crate) fn add_to_history(
+        &mut self,
+        url: String,
+        date: String,
+        save_to_disk: bool,
+    ) {
         while self.items.len() > self.current_position + 1 {
             self.items.pop_back();
         }
 
         let new_position = self.items.len();
-        self.items.push_back(HistoryItem::new(new_position as i32, url, date));
+        self.items.push_back(HistoryItem::new(
+            new_position as i32,
+            url.clone(),
+            date.clone(),
+        ));
         self.current_position = new_position;
 
-        println!("Added to history: {:?}", self.items.back().unwrap());
+        if save_to_disk {
+            let mut map = Map::new();
+
+            map.insert("url".to_owned(), serde_json::Value::String(url));
+            map.insert("date".to_owned(), serde_json::Value::String(date));
+
+            set_config("history".to_owned(), serde_json::Value::Object(map), true)
+        }
     }
 
     pub(crate) fn go_back(&mut self) -> Option<&HistoryItem> {

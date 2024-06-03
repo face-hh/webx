@@ -1,9 +1,9 @@
-// #![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod b9;
 mod globals;
+mod historymod;
 mod imp;
 mod parser;
-mod historymod;
 
 #[macro_export]
 macro_rules! lualog {
@@ -35,6 +35,8 @@ macro_rules! lualog {
 }
 
 use std::cell::RefCell;
+use std::fs;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 glib::wrapper! {
@@ -48,11 +50,12 @@ static LOGO_PNG: &[u8] = include_bytes!("../file.png");
 
 use b9::css;
 use b9::css::Styleable;
+use glib::Object;
 use gtk::SignalListItemFactory;
 use historymod::History;
 use historymod::HistoryObject;
-use glib::Object;
 
+use globals::APPDATA_PATH;
 use globals::DNS_SERVER;
 use globals::LUA_LOGS;
 use gtk::gdk;
@@ -63,6 +66,8 @@ use serde::Deserialize;
 
 use gtk::glib;
 use gtk::prelude::*;
+
+use directories::ProjectDirs;
 
 const APP_ID: &str = "io.github.face_hh.Napture";
 const DEFAULT_URL: &str = "dingle.it";
@@ -77,8 +82,10 @@ struct Tab {
 }
 
 fn main() -> glib::ExitCode {
-    let args = Rc::new(RefCell::new(std::env::args().collect::<Vec<String>>()));
+    init_config();
 
+    let args = Rc::new(RefCell::new(std::env::args().collect::<Vec<String>>()));
+    let config = Rc::new(RefCell::new(get_config()));
     let app = adw::Application::builder().application_id(APP_ID).build();
 
     app.connect_startup(|_| {
@@ -113,9 +120,11 @@ fn main() -> glib::ExitCode {
 
         css::load_css_into_app(&content);
     });
+
     app.connect_activate(move |app| {
         let args_clone = Rc::clone(&args);
-        build_ui(app, args_clone);
+        let config_clone = Rc::clone(&config);
+        build_ui(app, args_clone, config_clone);
     });
 
     app.run_with_args(&[""])
@@ -165,11 +174,7 @@ fn handle_search_update(
     };
 }
 
-fn update_buttons(
-    go_back: &gtk::Button,
-    go_forward: &gtk::Button,
-    history: &Rc<RefCell<History>>,
-) {
+fn update_buttons(go_back: &gtk::Button, go_forward: &gtk::Button, history: &Rc<RefCell<History>>) {
     let history = history.borrow();
     go_back.set_sensitive(!history.is_empty() && !history.on_history_start());
     go_forward.set_sensitive(!history.is_empty() && !history.on_history_end());
@@ -179,7 +184,7 @@ fn get_time() -> String {
     chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
-fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
+fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<RefCell<serde_json::Value>>) {
     let history = Rc::new(RefCell::new(History::new()));
 
     let default_dns_url = fetch_dns(DEFAULT_URL.to_string());
@@ -205,7 +210,10 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     let tabs_widget = gtk::Box::builder().css_name("tabs").spacing(6).build();
 
-    history.borrow_mut().add_to_history(default_tab_url.clone(), get_time());
+    history
+        .borrow_mut()
+        .add_to_history(default_tab_url.clone(), get_time(), true);
+
     let mut tab1 = make_tab("New Tab", "file.png", tabs.clone(), default_tab_url);
     let current_tab = tab1.clone();
 
@@ -265,10 +273,6 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         if b == (gdk::ModifierType::SHIFT_MASK | gdk::ModifierType::CONTROL_MASK)
             && key == gdk::Key::H
         {
-            history_clone.borrow_mut().add_to_history("https://google.com".to_string(), get_time());
-            history_clone.borrow_mut().add_to_history("https://re.com".to_string(), get_time());
-            history_clone.borrow_mut().add_to_history("https://aa.com".to_string(), get_time());
-            
             display_history_page(&app_clone, history_clone);
         }
 
@@ -294,6 +298,22 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
 
     window.set_default_size(500, 500);
     window.present();
+
+    if let Some(past_history) = &config.borrow()["history"].as_array() {
+        for entry in past_history.iter() {
+            if let Some(res) = entry.as_object() {
+                if let (Some(raw_url), Some(raw_date)) = (res.get("url"), res.get("date")) {
+                    if let (Some(url), Some(date)) = (raw_url.as_str(), raw_date.as_str()) {
+                        history.borrow_mut().add_to_history(url.to_owned(), date.to_owned(), false);
+                    }
+                }
+            }
+        }
+    }
+
+    if let Some(dns) = &config.borrow()["dns"].as_str() {
+        *DNS_SERVER.lock().unwrap() = dns.to_string();
+    }
 
     if let Ok((htmlview, provider)) =
         b9::html::build_ui(tab1.clone(), None, rc_scroll.clone(), rc_search.clone())
@@ -322,7 +342,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
             );
             history
                 .borrow_mut()
-                .add_to_history(query.text().to_string(), get_time());
+                .add_to_history(query.text().to_string(), get_time(), true);
         }
     });
 
@@ -334,7 +354,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         let history = history.clone();
         history
             .borrow_mut()
-            .add_to_history(rc_search_refresh.borrow().text().to_string(), get_time());
+            .add_to_history(rc_search_refresh.borrow().text().to_string(), get_time(), true);
         move |_button| {
             handle_search_update(
                 rc_scroll_refresh.clone(),
@@ -355,7 +375,9 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>) {
         let go_back = go_back.clone();
         move |_button| {
             rc_search_home.borrow_mut().set_text(DEFAULT_URL);
-            history.borrow_mut().add_to_history(DEFAULT_URL.to_string(), get_time());
+            history
+                .borrow_mut()
+                .add_to_history(DEFAULT_URL.to_string(), get_time(), true);
             update_buttons(&go_back, &go_forward, &history);
             handle_search_update(
                 rc_scroll_home.clone(),
@@ -694,9 +716,12 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
     gtkbox.append(&dns_entry);
 
     dns_entry.connect_changed(move |entry| {
+        let dns = &entry.text();
+
         // set the DNS server to the new value
         DNS_SERVER.lock().unwrap().clear();
-        DNS_SERVER.lock().unwrap().push_str(&entry.text());
+        DNS_SERVER.lock().unwrap().push_str(&dns);
+        set_config(String::from("dns"), serde_json::Value::String(dns.to_string()), false)
     });
 
     let scroll = gtk::ScrolledWindow::builder().build();
@@ -717,69 +742,149 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
 }
 
 fn display_history_page(app: &Rc<RefCell<adw::Application>>, history: Rc<RefCell<History>>) {
-        let window: Window = Object::builder()
-            .property("application", glib::Value::from(&*app.borrow_mut()))
-            .build();
-    
-        window.set_default_size(500, 300);
-        let vector: Vec<HistoryObject> = history.borrow().clone().items.into_iter().rev().map(|item| HistoryObject::new(item.url, item.position as i32, item.date)).collect();
+    let window: Window = Object::builder()
+        .property("application", glib::Value::from(&*app.borrow_mut()))
+        .build();
 
-        let model = gio::ListStore::new::<HistoryObject>();
-    
-        model.extend_from_slice(&vector);
-    
-        let factory = SignalListItemFactory::new();
-        factory.connect_setup(move |_, list_item| {
-            let label = gtk::Label::new(None);
-            list_item
-                .downcast_ref::<gtk::ListItem>()
-                .expect("Needs to be ListItem")
-                .set_child(Some(&label));
-        });
-    
-        factory.connect_bind(move |_, list_item| {
-            let history_object = list_item
-                .downcast_ref::<gtk::ListItem>()
-                .expect("Needs to be ListItem")
-                .item()
-                .and_downcast::<HistoryObject>()
-                .expect("The item has to be an `HistoryObject`.");
-    
-            let label = list_item
-                .downcast_ref::<gtk::ListItem>()
-                .expect("Needs to be ListItem")
-                .child()
-                .and_downcast::<gtk::Label>()
-                .expect("The child has to be a `Label`.");
-            
-            label.set_halign(gtk::Align::Start);
+    window.set_default_size(500, 300);
+    let vector: Vec<HistoryObject> = history
+        .borrow()
+        .clone()
+        .items
+        .into_iter()
+        .rev()
+        .map(|item| HistoryObject::new(item.url, item.position as i32, item.date))
+        .collect();
 
-            label.set_use_markup(true);
-            label.set_markup(&format!("<span color=\"grey\">{}</span>. <span color=\"cyan\">{}</span> | <span>{}</span>", &history_object.position() + 1, &history_object.date(), &history_object.url().to_string()));
-        });
+    let model = gio::ListStore::new::<HistoryObject>();
 
-        let selection_model = gtk::SingleSelection::new(Some(model));
-        let list_view = gtk::ListView::new(Some(selection_model), Some(factory));
+    model.extend_from_slice(&vector);
 
-        let scrolled_window = gtk::ScrolledWindow::builder()
-            .hscrollbar_policy(gtk::PolicyType::Never) // Disable horizontal scrolling
-            .min_content_width(360)
-            .margin_bottom(10)
-            .margin_end(10)
-            .margin_start(10)
-            .margin_top(10)
-            .child(&list_view)
-            .build();    
+    let factory = SignalListItemFactory::new();
+    factory.connect_setup(move |_, list_item| {
+        let label = gtk::Label::new(None);
+        list_item
+            .downcast_ref::<gtk::ListItem>()
+            .expect("Needs to be ListItem")
+            .set_child(Some(&label));
+    });
 
-        let labell = gtk::Label::new(Some(" Napture settings"));
-        let empty_label = gtk::Label::new(Some(""));
-        let headerbar = gtk::HeaderBar::builder().build();
-    
-        headerbar.pack_start(&labell);
-        headerbar.set_title_widget(Some(&empty_label));
-    
-        window.set_child(Some(&scrolled_window));
-        window.set_titlebar(Some(&headerbar));
-    
-        window.present();
+    factory.connect_bind(move |_, list_item| {
+        let history_object = list_item
+            .downcast_ref::<gtk::ListItem>()
+            .expect("Needs to be ListItem")
+            .item()
+            .and_downcast::<HistoryObject>()
+            .expect("The item has to be an `HistoryObject`.");
+
+        let label = list_item
+            .downcast_ref::<gtk::ListItem>()
+            .expect("Needs to be ListItem")
+            .child()
+            .and_downcast::<gtk::Label>()
+            .expect("The child has to be a `Label`.");
+
+        label.set_halign(gtk::Align::Start);
+
+        label.set_use_markup(true);
+        label.set_markup(&format!(
+            "<span color=\"grey\">{}</span>. <span color=\"cyan\">{}</span> | <span>{}</span>",
+            &history_object.position() + 1,
+            &history_object.date(),
+            &history_object.url().to_string()
+        ));
+    });
+
+    let selection_model = gtk::SingleSelection::new(Some(model));
+    let list_view = gtk::ListView::new(Some(selection_model), Some(factory));
+
+    let scrolled_window = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Never) // Disable horizontal scrolling
+        .min_content_width(360)
+        .margin_bottom(10)
+        .margin_end(10)
+        .margin_start(10)
+        .margin_top(10)
+        .child(&list_view)
+        .build();
+
+    let labell = gtk::Label::new(Some(" Napture settings"));
+    let empty_label = gtk::Label::new(Some(""));
+    let headerbar = gtk::HeaderBar::builder().build();
+
+    headerbar.pack_start(&labell);
+    headerbar.set_title_widget(Some(&empty_label));
+
+    window.set_child(Some(&scrolled_window));
+    window.set_titlebar(Some(&headerbar));
+
+    window.present();
+}
+
+fn init_config() {
+    if let Some(proj_dirs) = ProjectDirs::from("com", "Bussin", "Napture") {
+        let dir = proj_dirs.data_dir();
+        let exists = &dir.join("config.json").exists();
+
+        if *exists {
+            let mut path = APPDATA_PATH.lock().unwrap();
+            *path = dir.to_str().unwrap().to_string();
+        } else {
+            if let Err(error) = fs::create_dir_all(&dir) {
+                println!("FATAL: COULD NOT CREATE APPDATA FOLDER, STACK: {}", error);
+            } else {
+                println!("Created config folder in AppData: {:?}", &dir.as_os_str());
+
+                if let Err(error2) = fs::write(
+                    PathBuf::from(&dir).join("config.json"),
+                    format!(
+                        "{{\"history\": [],\"dns\": \"{}\" }}",
+                        DNS_SERVER.lock().unwrap()
+                    ),
+                ) {
+                    println!(
+                        "FATAL: COULD NOT CREATE CONFIG IN APPDATA, STACK: {}",
+                        error2
+                    );
+                }
+
+                let mut path = APPDATA_PATH.lock().unwrap();
+                *path = dir.to_str().unwrap().to_string();
+            }
+        }
     }
+}
+
+fn get_config() -> serde_json::Value {
+    let json_path = PathBuf::from(APPDATA_PATH.lock().unwrap().clone()).join("config.json");
+    let contents = fs::read_to_string(&json_path).expect("Failed to read configuration for theme.");
+
+    println!("{:?}", json_path);
+    let json_contents: serde_json::Value = serde_json::from_str(&contents).expect("Failed to parse JSON");
+
+    json_contents
+}
+
+fn set_config(property: String, value: serde_json::Value, array: bool) {
+    let json_path = PathBuf::from(APPDATA_PATH.lock().unwrap().clone()).join("config.json");
+    let contents = fs::read_to_string(&json_path).expect("Failed to read configuration for theme.");
+
+    let mut json_contents: serde_json::Value = serde_json::from_str(&contents).expect("Failed to parse JSON");
+
+    if array {
+        if json_contents[property.clone()].is_array() {
+            json_contents[property].as_array_mut().unwrap().push(value);
+        }
+    } else {
+        json_contents[property] = value;
+    }
+
+    if let Ok(updated_json) = serde_json::to_string_pretty(&json_contents) {
+        match fs::write(&json_path, &updated_json) {
+            Ok(_) => {},
+            Err(err) => {
+                eprintln!("ERROR: Failed to save config to disk. Error: {}", err);
+            }
+        }
+    }
+}
