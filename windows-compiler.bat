@@ -1,13 +1,17 @@
 @echo off
 if "%1" == "next" goto :next
 
+
+:: BatchGotAdmin
 :-------------------------------------
+REM  --> Check for permissions
 IF "%PROCESSOR_ARCHITECTURE%" EQU "amd64" (
 >nul 2>&1 "%SYSTEMROOT%\SysWOW64\cacls.exe" "%SYSTEMROOT%\SysWOW64\config\system"
 ) ELSE (
 >nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
 )
 
+REM --> If error flag set, we do not have admin.
 if '%errorlevel%' NEQ '0' (
     echo Requesting administrative privileges...
     goto UACPrompt
@@ -32,10 +36,14 @@ title Bussin Napture Windows Compiler - By NEOAPPS
 rustc --version
 IF %ERRORLEVEL% NEQ 0 (
     echo Rust is not installed. Please install Rust before proceeding. >error.txt
-    SET pc=i686
+    set pc=i686
     if "%ProgramFiles(x86)%" == "C:\Program Files (x86)" set pc=x86_64
     echo Downloading Rust Installer for your PC...
-    powershell -Command "Invoke-WebRequest -Uri https://static.rust-lang.org/rustup/dist/%pc%-pc-windows-msvc/rustup-init.exe -OutFile rustup-init.exe"
+if %pc% NEQ i686 (    
+powershell -Command "Invoke-WebRequest -Uri https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -OutFile rustup-init.exe"
+) else (
+powershell -Command "Invoke-WebRequest -Uri https://static.rust-lang.org/rustup/dist/i686-pc-windows-msvc/rustup-init.exe -OutFile rustup-init.exe"
+)
     echo Downloaded rustup-init.exe. Complete installation then open the compiler again. >>error.txt
     rustup-init
     setx PATH "%PATH%;%USERPROFILE%\.cargo\bin" /m
