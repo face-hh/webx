@@ -90,7 +90,10 @@ fn get(
             )?;
             table.set(
                 "set_content",
-                lua.create_function(move |_, label: String| {
+                lua.create_function(move |_, label: Option<String>| {
+                    let label = if let Some(label) = label {
+                        label
+                    } else { "".to_string()};
                     tags2.borrow()[i].widget.set_contents_(label);
                     Ok(())
                 })?,
@@ -195,8 +198,9 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
 // todo: make this async if shit breaks
 pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: String) -> LuaResult<()> {
     let lua = Lua::new_with(
-        StdLib::COROUTINE | StdLib::STRING |
-        StdLib::TABLE | StdLib::MATH,
+        /*StdLib::COROUTINE | StdLib::STRING |
+        StdLib::TABLE | StdLib::MATH,*/
+        StdLib::ALL_SAFE,
         LuaOptions::new().catch_rust_panics(true)
     )?;
     let globals = lua.globals();
@@ -326,17 +330,22 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
     globals.set("fetch", fetchtest)?;
     globals.set("window", window_table)?;
 
-    let ok = lua.load(luacode).eval::<LuaMultiValue>();
+    if let Err(e) = lua.sandbox(true) {
+        lualog!("error", format!("failed to enable sandbox: {}", e));
+        Err(LuaError::runtime("failed to enable sandbox"))
+    } else {
+        let ok = lua.load(luacode).eval::<LuaMultiValue>();
 
-    match ok {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            eprintln!(
-                "--------------------------\nerror: {}\n--------------------------------",
-                e
-            );
-            Err(LuaError::runtime("Failed to run script!"))
-        }
+        match ok {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                eprintln!(
+                    "--------------------------\nerror: {}\n--------------------------------",
+                    e
+                );
+                Err(LuaError::runtime("Failed to run script!"))
+            }
+       }
     }
 }
 
