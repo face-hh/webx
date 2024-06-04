@@ -20,7 +20,9 @@ struct Error {
 
 #[derive(Deserialize)]
 struct PaginationParams {
+    #[serde(alias = "p")]
     page: Option<u32>,
+    #[serde(alias = "s")]
     page_size: Option<u32>,
 }
 
