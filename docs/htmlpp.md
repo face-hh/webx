@@ -10,7 +10,7 @@ next:
 
 # HTML++
 
-HTML ++ looks similar to regular HTML5, but with some differences. Note that B9 is a new engine, not all classic HTML5 features are supported.
+HTML++ looks similar to regular HTML5, but with some differences. Note that B9 is a new engine, not all classic HTML5 features are supported.
 
 ## Basic structure.
 
@@ -27,7 +27,7 @@ Same as regular HTML5, the `html` tag, with the `head` for metadata and `body` f
 </html>
 ```
 
-## `<head>`: Metadata in HTML ++
+## `<head>`: Metadata in HTML++
 
 A complete WebX head looks like this:
 
@@ -87,13 +87,18 @@ This isn't the standard web, **HTTP**/HTTPS are **not** supported for neither sc
 You cannot embed `<style>` tags or write inline scripts in your HTML. Due to that, the script tag must be self closing, even thought your IDE might mark that as an error.
 :::
 
+:::tip
+If you mess up something in your head, the title bar will notify you about that. Given image is an example of how it would look like:
+![Screenshot](png3.png)
+:::
+
 Well, your head is done. Great! Now let's move on onto the body.
 
 ## `<body>`: Page's content in HTML++
 
 Currently, you can use the following HTML tags:
 - Headers (`<h1>`, `<h2>`, `<h3>`, `<h4>`, `<h5>`, `<h6>`) and paragraphs (`<p>`). Headers will be bigger or smaller based on the number, being 1 the biggest and 6 the smallest.
-- Hyperlinks (`<a>`), which can have a `href` property (`<a href="#>`).
+- Anchors (or hyperlinks) (`<a>`), which can have a `href` property (`<a href="#>`).
   - If the href starts with `buss://`, Napture will open it and redirect the user away from your page. If it starts with anything else, GTK will handle it and automaticaly open your default WWW browser.
 - Divisions (`<div>`), basically containers where you can put your tags to organise your page.
 - Lists, which can be ordered (`<ol>`) or unordered (`<ul>`). Both can have list items (`<li>`) in them.
@@ -112,5 +117,9 @@ As of B9 1.2.2, dropdowns are purely decorative at the moment as they don't have
 We're done with the HTML++, **but you must note one more thing**.
 
 > Every tag that is made for the body (`<h1>`, `<p>`, `<input>`, etc...) has support for a property called "`class`". You might know them for CSS 3 styling, but here they are more important as they are used **for scripting aswell**. Therefore, HTML 5's standard `id` is not supported. Keep that in mind.
+
+:::tip
+Never give a class the same name than a supported HTML++ tag. [This is because of how Luau gets elements.](luau.md)
+:::
 
 Now, let's move onto styling.

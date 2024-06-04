@@ -17,9 +17,9 @@ features:
   - title: How to use Napture
     details: WebX's official browser.
     link: /user-manual
-  - title: How to register a domain
+  - title: How to publish a site & register a domain
     details: yourcoolsite.sigma is waiting.
-    link: /dev-register-domain
+    link: /dev-publish
   - title: How to code WebX sites
     details: Learn HTML++, CSS 3.25, and Luau.
     link: /dev-start

@@ -5,6 +5,7 @@ export default defineConfig({
   title: "Bussin WebX Docs",
   lang: "en-US",
   base: "/docs",
+  lastUpdated: true,
   description: "User manual for WebX user & Documentation for WebX developers",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
@@ -13,7 +14,13 @@ export default defineConfig({
       { text: 'User manual', link: '/user-manual' },
       { text: 'Dev Docs', link: '/dev-start' }
     ],
-
+    lastUpdated: {
+      text: 'Last updated at',
+      formatOptions: {
+        dateStyle: 'full',
+        timeStyle: 'medium'
+      }
+    },
     sidebar: [
       {
         text: 'For users',
@@ -29,6 +36,7 @@ export default defineConfig({
           { text: 'HTML++', link: '/htmlpp' },
           { text: 'CSS 3.25', link: '/css' },
           { text: 'Luau', link: '/luau' },
+          { text: 'Site publishing & Domain registering', link: '/dev-publish' },
           { text: 'API Reference', link: '/webx-api' },
         ]
       }
