@@ -241,6 +241,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
     let globals = lua.globals();
 
     let window_table = lua.create_table()?;
+    let json_table = lua.create_table()?;
     let query_table = lua.create_table()?;
 
     let parts: Vec<&str> = taburl.splitn(2, '?').collect();
@@ -346,8 +347,82 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
         lua.to_value(&json)
     })?;
 
+    let json_stringify = lua.create_function(|lua, table: LuaTable| {
+        match serde_json::to_string(&table) {
+            Ok(value) => Ok(lua.to_value(&value)?),
+            Err(_) => {
+                lualog!(
+                    "error",
+                    format!("Failed to stringify JSON. Returning null.")
+                );
+                Ok(lua.null())
+            }
+        }
+    })?;
+
+    let json_parse = lua.create_function(|lua, json: String| {
+        match serde_json::from_str::<serde_json::Value>(&json) {
+            Ok(value) => Ok(lua.to_value(&value)?),
+            Err(_) => {
+                lualog!(
+                    "error",
+                    format!("Failed to parse JSON. Returning null.")
+                );
+                Ok(lua.null())
+            }
+        }
+    })?;
+
+    let require = lua.create_async_function(|lua, module: String| async move {
+        if !module.starts_with("http://") && !module.starts_with("https://") {
+            lualog!("error", "Module argument must be a URL.");
+            return Ok(lua.null());
+        }
+
+        let handle = thread::spawn(move || {
+            let client = reqwest::blocking::Client::new();
+
+            let req = client.get(module);
+
+            let res = match req.send() {
+                Ok(res) => res,
+                Err(e) => {
+                    return format!("Failed to send request: {}", e).into();
+                }
+            };
+
+            let errcode = Rc::new(RefCell::new(res.status().as_u16()));
+
+            let text = res.text().unwrap_or_default();
+
+            text
+        });
+
+        let result = match handle.join() {
+            Ok(result) => result,
+            Err(_) => {
+                lualog!(
+                    "error",
+                    format!("Failed to join request thread at fetch request. Originates from the Lua runtime. Returning null.")
+                );
+                "null".to_string()
+            }
+        };
+
+        if let Err(e) = lua.sandbox(true) {
+            lualog!("error", format!("failed to enable sandbox: {}", e));
+            Err(LuaError::runtime("failed to enable sandbox"))
+        } else {
+            let load = lua.load(result);
+            load.eval::<LuaValue>()
+        }
+    })?;
+
     window_table.set("link", taburl)?;
     window_table.set("query", query_table)?;
+
+    json_table.set("stringify", json_stringify)?;
+    json_table.set("parse", json_parse)?;
 
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
@@ -369,7 +444,9 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
         })?
     )?;
     globals.set("fetch", fetchtest)?;
+    globals.set("json", json_table)?;
     globals.set("window", window_table)?;
+    globals.set("require", require)?;
 
     if let Err(e) = lua.sandbox(true) {
         lualog!("error", format!("failed to enable sandbox: {}", e));
