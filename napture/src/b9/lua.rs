@@ -409,10 +409,13 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
             }
         };
 
-        let load = lua.load(&result);
-        let result = load.eval::<LuaValue>();
-
-        result
+        if let Err(e) = lua.sandbox(true) {
+            lualog!("error", format!("failed to enable sandbox: {}", e));
+            Err(LuaError::runtime("failed to enable sandbox"))
+        } else {
+            let load = lua.load(result);
+            load.eval::<LuaValue>()
+        }
     })?;
 
     window_table.set("link", taburl)?;
