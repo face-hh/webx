@@ -15,14 +15,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install Dependencies and Rustup
+    - name: Install Dependencies
       run: |
-        echo "Installing dependencies and Rustup..."
+        echo "Installing dependencies..."
         sudo apt-get update
         sudo apt-get install -y libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev liblua5.4-dev
-        echo "Dependencies and Rustup installed."
+        echo "Dependencies installed."
 
-    - name: Build and Install Napture
+    - name: Build Napture
       run: |
         echo "Building Napture..."
         cd napture
