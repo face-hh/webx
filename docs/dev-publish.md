@@ -129,7 +129,12 @@ By publishing content to this platform ("Bussin Napture"/"Bussin WebX"), ***you 
 To report websites that are not following the listed rules, please use [the Discord server](https://discord.gg/cNwWvdWj42) or contact `FaceDev` on [Twitter](https://twitter.com/facedevstuff) or Discord.
 :::
 
-If you submit a website that is not against the rules, you should start seeing it on the Dingle search results and in your `buss://` URL.
+If you submit a website that is not against the rules, you should start seeing it on the Dingle search results and in your `buss://` URL. Plus, your domain provider should give you a "Secret key" (or "Secret code", "API Key", or however they call it, but it is always the same key).
+
+:::danger VERY IMPORTANT THING ABOUT YOUR SECRET KEY
+### DO NOT LOOSE IT AND DO NOT SHARE IT WITH ANYONE.
+Do not loose it because it is required if you want to edit your IP or shut down your domain, and do not share it with anyone because it can compromise your website.
+:::
 
 :::details What to do if it doesn't work
 There are a few reasons it could be wrong:
