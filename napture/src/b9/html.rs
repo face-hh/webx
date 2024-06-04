@@ -1,6 +1,6 @@
 extern crate html_parser;
 
-use crate::{lualog, Tab};
+use crate::{lualog, Tab, globals::LUA_TIMEOUTS};
 
 use super::{
     css::{self, Styleable},
@@ -13,6 +13,7 @@ use gtk::{gdk::Display, gdk_pixbuf, gio, glib::Bytes, prelude::*, CssProvider};
 use html_parser::{Dom, Element, Node, Result};
 
 use lua::Luable;
+use url::Url;
 
 pub(crate) struct Tag {
     pub classes: Vec<String>,
@@ -20,8 +21,40 @@ pub(crate) struct Tag {
     pub tied_variables: Vec<String>,
 }
 
-async fn parse_html(url: String) -> Result<(Node, Node)> {
-    let html = fetch_file(url + "/index.html").await;
+fn decode_html_entities<T: AsRef<str>>(s: T) -> String {
+    use html_escape::decode_html_entities;
+    decode_html_entities(s.as_ref()).to_string()
+}
+
+async fn parse_html(mut url: String) -> Result<(Node, Node)> {
+    let mut is_html = true;
+    let mut file_name = String::new();
+
+    if let Ok(mut uri) = Url::parse(&url) {
+       let last_seg = {
+           uri.path_segments()
+               .map(|seg| seg.last().unwrap_or(""))
+               .unwrap_or("").to_string()
+       };
+       if let Ok(mut segments) = uri.path_segments_mut() {
+           if !last_seg.contains(".") {
+               segments.pop_if_empty();
+               segments.push("index.html");
+           } else {
+               if !last_seg.ends_with(".html") {
+                   is_html = false;
+               }
+           }
+           file_name += &last_seg;
+       }
+       url = uri.into();
+    }
+
+    let mut html = fetch_file(url).await;
+
+    if !is_html {
+        html = format!("<html><head>{}</head><body><p>{}</p></body></html>", file_name, html_escape::encode_double_quoted_attribute(&html));
+    }
 
     let dom = match !html.is_empty() {
         true => Dom::parse(&html),
@@ -70,9 +103,16 @@ pub async fn build_ui(
     scroll: Rc<RefCell<gtk::ScrolledWindow>>,
     searchbar: Rc<RefCell<gtk::SearchEntry>>,
 ) -> Result<(gtk::Box, CssProvider)> {
-    let furl = tab.url.split("?").nth(0).unwrap_or(&tab.url);
+    let furl = tab.url.split("?").nth(0).unwrap_or(&tab.url).strip_suffix("/").unwrap_or(&tab.url);
 
     css::reset_css();
+
+    {
+        let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
+        for timeout in timeouts.drain(..) { 
+            timeout.destroy();
+        }
+    }
 
     let tags = Rc::new(RefCell::new(Vec::new()));
 
@@ -214,7 +254,7 @@ async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell
             if let Some(contents) = contents {
                 tab.borrow()
                     .label_widget
-                    .set_label(contents.text().unwrap_or(""))
+                    .set_label(&decode_html_entities(contents.text().unwrap_or("")))
             }
         }
         "link" => {
@@ -520,16 +560,16 @@ fn render_html(
                     if el.name.as_str() == "option" {
                         // TODO: keep track of value
                         if let Some(node) = el.children.first() {
-                            strings.push(node.text().unwrap_or(""))
+                            strings.push(decode_html_entities(node.text().unwrap_or("")))
                         } else {
-                            strings.push("")
+                            strings.push("".to_string())
                         }
                     }
                 }
             }
 
             let dropdown = gtk::DropDown::builder()
-                .model(&gtk::StringList::new(&strings[..]))
+                .model(&gtk::StringList::new(&strings.iter().map(|s| &**s).collect::<Vec<&str>>()))
                 .css_name("select")
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
@@ -558,7 +598,7 @@ fn render_html(
 
             textview
                 .buffer()
-                .set_text(element.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""));
+                .set_text(&decode_html_entities(element.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")));
 
             html_view.append(&textview);
 
@@ -571,12 +611,12 @@ fn render_html(
         "button" => {
             let button = gtk::Button::builder()
                 .label(
-                    element
+                    &decode_html_entities(element
                         .children
                         .first()
                         .unwrap_or(&Node::Text("".to_owned()))
                         .text()
-                        .unwrap_or(""),
+                        .unwrap_or("")),
                 )
                 .css_name("button")
                 .css_classes(element.classes.clone())
@@ -619,7 +659,7 @@ fn render_a(
     };
 
     let link_button = gtk::LinkButton::builder()
-        .label(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""))
+        .label(&decode_html_entities(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")))
         .uri(uri)
         .css_name("a")
         .css_classes(el.classes.clone())
@@ -687,7 +727,7 @@ fn render_list(
                         .build();
 
                     let label = gtk::Label::builder()
-                        .label(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or(""))
+                        .label(&decode_html_entities(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")))
                         .css_name("li")
                         .css_classes(el.classes.clone())
                         .halign(gtk::Align::Start)
@@ -718,21 +758,40 @@ fn render_list(
 }
 
 pub(crate) fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
-    let handle = thread::spawn(move || {
-        reqwest::blocking::get(url)
-            .map_err(|e| e.to_string())
-            .and_then(|res| res.bytes().map_err(|e| e.to_string()))
-            .unwrap_or_else(|e| {
-                lualog!("error", format!("Failed to fetch image: {}", e));
-                Vec::new().into()
-            })
-    });
+    let img_data: Vec<u8> = if url.starts_with("data:") {
+        let (_, data) = url.split_once("data:").unwrap();
+        let (mime, data) = data.split_once(",").unwrap_or(("", ""));
+        let properties = mime.split(";").collect::<String>();
 
-    let img_data = match handle.join() {
-        Ok(data) => data,
-        Err(_) => {
-            lualog!("error", "Failed to join fetch_image_to_pixbuf thread.");
-            Vec::new().into()
+        if properties.contains("base64") {
+            use base64::prelude::*;
+            match BASE64_STANDARD.decode(data) {
+                Ok(data) => data,
+                Err(e) => {
+                    lualog!("error", format!("invalid base64: {}", e));
+                    Vec::new()
+                }
+            }
+        } else {
+            Vec::new()
+        }
+    } else {
+        let handle = thread::spawn(move || {
+            reqwest::blocking::get(url)
+                .map_err(|e| e.to_string())
+                .and_then(|res| res.bytes().map_err(|e| e.to_string()))
+                .unwrap_or_else(|e| {
+                    lualog!("error", format!("Failed to fetch image: {}", e));
+                    Vec::new().into()
+                })
+        });
+
+        match handle.join() {
+            Ok(data) => data.to_vec(),
+            Err(_) => {
+                lualog!("error", "Failed to join fetch_image_to_pixbuf thread.");
+                Vec::new()
+            }
         }
     };
 
@@ -750,8 +809,12 @@ async fn fetch_file(url: String) -> String {
     println!("Attempting to navigate to {url}...");
 
     if url.starts_with("file://") {
-        let path = url.replace("file://", "");
+        let path = url
+            .replace("file:///", "")
+            .replace("file://", "");
         
+        println!("{path}");
+
         match fs::read_to_string(&format!("{}", path)) {
             Ok(text) => text,
             Err(_) => {
@@ -791,11 +854,21 @@ async fn fetch_file(url: String) -> String {
 async fn fetch_from_github(url: String) -> String {
     let client: reqwest::ClientBuilder = reqwest::Client::builder();
 
+    let branch = if url.contains("tree") {
+        url.split('/').nth(6).unwrap_or("main")
+    } else { "main" };
+
+    let path = (if url.contains("tree") {
+        url.split('/').skip(7).collect::<Vec<&str>>()
+    } else {
+        url.split('/').skip(5).collect::<Vec<&str>>()
+    }).join("/");
+
     let url = format!(
-        "https://raw.githubusercontent.com/{}/{}/main/{}",
+        "https://raw.githubusercontent.com/{}/{}/{}/{}",
         url.split('/').nth(3).unwrap_or(""),
         url.split('/').nth(4).unwrap_or(""),
-        url.split('/').last().unwrap_or(""),
+        branch, path,
     );
 
     let client = match client.build() {
@@ -842,7 +915,7 @@ async fn fetch_from_github(url: String) -> String {
 
 fn render_p(child: &Node, element: &Element, label_box: &gtk::Box, css: &mut String, tags: &Rc<RefCell<Vec<Tag>>>){
     let label = gtk::Label::builder()
-        .label(child.text().unwrap_or(""))
+        .label(&decode_html_entities(child.text().unwrap_or("")))
         .css_name(element.name.as_str())
         .css_classes(element.classes.clone())
         .halign(gtk::Align::Start)
