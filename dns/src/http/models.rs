@@ -47,3 +47,15 @@ pub(crate) struct PaginationResponse {
     pub(crate) page: u32,
     pub(crate) limit: u32,
 }
+
+#[derive(Deserialize)]
+pub(crate) struct DomainQuery {
+    pub(crate) name: String,
+    pub(crate) tld: Option<String>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct DomainList {
+    pub(crate) domain: String,
+    pub(crate) taken: bool,
+}

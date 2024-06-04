@@ -1,38 +1,13 @@
 use super::{models::*, AppState};
-use crate::{config::Config, kv, secret};
+use crate::{config::Config, http::helpers, kv, secret};
 use futures::stream::StreamExt;
 use mongodb::{bson::doc, options::FindOptions, Collection};
-use regex::Regex;
 use std::env;
-use std::net::{Ipv4Addr, Ipv6Addr};
 
 use actix_web::{
     web::{self, Data},
     HttpRequest, HttpResponse, Responder,
 };
-
-fn validate_ip(domain: &Domain) -> Result<(), HttpResponse> {
-    let http_regex = Regex::new(r"^https?://[a-zA-Z0-9.-]+$").unwrap();
-
-    let is_valid_ip = domain.ip.parse::<Ipv4Addr>().is_ok() || domain.ip.parse::<Ipv6Addr>().is_ok();
-    let is_valid_http = http_regex.is_match(&domain.ip);
-
-    if is_valid_ip || is_valid_http {
-        if domain.name.len() <= 100 {
-            Ok(())
-        } else {
-            Err(HttpResponse::BadRequest().json(Error {
-                msg: "Failed to create domain",
-                error: "Invalid name, non-existent TLD, or name too long (100 chars).".into(),
-            }))
-        }
-    } else {
-        Err(HttpResponse::BadRequest().json(Error {
-            msg: "Failed to create domain",
-            error: "Invalid name, non-existent TLD, or name too long (100 chars).".into(),
-        }))
-    }
-}
 
 #[actix_web::get("/")]
 pub(crate) async fn index() -> impl Responder {
@@ -42,7 +17,7 @@ pub(crate) async fn index() -> impl Responder {
 }
 
 pub(crate) async fn create_logic(domain: Domain, config: &Config, collection: &Collection<Domain>) -> Result<Domain, HttpResponse> {
-    validate_ip(&domain)?;
+    helpers::validate_ip(&domain)?;
 
     if !config.tld_list().contains(&domain.tld.as_str()) || !domain.name.chars().all(|c| c.is_alphabetic() || c == '-') || domain.name.len() > 24 {
         return Err(HttpResponse::BadRequest().json(Error {
@@ -168,6 +143,14 @@ pub(crate) async fn delete_domain(path: web::Path<String>, app: Data<AppState>) 
         }
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
+}
+
+#[actix_web::post("/domain/check")]
+pub(crate) async fn check_domain(query: web::Json<DomainQuery>, app: Data<AppState>) -> impl Responder {
+    let DomainQuery { name, tld } = query.into_inner();
+
+    let result = helpers::is_domain_taken(&name, tld.as_deref(), app).await;
+    HttpResponse::Ok().json(result)
 }
 
 #[actix_web::get("/domains")]

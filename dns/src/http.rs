@@ -1,3 +1,4 @@
+mod helpers;
 mod models;
 mod ratelimit;
 mod routes;
@@ -73,6 +74,7 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
             .service(routes::delete_domain)
             .service(routes::get_domains)
             .service(routes::get_tlds)
+            .service(routes::check_domain)
             .service(routes::elevated_domain)
             .route("/domain", web::post().to(routes::create_domain).wrap(Governor::new(&governor_builder)))
     };
