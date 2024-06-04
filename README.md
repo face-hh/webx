@@ -228,6 +228,4 @@ For those coming from the traditional web...
 
 I believe you'd get a better understand if you explored the [registrar](https://github.com/face-hh/webx-registrar) repository's `script.lua`.
 
-NOTE: Bussin Napture doesn't support `buss://` redirects yet. They will be added in the official release.
-
 Made by FaceDev with pure utter hatred and undesire :D
