@@ -8,7 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-#curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y FUCK
+
 jobs:
   build:
     runs-on: ubuntu-24.04
