@@ -789,54 +789,67 @@ async fn fetch_file(url: String) -> String {
 }
 
 async fn fetch_from_github(url: String) -> String {
-    let client: reqwest::ClientBuilder = reqwest::Client::builder();
+    let client = reqwest::Client::builder()
+        .build();
 
-    let url = format!(
-        "https://raw.githubusercontent.com/{}/{}/main/{}",
-        url.split('/').nth(3).unwrap_or(""),
-        url.split('/').nth(4).unwrap_or(""),
-        url.split('/').last().unwrap_or(""),
-    );
-
-    let client = match client.build() {
-        Ok(client) => client,
-        Err(e) => {
+    let (user, repo, file_path) = match (
+        url.split('/').nth(3),
+        url.split('/').nth(4),
+        url.split('/').last(),
+    ) {
+        (Some(user), Some(repo), Some(file_path)) => (user, repo, file_path),
+        _ => {
             lualog!(
                 "error",
-                format!(
-                    "Couldn't build reqwest client, returning empty string: {}",
-                    e
-                )
+                "Invalid URL format, returning empty string."
             );
             return String::new();
         }
     };
 
-    if let Ok(response) = client.get(&url).send().await {
-        let status = response.status();
+    let formatted_url = format!(
+        "https://raw.githubusercontent.com/{}/{}/main/{}",
+        user, repo, file_path
+    );
 
-        if let Ok(json) = response.text().await {
-            json
-        } else {
+    let client = match client {
+        Ok(client) => client,
+        Err(e) => {
+            lualog!(
+                "error",
+                format!("Couldn't build reqwest client, returning empty string: {}", e)
+            );
+            return String::new();
+        }
+    };
+
+    match client.get(&formatted_url).send().await {
+        Ok(response) => {
+            let status = response.status();
+            match response.text().await {
+                Ok(text) => text,
+                Err(_) => {
+                    lualog!(
+                        "error",
+                        format!(
+                            "Failed to parse response body from URL (\"{}\"), status code: {}",
+                            formatted_url, status
+                        )
+                    );
+                    String::new()
+                }
+            }
+        }
+        Err(_) => {
             lualog!(
                 "error",
                 format!(
-                    "Failed to parse response body from URL (\"{}\"), status code: {}",
-                    url, status
+                    "Failed to fetch URL (\"{}\"). Perhaps no internet connection?",
+                    formatted_url
                 )
             );
             String::new()
         }
-    } else {
-        lualog!(
-            "error",
-            format!(
-                "Failed to fetch URL (\"{}\"). Perhaps no internet connection?",
-                url
-            )
-        );
-
-        String::new()
     }
 }
 
