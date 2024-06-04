@@ -37,7 +37,7 @@ fn validate_ip(domain: &Domain) -> Result<(), HttpResponse> {
 #[actix_web::get("/")]
 pub(crate) async fn index() -> impl Responder {
     HttpResponse::Ok().body(format!(
-		  "webxDNS v{}!\n\nThe available endpoints are:\n\n - [GET] /domains\n - [GET] /domain/{{name}}/{{tld}}\n - [POST] /domain\n - [PUT] /domain/{{key}}\n - [DELETE] /domain/{{key}}\n - [GET] /tlds\n\nRatelimits are as follows: 3 requests per 5 minutes on `[POST] /domain`.\n\nCode link: https://github.com/face-hh/webx/tree/master/dns",env!("CARGO_PKG_VERSION")),
+		  "webxDNS v{}!\n\nThe available endpoints are:\n\n - [GET] /domains\n - [GET] /domain/{{name}}/{{tld}}\n - [POST] /domain\n - [PUT] /domain/{{key}}\n - [DELETE] /domain/{{key}}\n - [GET] /tlds\n\nRatelimits are as follows: 5 requests per 10 minutes on `[POST] /domain`.\n\nCode link: https://github.com/face-hh/webx/tree/master/dns",env!("CARGO_PKG_VERSION")),
 	 )
 }
 

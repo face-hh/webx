@@ -1,11 +1,15 @@
 mod models;
+mod ratelimit;
 mod routes;
 
 use crate::config::Config;
-use actix_web::{web, web::Data, App, HttpRequest, HttpServer};
+use actix_governor::{Governor, GovernorConfigBuilder};
+use actix_web::{http::Method, web, web::Data, App, HttpRequest, HttpServer};
 use anyhow::{anyhow, Error};
-use rate_limit::backend::{memory::InMemoryBackend, SimpleInputFunctionBuilder};
-use std::time::Duration;
+use colored::Colorize;
+use macros_rs::fmt::{crashln, string};
+use ratelimit::RealIpKeyExtractor;
+use std::{net::IpAddr, str::FromStr, time::Duration};
 
 pub use models::Domain;
 
@@ -27,17 +31,25 @@ pub fn get_token<'a>(req: &'a HttpRequest) -> Result<(&'a str, &'a str), Error> 
 #[actix_web::main]
 pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
     let config = Config::new().set_path(&cli.config).read();
-    let backend = InMemoryBackend::builder().build();
+    let trusted_reverse_proxy = match IpAddr::from_str(&config.get_address()) {
+        Ok(addr) => addr,
+        Err(err) => crashln!("Cannot parse address.\n{}", string!(err).white()),
+    };
+
+    let governor_builder = GovernorConfigBuilder::default()
+        .methods(vec![Method::POST])
+        .period(Duration::from_secs(600))
+        .burst_size(5)
+        .key_extractor(RealIpKeyExtractor)
+        .finish()
+        .unwrap();
 
     config.connect_to_mongo(&crate::DB).await;
 
     let app = move || {
         let config = Config::new().set_path(&cli.config).read();
-        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(600), 3).real_ip_key().build();
-        let middleware = rate_limit::RateLimiter::builder(backend.clone(), input).add_headers().build();
 
         App::new()
-            .app_data(Data::new(config))
             .service(routes::index)
             .service(routes::get_domain)
             .service(routes::update_domain)
@@ -45,7 +57,9 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
             .service(routes::get_domains)
             .service(routes::get_tlds)
             .service(routes::elevated_domain)
-            .route("/domain", web::post().wrap(middleware).to(routes::create_domain))
+            .app_data(Data::new(config))
+            .app_data(Data::new(trusted_reverse_proxy))
+            .route("/domain", web::post().to(routes::create_domain).wrap(Governor::new(&governor_builder)))
     };
 
     log::info!("Listening on {}", config.get_address());
