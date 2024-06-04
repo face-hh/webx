@@ -2,24 +2,10 @@
 
 echo "Building Napture..."
 
-status=$(git status)
-
-# Check if the status contains the phrase "Your branch is behind"
-if [[ $status == *"Your branch is behind"* ]]; then
-    echo "Your branch is behind the remote repository."
-    echo "Pulling the latest changes..."
-    git pull origin $(git rev-parse --abbrev-ref HEAD)
-elif [[ $status == *"Your branch is up to date"* ]]; then
-    echo "Your branch is up to date with the remote repository."
-else
-    echo "Failed to determine the repository status."
-fi
+./scripts/git-status-check.sh
 
 # Install deps using Homebrew
 brew install gtk4 graphene glib libadwaita lua pkg-config || exit 1
-
-# Assuming the script is in the same directory as "napture"
-cd "$(dirname "$0")/napture" || exit 1
 
 # Specifies required environment variable HOMEBREW_CELLAR when it is not set
 arch_name=$(uname -m)
@@ -67,6 +53,7 @@ codesign --force --deep --sign - target/release/Napture.app || exit 1
 
 echo "Installing Napture..."
 
+rm -rf /Applications/Napture.app || true
 mv target/release/Napture.app /Applications || exit 1
 
 echo "Napture installation completed."
