@@ -2481,6 +2481,7 @@ dependencies = [
  "pretty_env_logger",
  "prettytable",
  "rand",
+ "regex",
  "serde",
  "sled",
  "tokio",

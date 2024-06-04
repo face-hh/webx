@@ -2,7 +2,9 @@ use super::models::*;
 use crate::{config::Config, kv, secret, DB};
 use futures::stream::StreamExt;
 use mongodb::{bson::doc, Collection};
+use regex::Regex;
 use std::env;
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 use actix_web::{
     web::{self, Data},
@@ -15,6 +17,29 @@ struct Error {
     error: String,
 }
 
+fn validate_ip(domain: &Domain) -> Result<(), HttpResponse> {
+    let http_regex = Regex::new(r"^https?://[a-zA-Z0-9.-]+$").unwrap();
+
+    let is_valid_ip = domain.ip.parse::<Ipv4Addr>().is_ok() || domain.ip.parse::<Ipv6Addr>().is_ok();
+    let is_valid_http = http_regex.is_match(&domain.ip);
+
+    if is_valid_ip || is_valid_http {
+        if domain.name.len() <= 100 {
+            Ok(())
+        } else {
+            Err(HttpResponse::BadRequest().json(Error {
+                msg: "Failed to create domain",
+                error: "Invalid name, non-existent TLD, or name too long (100 chars).".into(),
+            }))
+        }
+    } else {
+        Err(HttpResponse::BadRequest().json(Error {
+            msg: "Failed to create domain",
+            error: "Invalid name, non-existent TLD, or name too long (100 chars).".into(),
+        }))
+    }
+}
+
 #[actix_web::get("/")]
 pub(crate) async fn index() -> impl Responder {
     HttpResponse::Ok().body(format!(
@@ -23,10 +48,12 @@ pub(crate) async fn index() -> impl Responder {
 }
 
 pub(crate) async fn create_logic(domain: Domain, config: &Config, collection: &Collection<Domain>) -> Result<Domain, HttpResponse> {
+    validate_ip(&domain)?;
+
     if !config.tld_list().contains(&domain.tld.as_str()) || !domain.name.chars().all(|c| c.is_alphabetic() || c == '-') || domain.name.len() > 24 {
         return Err(HttpResponse::BadRequest().json(Error {
             msg: "Failed to create domain",
-            error: "Token is invalid".into(),
+            error: "Invalid name, non-existent TLD, or name too long (24 chars).".into(),
         }));
     }
 
