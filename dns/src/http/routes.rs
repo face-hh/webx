@@ -3,7 +3,6 @@ use crate::{config::Config, kv, secret, DB};
 use futures::stream::StreamExt;
 use mongodb::{bson::doc, options::FindOptions, Collection};
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 use std::env;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
@@ -11,20 +10,6 @@ use actix_web::{
     web::{self, Data},
     HttpRequest, HttpResponse, Responder,
 };
-
-#[derive(Serialize)]
-struct Error {
-    msg: &'static str,
-    error: String,
-}
-
-#[derive(Deserialize)]
-struct PaginationParams {
-    #[serde(alias = "p")]
-    page: Option<u32>,
-    #[serde(alias = "s")]
-    page_size: Option<u32>,
-}
 
 fn validate_ip(domain: &Domain) -> Result<(), HttpResponse> {
     let http_regex = Regex::new(r"^https?://[a-zA-Z0-9.-]+$").unwrap();
@@ -243,9 +228,9 @@ pub(crate) async fn delete_domain(path: web::Path<String>) -> impl Responder {
 #[actix_web::get("/domains")]
 pub(crate) async fn get_domains(query: web::Query<PaginationParams>) -> impl Responder {
     let page = query.page.unwrap_or(1);
-    let page_size = query.page_size.unwrap_or(15);
+    let limit = query.page_size.unwrap_or(15);
 
-    if page == 0 || page_size == 0 || page_size == 100 {
+    if page == 0 || limit == 0 || limit == 100 {
         return HttpResponse::BadRequest().json(Error {
             msg: "page_size must be greater than 0 and less than 100",
             error: "Invalid pagination parameters".into(),
@@ -264,8 +249,8 @@ pub(crate) async fn get_domains(query: web::Query<PaginationParams>) -> impl Res
         }
     };
 
-    let skip = (page - 1) * page_size;
-    let find_options = FindOptions::builder().skip(Some(skip as u64)).limit(Some(page_size as i64)).build();
+    let skip = (page - 1) * limit;
+    let find_options = FindOptions::builder().skip(Some(skip as u64)).limit(Some(limit as i64)).build();
 
     let cursor = match collection.find(None, find_options).await {
         Ok(res) => res,
@@ -291,7 +276,8 @@ pub(crate) async fn get_domains(query: web::Query<PaginationParams>) -> impl Res
         .collect()
         .await;
 
-    HttpResponse::Ok().json(domains)
+    HttpResponse::Ok().json(PaginationResponse { domains, page, limit })
 }
+
 #[actix_web::get("/tlds")]
 pub(crate) async fn get_tlds(config: Data<Config>) -> impl Responder { HttpResponse::Ok().json(&*config.tld_list()) }
