@@ -55,7 +55,7 @@ impl KeyExtractor for RealIpKeyExtractor {
         response.json(Ratelimit {
             after: wait_time_unix,
             error: "ratelimited_endpoint",
-            msg: format!("Too many requests, retry in {wait_time}s"),
+            msg: format!("Too many requests, try again in {wait_time}s"),
         })
     }
 }
