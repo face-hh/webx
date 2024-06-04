@@ -19,7 +19,7 @@ jobs:
       run: |
         echo "Installing dependencies..."
         sudo apt-get update
-        sudo apt-get install -y libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev liblua5.4-dev
+        sudo apt-get install -y libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev 
         echo "Dependencies installed."
 
     - name: Build Napture
