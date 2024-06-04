@@ -33,7 +33,7 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
 
     let app = move || {
         let config = Config::new().set_path(&cli.config).read();
-        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(300), 3).real_ip_key().build();
+        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(600), 3).real_ip_key().build();
         let middleware = rate_limit::RateLimiter::builder(backend.clone(), input).add_headers().build();
 
         App::new()

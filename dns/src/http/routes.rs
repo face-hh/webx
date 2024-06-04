@@ -230,9 +230,16 @@ pub(crate) async fn get_domains(query: web::Query<PaginationParams>) -> impl Res
     let page = query.page.unwrap_or(1);
     let limit = query.page_size.unwrap_or(15);
 
-    if page == 0 || limit == 0 || limit < 100 {
+    if page == 0 || limit == 0 {
         return HttpResponse::BadRequest().json(Error {
-            msg: "page_size must be greater than 0 and less than 100",
+            msg: "page_size or page must be greater than 0",
+            error: "Invalid pagination parameters".into(),
+        });
+    }
+
+    if limit > 100 {
+        return HttpResponse::BadRequest().json(Error {
+            msg: "page_size must be greater than 0 and less than or equal to 100",
             error: "Invalid pagination parameters".into(),
         });
     }
