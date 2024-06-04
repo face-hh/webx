@@ -2,21 +2,34 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: "Bussin WebX Manual & Developer Docs",
+  title: "Bussin WebX Docs",
+  lang: "en-US",
+  base: "/docs",
   description: "User manual for WebX user & Documentation for WebX developers",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'User manual', link: '/user-manual' }
+      { text: 'User manual', link: '/user-manual' },
+      { text: 'Dev Docs', link: '/dev-start' }
     ],
 
     sidebar: [
       {
-        text: 'Examples',
+        text: 'For users',
         items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
+          { text: 'First time', link: '/user-manual' },
+          { text: 'Advanced options', link: '/user-advanced' }
+        ]
+      },
+      {
+        text: 'For developers',
+        items: [
+          { text: 'Getting started', link: '/dev-start' },
+          { text: 'HTML++', link: '/htmlpp' },
+          { text: 'CSS 3.25', link: '/css' },
+          { text: 'Lua', link: '/lua' },
+          { text: 'API Reference', link: '/webx-api' },
         ]
       }
     ],

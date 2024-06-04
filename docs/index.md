@@ -3,9 +3,8 @@
 layout: home
 
 hero:
-  name: "Welcome to Bussin WebX"
-  text: "An alternative to the World Wide Web"
-  tagline: User manual for WebX user & Documentation for WebX developers
+  name: "Welcome to WebX"
+  tagline: "An alternative to the World Wide Web"
   actions:
     - theme: brand
       text: User manual
@@ -17,9 +16,12 @@ hero:
 features:
   - title: How to use Napture
     details: WebX's official browser.
+    link: /user-manual
   - title: How to register a domain
     details: yourcoolsite.sigma is waiting.
-  - title: HTML++, CSS, and LUA stack
-    details: How to code WebX sites.
+    link: /dev-register-domain
+  - title: How to code WebX sites
+    details: Learn HTML++, CSS 3.25, and Lua.
+    link: /dev-start
 ---
 
