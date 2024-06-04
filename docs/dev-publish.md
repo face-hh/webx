@@ -71,6 +71,8 @@ Your domain needs three simple things.
 The name of your website for the URI. It will be here:
 
 buss://**{here}**.tld
+
+Note that there is a max of 24 characters for your domain.
 :::
 :::info TLD
 The Top-Level Domain you'd like your website to have. It will be here:
