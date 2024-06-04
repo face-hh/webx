@@ -41,5 +41,5 @@ jobs:
     - name: Build Napture
       run: |
           echo "Building Napture..."
-          cd napture || exit 1
+          cd napture
           cargo build --verbose
