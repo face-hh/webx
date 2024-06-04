@@ -810,9 +810,11 @@ async fn fetch_file(url: String) -> String {
 
     if url.starts_with("file://") {
         let path = url
-            .replace("file://", "")
-            .replace("/", std::path::MAIN_SEPARATOR_STR); // translate / to system path seperator
+            .replace("file:///", "")
+            .replace("file://", "");
         
+        println!("{path}");
+
         match fs::read_to_string(&format!("{}", path)) {
             Ok(text) => text,
             Err(_) => {
