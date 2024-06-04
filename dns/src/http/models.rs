@@ -28,9 +28,9 @@ pub(crate) struct Error {
 
 #[derive(Deserialize)]
 pub(crate) struct PaginationParams {
-    #[serde(alias = "p")]
+    #[serde(alias = "p", alias = "doc")]
     pub(crate) page: Option<u32>,
-    #[serde(alias = "s")]
+    #[serde(alias = "s", alias = "size", alias = "l", alias = "limit")]
     pub(crate) page_size: Option<u32>,
 }
 
