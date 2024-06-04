@@ -1,6 +1,11 @@
 ---
 outline: deep
 prev:
-  title: 'API'
+  text: 'Luau'
+  link: 'luau'
+next:
+  text: 'API Reference'
   link: 'webx-api'
 ---
+
+# Registering a domain

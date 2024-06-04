@@ -55,7 +55,11 @@ You can link images (as much as you like), stylesheets and scripts (only 1 of ea
 Audio and video support are being worked on, but as of B9 1.2.2 they are not supported. [See PR](https://github.com/face-hh/webx/pull/150).
 :::
 
-The thing is, B9 does not use `rel` to define what to do with each thing. It uses the **order** of your tags, being the first tag of each kind the one that will be used for it's specific purpose. In other words: your first `<link>` which hrefs an image will be your site's icon, your first `<link>` which hrefs a stylesheet will be the source for the page's CSS 3.25, and your first `<link>` which hrefs a script will be the source for the page's Lua script.
+The thing is, B9 does not use `rel` to define what to do with each thing. It uses the **order** of your tags, being the first tag of each kind the one that will be used for it's specific purpose. In other words: your first `<link>` has to href an image and will be your site's icon, your second `<link>` has to href a stylesheet and will be the source for the page's CSS 3.25, and your `<script>` tag should be the third one, and will be the source for the page's Luau script.
+
+:::warning
+This isn't the standard web, **HTTP**/HTTPS are **not** supported for neither script tags & link tags that href a stylesheet. Both files must be available locally, in the same path as the `index.html`. As we told you before, the three files must be in the root. HTTP is supported for the icon's link and for images.
+:::
 
 ```html:line-numbers=2
 <head>
@@ -86,3 +90,27 @@ You cannot embed `<style>` tags or write inline scripts in your HTML. Due to tha
 Well, your head is done. Great! Now let's move on onto the body.
 
 ## `<body>`: Page's content in HTML++
+
+Currently, you can use the following HTML tags:
+- Headers (`<h1>`, `<h2>`, `<h3>`, `<h4>`, `<h5>`, `<h6>`) and paragraphs (`<p>`). Headers will be bigger or smaller based on the number, being 1 the biggest and 6 the smallest.
+- Hyperlinks (`<a>`), which can have a `href` property (`<a href="#>`).
+  - If the href starts with `buss://`, Napture will open it and redirect the user away from your page. If it starts with anything else, GTK will handle it and automaticaly open your default WWW browser.
+- Divisions (`<div>`), basically containers where you can put your tags to organise your page.
+- Lists, which can be ordered (`<ol>`) or unordered (`<ul>`). Both can have list items (`<li>`) in them.
+- Horizontal rule (`<hr>`), which creates a horizontal line on the entire page.
+- Images (`<img>`), with a `src` property for the local path / HTTP URI of the image. They are unresizeable, so your image must already be of the desired size (use any image editing tool for that, e.g. [GIMP](https://www.gimp.org/)).
+:::warning
+Additionally, **as of B9 v1.2.2** images are currently broken on Microsoft Windows&tm; and will only work if you follow the [Guide of Compilation for Napture - Windows.](https://github.com/face-hh/webx?tab=readme-ov-file#windows-1).
+:::
+- Inputs (`<input>`) are one-line text fields. You can interact with them with WebX's Luau API.
+- Textareas (`<textarea>`) are equivalent to inputs, but they are *multi-line* text fields instead of *one-line*.
+- Dropdowns (`<select>`), which can have options in them (`<option>`).
+:::warning
+As of B9 1.2.2, dropdowns are purely decorative at the moment as they don't have a Luau API.
+:::
+
+We're done with the HTML++, **but you must note one more thing**.
+
+> Every tag that is made for the body (`<h1>`, `<p>`, `<input>`, etc...) has support for a property called "`class`". You might know them for CSS 3 styling, but here they are more important as they are used **for scripting aswell**. Therefore, HTML 5's standard `id` is not supported. Keep that in mind.
+
+Now, let's move onto styling.

@@ -28,7 +28,7 @@ export default defineConfig({
           { text: 'Getting started', link: '/dev-start' },
           { text: 'HTML++', link: '/htmlpp' },
           { text: 'CSS 3.25', link: '/css' },
-          { text: 'Lua', link: '/lua' },
+          { text: 'Luau', link: '/luau' },
           { text: 'API Reference', link: '/webx-api' },
         ]
       }

@@ -21,7 +21,7 @@ features:
     details: yourcoolsite.sigma is waiting.
     link: /dev-register-domain
   - title: How to code WebX sites
-    details: Learn HTML++, CSS 3.25, and Lua.
+    details: Learn HTML++, CSS 3.25, and Luau.
     link: /dev-start
 ---
 
