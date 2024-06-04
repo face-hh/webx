@@ -17,14 +17,15 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
-        libpango1.0-dev \
-        software-properties-common
-        sudo dpkg --add-architecture i386
-        sudo add-apt-repository 'deb http://deb.debian.org/debian sid main'
-        sudo apt-get update
-        sudo apt-get install -y libgtk-4-dev
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+          libpango1.0-dev \
+          software-properties-common
+          sudo dpkg --add-architecture i386
+          sudo add-apt-repository 'deb http://deb.debian.org/debian sid main'
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9 6ED0E7B82643E131
+          sudo apt-get update
+          sudo apt-get install -y libgtk-4-dev
     - name: Build
       run: cd napture && cargo build --verbose
     - name: Run tests
