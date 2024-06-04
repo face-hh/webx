@@ -12,14 +12,13 @@ use macros_rs::fmt::{crashln, string};
 use ratelimit::RealIpKeyExtractor;
 use std::{net::IpAddr, str::FromStr, time::Duration};
 
-pub use models::Domain;
-pub type Db = mongodb::Collection<Domain>;
+pub(crate) use models::Domain;
 
 #[derive(Clone)]
-pub struct AppState {
-    db: Db,
+pub(crate) struct AppState {
     trusted: IpAddr,
     config: Config,
+    db: mongodb::Collection<Domain>,
 }
 
 pub fn get_token<'a>(req: &'a HttpRequest) -> Result<(&'a str, &'a str), Error> {
