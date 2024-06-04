@@ -4,6 +4,10 @@ print(btn.get_content())
 btn.set_content("Hello, World!")
 print(btn.get_content())
 
+local ok = set_timeout(function()
+	btn.set_content("ok")
+end, 5000)
+
 btn.on_click(function()
     print("clicked!")
 end)
