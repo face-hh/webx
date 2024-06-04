@@ -26,6 +26,13 @@ pub(crate) struct Error {
     pub(crate) error: String,
 }
 
+#[derive(Serialize)]
+pub(crate) struct Ratelimit {
+    pub(crate) msg: String,
+    pub(crate) error: &'static str,
+    pub(crate) after: u64,
+}
+
 #[derive(Deserialize)]
 pub(crate) struct PaginationParams {
     #[serde(alias = "p", alias = "doc")]

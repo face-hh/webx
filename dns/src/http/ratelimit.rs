@@ -1,7 +1,17 @@
-use actix_governor::{KeyExtractor, SimpleKeyExtractionError};
-use actix_web::{dev::ServiceRequest, web};
-use std::net::{IpAddr, SocketAddr};
-use std::str::FromStr;
+use super::models::Ratelimit;
+use actix_web::{dev::ServiceRequest, web, HttpResponse, HttpResponseBuilder};
+
+use std::{
+    net::{IpAddr, SocketAddr},
+    str::FromStr,
+    time::{SystemTime, UNIX_EPOCH},
+};
+
+use actix_governor::{
+    governor::clock::{Clock, DefaultClock, QuantaInstant},
+    governor::NotUntil,
+    KeyExtractor, SimpleKeyExtractionError,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct RealIpKeyExtractor;
@@ -35,5 +45,17 @@ impl KeyExtractor for RealIpKeyExtractor {
                 .and_then(|str| SocketAddr::from_str(str).map_err(|_| SimpleKeyExtractionError::new("Could not extract peer IP address from request")))
                 .map(|socket| socket.ip()),
         }
+    }
+
+    fn exceed_rate_limit_response(&self, negative: &NotUntil<QuantaInstant>, mut response: HttpResponseBuilder) -> HttpResponse {
+        let current_unix_timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
+        let wait_time = negative.wait_time_from(DefaultClock::default().now()).as_secs();
+        let wait_time_unix = current_unix_timestamp + negative.wait_time_from(DefaultClock::default().now()).as_secs();
+
+        response.json(Ratelimit {
+            after: wait_time_unix,
+            error: "ratelimited_endpoint",
+            msg: format!("Too many requests, retry in {wait_time}s"),
+        })
     }
 }
