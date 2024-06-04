@@ -22,8 +22,8 @@ impl KeyExtractor for RealIpKeyExtractor {
 
     fn extract(&self, req: &ServiceRequest) -> Result<Self::Key, Self::KeyExtractionError> {
         let reverse_proxy_ip = req
-            .app_data::<web::Data<IpAddr>>()
-            .map(|ip| ip.get_ref().to_owned())
+            .app_data::<web::Data<super::AppState>>()
+            .map(|ip| ip.get_ref().trusted.to_owned())
             .unwrap_or_else(|| IpAddr::from_str("0.0.0.0").unwrap());
 
         let peer_ip = req.peer_addr().map(|socket| socket.ip());

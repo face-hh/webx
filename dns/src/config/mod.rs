@@ -4,7 +4,7 @@ mod structs;
 use crate::http::Domain;
 use colored::Colorize;
 use macros_rs::fmt::{crashln, string};
-use mongodb::{options::ClientOptions, Client};
+use mongodb::{error::Error, options::ClientOptions, Client, Collection};
 use std::fs::write;
 use structs::{Mongo, Server, Settings};
 
@@ -61,21 +61,15 @@ impl Config {
         return self;
     }
 
-    pub async fn connect_to_mongo(&self, mongo: &crate::DB) {
-        let mut client_options = ClientOptions::parse(&self.server.mongo.connection).await.unwrap_or_default();
+    pub async fn connect_to_mongo(&self) -> Result<Collection<Domain>, Error> {
+        let mut client_options = ClientOptions::parse(&self.server.mongo.connection).await?;
         client_options.app_name = Some(self.server.mongo.app_name.clone());
 
-        let client = match Client::with_options(client_options) {
-            Ok(client) => client,
-            Err(err) => crashln!("Failed to connect to MongoDB.\n{}", string!(err).white()),
-        };
-
+        let client = Client::with_options(client_options)?;
         let db = client.database(&self.server.mongo.db_name);
         let collection = db.collection::<Domain>("domains");
 
-        let mut db_lock = mongo.lock().await;
-        *db_lock = Some(collection);
-
         log::info!("MongoDB server connected");
+        Ok(collection)
     }
 }

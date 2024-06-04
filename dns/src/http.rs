@@ -12,6 +12,14 @@ use ratelimit::RealIpKeyExtractor;
 use std::{net::IpAddr, str::FromStr, time::Duration};
 
 pub use models::Domain;
+pub type Db = mongodb::Collection<Domain>;
+
+#[derive(Clone)]
+pub struct AppState {
+    db: Db,
+    trusted: IpAddr,
+    config: Config,
+}
 
 pub fn get_token<'a>(req: &'a HttpRequest) -> Result<(&'a str, &'a str), Error> {
     let header = match req.headers().get("authorization") {
@@ -32,7 +40,7 @@ pub fn get_token<'a>(req: &'a HttpRequest) -> Result<(&'a str, &'a str), Error> 
 pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
     let config = Config::new().set_path(&cli.config).read();
 
-    let trusted_reverse_proxy = match IpAddr::from_str(&config.server.address) {
+    let trusted_ip = match IpAddr::from_str(&config.server.address) {
         Ok(addr) => addr,
         Err(err) => crashln!("Cannot parse address.\n{}", string!(err).white()),
     };
@@ -45,12 +53,20 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
         .finish()
         .unwrap();
 
-    config.connect_to_mongo(&crate::DB).await;
+    let db = match config.connect_to_mongo().await {
+        Ok(client) => client,
+        Err(err) => crashln!("Failed to connect to MongoDB.\n{}", string!(err).white()),
+    };
 
     let app = move || {
-        let config = Config::new().set_path(&cli.config).read();
+        let data = AppState {
+            db: db.clone(),
+            trusted: trusted_ip,
+            config: Config::new().set_path(&cli.config).read(),
+        };
 
         App::new()
+            .app_data(Data::new(data))
             .service(routes::index)
             .service(routes::get_domain)
             .service(routes::update_domain)
@@ -58,8 +74,6 @@ pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
             .service(routes::get_domains)
             .service(routes::get_tlds)
             .service(routes::elevated_domain)
-            .app_data(Data::new(config))
-            .app_data(Data::new(trusted_reverse_proxy))
             .route("/domain", web::post().to(routes::create_domain).wrap(Governor::new(&governor_builder)))
     };
 

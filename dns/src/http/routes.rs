@@ -1,5 +1,5 @@
-use super::models::*;
-use crate::{config::Config, kv, secret, DB};
+use super::{models::*, AppState};
+use crate::{config::Config, kv, secret};
 use futures::stream::StreamExt;
 use mongodb::{bson::doc, options::FindOptions, Collection};
 use regex::Regex;
@@ -72,32 +72,21 @@ pub(crate) async fn create_logic(domain: Domain, config: &Config, collection: &C
     Ok(domain)
 }
 
-pub(crate) async fn create_domain(domain: web::Json<Domain>, config: Data<Config>) -> impl Responder {
+pub(crate) async fn create_domain(domain: web::Json<Domain>, app: Data<AppState>) -> impl Responder {
     let secret_key = secret::generate(31);
     let mut domain = domain.into_inner();
     domain.secret_key = Some(secret_key);
 
-    let collection = DB.lock().await;
-    let collection = match collection.as_ref() {
-        Some(res) => res,
-        None => {
-            return HttpResponse::InternalServerError().json(Error {
-                msg: "Failed to fetch collection",
-                error: "Unknown Error".into(),
-            })
-        }
-    };
-
-    match create_logic(domain, &config, collection).await {
+    match create_logic(domain, &app.config, &app.db).await {
         Ok(domain) => HttpResponse::Ok().json(domain),
         Err(error) => error,
     }
 }
 
 #[actix_web::post("/registry/domain")]
-pub(crate) async fn elevated_domain(domain: web::Json<Domain>, config: Data<Config>, req: HttpRequest) -> impl Responder {
+pub(crate) async fn elevated_domain(domain: web::Json<Domain>, app: Data<AppState>, req: HttpRequest) -> impl Responder {
     match super::get_token(&req) {
-        Ok((name, key)) => match kv::get(&config.server.key_db, &name.to_string()) {
+        Ok((name, key)) => match kv::get(&app.config.server.key_db, &name.to_string()) {
             Ok(value) => macros_rs::exp::then!(
                 value != key,
                 return HttpResponse::Unauthorized().json(Error {
@@ -124,40 +113,18 @@ pub(crate) async fn elevated_domain(domain: web::Json<Domain>, config: Data<Conf
     let mut domain = domain.into_inner();
     domain.secret_key = Some(secret_key);
 
-    let collection = DB.lock().await;
-    let collection = match collection.as_ref() {
-        Some(res) => res,
-        None => {
-            return HttpResponse::InternalServerError().json(Error {
-                msg: "Failed to fetch collection",
-                error: "Unknown Error".into(),
-            })
-        }
-    };
-
-    match create_logic(domain, &config, collection).await {
+    match create_logic(domain, &app.config, &app.db).await {
         Ok(domain) => HttpResponse::Ok().json(domain),
         Err(error) => error,
     }
 }
 
 #[actix_web::get("/domain/{name}/{tld}")]
-pub(crate) async fn get_domain(path: web::Path<(String, String)>) -> impl Responder {
-    let collection = DB.lock().await;
-    let collection = match collection.as_ref() {
-        Some(res) => res,
-        None => {
-            return HttpResponse::InternalServerError().json(Error {
-                msg: "Failed to fetch collection",
-                error: "Unknown Error".into(),
-            })
-        }
-    };
-
+pub(crate) async fn get_domain(path: web::Path<(String, String)>, app: Data<AppState>) -> impl Responder {
     let (name, tld) = path.into_inner();
     let filter = doc! { "name": name, "tld": tld };
 
-    match collection.find_one(filter, None).await {
+    match app.db.find_one(filter, None).await {
         Ok(Some(domain)) => HttpResponse::Ok().json(ResponseDomain {
             tld: domain.tld,
             name: domain.name,
@@ -169,23 +136,12 @@ pub(crate) async fn get_domain(path: web::Path<(String, String)>) -> impl Respon
 }
 
 #[actix_web::put("/domain/{key}")]
-pub(crate) async fn update_domain(path: web::Path<String>, domain_update: web::Json<UpdateDomain>) -> impl Responder {
-    let collection = DB.lock().await;
-    let collection = match collection.as_ref() {
-        Some(res) => res,
-        None => {
-            return HttpResponse::InternalServerError().json(Error {
-                msg: "Failed to fetch collection",
-                error: "Unknown Error".into(),
-            })
-        }
-    };
-
+pub(crate) async fn update_domain(path: web::Path<String>, domain_update: web::Json<UpdateDomain>, app: Data<AppState>) -> impl Responder {
     let key = path.into_inner();
     let filter = doc! { "secret_key": key };
     let update = doc! { "$set": { "ip": &domain_update.ip } };
 
-    match collection.update_one(filter, update, None).await {
+    match app.db.update_one(filter, update, None).await {
         Ok(result) => {
             if result.matched_count == 1 {
                 HttpResponse::Ok().json(domain_update.into_inner())
@@ -198,22 +154,11 @@ pub(crate) async fn update_domain(path: web::Path<String>, domain_update: web::J
 }
 
 #[actix_web::delete("/domain/{key}")]
-pub(crate) async fn delete_domain(path: web::Path<String>) -> impl Responder {
-    let collection = DB.lock().await;
-    let collection = match collection.as_ref() {
-        Some(res) => res,
-        None => {
-            return HttpResponse::InternalServerError().json(Error {
-                msg: "Failed to fetch collection",
-                error: "Unknown Error".into(),
-            })
-        }
-    };
-
+pub(crate) async fn delete_domain(path: web::Path<String>, app: Data<AppState>) -> impl Responder {
     let key = path.into_inner();
     let filter = doc! { "secret_key": key };
 
-    match collection.delete_one(filter, None).await {
+    match app.db.delete_one(filter, None).await {
         Ok(result) => {
             if result.deleted_count == 1 {
                 HttpResponse::Ok().finish()
@@ -226,7 +171,7 @@ pub(crate) async fn delete_domain(path: web::Path<String>) -> impl Responder {
 }
 
 #[actix_web::get("/domains")]
-pub(crate) async fn get_domains(query: web::Query<PaginationParams>) -> impl Responder {
+pub(crate) async fn get_domains(query: web::Query<PaginationParams>, app: Data<AppState>) -> impl Responder {
     let page = query.page.unwrap_or(1);
     let limit = query.page_size.unwrap_or(15);
 
@@ -244,22 +189,10 @@ pub(crate) async fn get_domains(query: web::Query<PaginationParams>) -> impl Res
         });
     }
 
-    let collection = DB.lock().await;
-
-    let collection = match collection.as_ref() {
-        Some(res) => res,
-        None => {
-            return HttpResponse::InternalServerError().json(Error {
-                msg: "Failed to fetch collection",
-                error: "Unknown Error".into(),
-            })
-        }
-    };
-
     let skip = (page - 1) * limit;
     let find_options = FindOptions::builder().skip(Some(skip as u64)).limit(Some(limit as i64)).build();
 
-    let cursor = match collection.find(None, find_options).await {
+    let cursor = match app.db.find(None, find_options).await {
         Ok(res) => res,
         Err(err) => {
             return HttpResponse::InternalServerError().json(Error {

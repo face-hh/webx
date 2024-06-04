@@ -7,14 +7,7 @@ mod secret;
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::{LogLevel, Verbosity};
 use config::Config;
-use lazy_static::lazy_static;
 use macros_rs::fs::file_exists;
-use mongodb::{bson::doc, Collection};
-use tokio::sync::Mutex as TokioMutex;
-
-lazy_static! {
-    pub static ref DB: TokioMutex<Option<Collection<http::Domain>>> = TokioMutex::new(None);
-}
 
 #[derive(Copy, Clone, Debug, Default)]
 struct Info;

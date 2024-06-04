@@ -2560,7 +2560,6 @@ dependencies = [
  "clap-verbosity-flag",
  "colored",
  "futures",
- "lazy_static",
  "log",
  "macros-rs",
  "mongodb",
