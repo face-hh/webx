@@ -17,16 +17,11 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install Dependencies
       run: |
-          echo "Installing dependencies..."
-          sudo apt-get update
-          sudo apt-get install -y curl git build-essential libssl-dev libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev liblua5.4-dev
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -y
-          echo "Dependencies installed."
-
-    - name: Update Repository
-      run: |
-          echo "Updating repository..."
-          git pull origin $(git rev-parse --abbrev-ref HEAD)
+        echo "Installing dependencies and Rustup..."
+        sudo apt-get update
+        sudo apt-get install -y curl git build-essential libssl-dev libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev liblua5.4-dev
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        echo "Dependencies and Rustup installed."
 
     - name: Build Napture
       run: |
