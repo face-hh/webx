@@ -1,8 +1,9 @@
 use super::models::*;
 use crate::{config::Config, kv, secret, DB};
 use futures::stream::StreamExt;
-use mongodb::{bson::doc, Collection};
+use mongodb::{bson::doc, options::FindOptions, Collection};
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
@@ -11,10 +12,16 @@ use actix_web::{
     HttpRequest, HttpResponse, Responder,
 };
 
-#[derive(serde::Serialize)]
+#[derive(Serialize)]
 struct Error {
     msg: &'static str,
     error: String,
+}
+
+#[derive(Deserialize)]
+struct PaginationParams {
+    page: Option<u32>,
+    page_size: Option<u32>,
 }
 
 fn validate_ip(domain: &Domain) -> Result<(), HttpResponse> {
@@ -232,7 +239,17 @@ pub(crate) async fn delete_domain(path: web::Path<String>) -> impl Responder {
 }
 
 #[actix_web::get("/domains")]
-pub(crate) async fn get_domains() -> impl Responder {
+pub(crate) async fn get_domains(query: web::Query<PaginationParams>) -> impl Responder {
+    let page = query.page.unwrap_or(1);
+    let page_size = query.page_size.unwrap_or(15);
+
+    if page == 0 || page_size == 0 || page_size == 100 {
+        return HttpResponse::BadRequest().json(Error {
+            msg: "page_size must be greater than 0 and less than 100",
+            error: "Invalid pagination parameters".into(),
+        });
+    }
+
     let collection = DB.lock().await;
 
     let collection = match collection.as_ref() {
@@ -245,7 +262,10 @@ pub(crate) async fn get_domains() -> impl Responder {
         }
     };
 
-    let cursor = match collection.find(None, None).await {
+    let skip = (page - 1) * page_size;
+    let find_options = FindOptions::builder().skip(Some(skip as u64)).limit(Some(page_size as i64)).build();
+
+    let cursor = match collection.find(None, find_options).await {
         Ok(res) => res,
         Err(err) => {
             return HttpResponse::InternalServerError().json(Error {
@@ -271,6 +291,5 @@ pub(crate) async fn get_domains() -> impl Responder {
 
     HttpResponse::Ok().json(domains)
 }
-
 #[actix_web::get("/tlds")]
 pub(crate) async fn get_tlds(config: Data<Config>) -> impl Responder { HttpResponse::Ok().json(&*config.tld_list()) }
