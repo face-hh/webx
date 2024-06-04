@@ -1,0 +1,16 @@
+{
+    "aikey":"lmao-no",
+    "bind":"0.0.0.0:80",
+    "mongo":"hellopeople",
+    "cloudflare":true,
+    "apiKeys":{
+        "KEY1":{
+            "owner":"Registrar#1",
+            "ratelimit":60
+        },
+        "KEY2":{
+            "owner":"Registrar#2",
+            "ratelimit":100
+        }
+    }
+}
