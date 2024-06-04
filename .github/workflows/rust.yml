@@ -15,8 +15,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Add PPA for GTK4
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository ppa:gnome3-team/gnome3-staging
+        sudo apt-get update
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev
+      run: sudo apt-get install -y libgtk-4-dev
     - name: Build
       run: cd napture && cargo build --verbose
     - name: Run tests
