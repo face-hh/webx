@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install system dependencies
-      run: sudo apt-get update && sudo apt-get install -y libpango1.0-dev
+      run: sudo apt-get update && sudo apt-get install -y libpango1.0-dev libgtk-4-dev
     - name: Build
       run: cd napture && cargo build --verbose
     - name: Run tests
