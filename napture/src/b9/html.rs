@@ -809,7 +809,9 @@ async fn fetch_file(url: String) -> String {
     println!("Attempting to navigate to {url}...");
 
     if url.starts_with("file://") {
-        let path = url.replace("file://", "");
+        let path = url
+            .replace("file://", "")
+            .replace("/", std::path::MAIN_SEPARATOR_STR); // translate / to system path seperator
         
         match fs::read_to_string(&format!("{}", path)) {
             Ok(text) => text,
