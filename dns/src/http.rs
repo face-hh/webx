@@ -31,7 +31,8 @@ pub fn get_token<'a>(req: &'a HttpRequest) -> Result<(&'a str, &'a str), Error> 
 #[actix_web::main]
 pub async fn start(cli: crate::Cli) -> std::io::Result<()> {
     let config = Config::new().set_path(&cli.config).read();
-    let trusted_reverse_proxy = match IpAddr::from_str(&config.get_address()) {
+
+    let trusted_reverse_proxy = match IpAddr::from_str(&config.server.address) {
         Ok(addr) => addr,
         Err(err) => crashln!("Cannot parse address.\n{}", string!(err).white()),
     };
