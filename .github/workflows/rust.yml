@@ -15,7 +15,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install Dependencies
+    - name: Install Dependencies and Rustup
       run: |
         echo "Installing dependencies and Rustup..."
         sudo apt-get update
@@ -23,8 +23,15 @@ jobs:
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         echo "Dependencies and Rustup installed."
 
-    - name: Build Napture
+    - name: Set PKG_CONFIG_PATH
       run: |
-          echo "Building Napture..."
-          cd napture
-          cargo build --verbose
+        export PKG_CONFIG_PATH=/usr/lib/pkgconfig
+        echo "PKG_CONFIG_PATH set to /usr/lib/pkgconfig"
+
+    - name: Build and Install Napture
+      run: |
+        echo "Building Napture..."
+        cd napture
+        cargo build --verbose
+        echo "Napture built successfully."
+
