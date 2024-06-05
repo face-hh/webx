@@ -142,11 +142,12 @@ jobs:
         cargo build --release --verbose
         echo "Napture built successfully."
         
-    - name: Copy DLLs to Workspace
+    - name: Copy and Move DLLs
       run: |
-        echo "Copying DLLs to workspace..."
-        mkdir -p napture/target/release/libs
-        Get-ChildItem -Recurse -Filter *.dll -File -Force | ForEach-Object { Move-Item -Force -Path $_.FullName -Destination ../ }
+        echo "Copying and moving DLLs to executable directory..."
+        C:\msys64\usr\bin\bash.exe -lc "find /mingw64/lib -name '*.dll' -exec cp --parents {} /c/projects/napture/target/release \;"
+        cd napture/target/release
+        Get-ChildItem -Recurse -Filter *.dll -File -Force | ForEach-Object { Move-Item -Force -Path $_.FullName -Destination . }
   
     - name: Zip Napture files
       run: |
