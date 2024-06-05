@@ -142,18 +142,20 @@ jobs:
         
     - name: Copy DLLs to Workspace
       run: |
+        echo "Copying DLLs to workspace..."
         mkdir -p napture/target/release/libs
-        cd C:/msys64/mingw64/lib
-        find . -name "*.dll" -exec cp --parents \{\} ../../../../napture/target/release/libs \;
-  
+        C:\msys64\usr\bin\bash.exe -lc "find /mingw64/lib -name '*.dll' -exec cp --parents \{\} /c/projects/napture/target/release/libs \;"
+
     - name: Move DLLs to Executable Directory
       run: |
+        echo "Moving DLLs to executable directory..."
         cd napture/target/release
         find libs -name "*.dll" -exec mv {} . \;
         rm -rf libs
   
     - name: Zip Napture files
       run: |
+        echo "Zipping Napture files..."
         cd napture/target/release
         tar -czvf napture-windows-nightly.tar.gz webx.exe *.dll
   
