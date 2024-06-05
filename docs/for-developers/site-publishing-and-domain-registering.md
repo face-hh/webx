@@ -47,7 +47,7 @@ This section contains content from contributors and 3rd parties. It has been mar
 Of course, we recommend using the official Bussin Registrar, which looks kinda like this:
 <!-- (***note for contributors: please update the screenshot***) -->
 
-![Screenshot](../png4.jpeg)
+![Screenshot](../png4.png)
 <!-- TO ANY DEV REVIEWING THE PR - SORRY MAN MY SCREEN IS JUST TOO SMALL FOR THIS XD - someome go take the actual napture and make a better screenshot, thanks-->
 
 What we care about is the Publish form. Every other registrer should use the same format, asking for an IP, TLD, and website name.
