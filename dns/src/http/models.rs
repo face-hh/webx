@@ -1,11 +1,14 @@
+use super::helpers::deserialize_lowercase;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Domain {
-    pub(crate) tld: String,
     pub(crate) ip: String,
-    pub(crate) name: String,
     pub(crate) secret_key: Option<String>,
+    #[serde(deserialize_with = "deserialize_lowercase")]
+    pub(crate) tld: String,
+    #[serde(deserialize_with = "deserialize_lowercase")]
+    pub(crate) name: String,
 }
 
 #[derive(Debug, Serialize)]
