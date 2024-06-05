@@ -46,12 +46,12 @@ jobs:
         ARCH=x86_64
         APPIMAGETOOL_APP_NAME="Bussin.Napture-x86_64"
          ../appimagetool-x86_64.AppImage AppDir --appimage-extract
-        mv Napture-x86_64.AppImage ../napture-x86_64.AppImage
+        mv Bussin.Napture-x86_64.AppImage ../Bussin.Napture-x86_64.AppImage
         echo "AppImage created successfully."
     - name: Publish AppImage to Releases
       uses: actions/upload-artifact@v4.3.3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        path: napture-x86_64.AppImage
-        name: napture-x86_64.AppImage
+        path: Bussin.Napture-x86_64.AppImage
+        name: Bussin.Napture-x86_64.AppImage
