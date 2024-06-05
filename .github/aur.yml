@@ -12,17 +12,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install dependencies and update AUR
+      - name: Install dependencies
+        run: sudo apt install -y git build-essential
+
+      - name: Configure SSH and clone AUR repository
         run: |
-          sudo apt install -y git build-essential
           mkdir -p ~/.ssh
           echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -t rsa aur.archlinux.org >> ~/.ssh/known_hosts
-          mkdir -p .github/aur  # Create aur/ relative to the workflow file
-          cd .github/aur
-          cp ../../PKGBUILD .
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_rsa
+          git clone ssh://aur@aur.archlinux.org/napture.git napture
+
+      - name: Copy PKGBUILD and generate .SRCINFO
+        run: |
+          cp PKGBUILD napture/
+          cd napture
           makepkg --printsrcinfo > .SRCINFO
+
+      - name: Commit and push changes to AUR
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
           git add PKGBUILD .SRCINFO
           git commit -m "Update PKGBUILD for version ${{ github.event.release.tag_name }}"
           git push
