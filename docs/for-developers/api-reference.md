@@ -18,7 +18,7 @@ APIs have rate limits. They are provided in the headers.
 | `GET` | https://api.buss.lol/ |
 {% endhint %}
 
-{% hint style="info" %}
+{% hint style="success" %}
 ### RETURNS
 ```txt
 Hello, world! The available endpoints are:
@@ -109,6 +109,9 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
     "ip":"https://github.com/face-hh/webx-registrar"
 }
 ```
+{% endhint %}
+
+{% hint style="danger" %}
 ### IF DOMAIN DOES NOT EXIST
 *Does not return anything.*
 {% endhint %}
@@ -146,7 +149,7 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
 ```
 {% endhint %}
 
-{% hint style="warning" %}
+{% hint style="danger" %}
 ### IF THE BODY OF YOUR `POST` REQUEST IS NOT VALID
 `400 Bad Request`
 
@@ -193,7 +196,7 @@ Quick reminder: unless specified, all parameters are required.
 ```
 {% endhint %}
 
-{% hint style="warning" %}
+{% hint style="danger" %}
 ### IF THE BODY OF YOUR `POST` REQUEST IS NOT VALID
 `400 Bad Request`
 
@@ -240,7 +243,7 @@ Quick reminder: unless specified, all parameters are required.
 
 {% endhint %}
 
-{% hint style="warning" %}
+{% hint style="danger" %}
 ### IF THE BODY OF YOUR `PUT` REQUEST IS NOT VALID *OR* SPECIFIED `KEY` IS NOT VALID
 `400 Bad Request`
 
@@ -265,7 +268,7 @@ Quick reminder: unless specified, all parameters are required.
 `200 OK`
 {% endhint %}
 
-{% hint style="warning" %}
+{% hint style="danger" %}
 ### IF THE REQUEST HAS AN INVALID PARAMETER
 `400 Bad Request`
 
@@ -313,7 +316,7 @@ This is disabled by default as you will need to come up with your own way of val
 ```
 {% endhint %}
 
-{% hint style="warning" %}
+{% hint style="danger" %}
 ### IF THE BODY OF YOUR `POST` REQUEST IS NOT VALID
 `400 Bad Request`
 
