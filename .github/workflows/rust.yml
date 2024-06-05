@@ -64,69 +64,47 @@ jobs:
       env:
         UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}
   build_win:
-    runs-on: windows-latest
-    name: Build Napture (Windows)
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
-    
-    - name: Install Inno Setup
+
+    - name: Install Dependencies
       run: |
-        echo "Downloading Inno Setup..."
-        Invoke-WebRequest -Uri 'https://jrsoftware.org/download.php/is.exe' -OutFile 'C:\is.exe'
-        echo "Installing Inno Setup..."
-        Start-Process -Wait -FilePath 'C:\is.exe' -ArgumentList '/VERYSILENT /NORESTART'
-        echo "Inno Setup installed."
-    - name: Install Rust with GNU target
-      run: |
-        rustup toolchain install stable-gnu 
-        rustup default stable-gnu
-    - name: Download and install MSYS2
-        run: |
-          $retryCount = 3
-          $downloadSucceeded = $false
-          for ($i = 1; $i -le $retryCount; $i++) {
-            Write-Host "Downloading MSYS2 (Attempt $i)..."
-            try {
-                Invoke-WebRequest -Uri 'https://repo.msys2.org/distrib/x86_64/msys2-x86_64-20240507.exe' -OutFile 'C:\msys2-x86_64.exe' -ErrorAction Stop
-                $downloadSucceeded = $true
-                break
-            } catch {
-                Write-Host "Failed to download MSYS2 (Attempt $i). Retrying..."
-            }
-          }
-          if (-not $downloadSucceeded) {
-            Write-Error "Failed to download MSYS2 after $retryCount attempts."
-              exit 1
-          }
-          Start-Process -Wait -FilePath 'C:\msys2-x86_64.exe' -ArgumentList '/VERYSILENT /NORESTART'
-  shell: powershell
+        echo "Installing dependencies..."
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
+        sudo apt-get install -y wine-stable innoextract
+        echo "Dependencies installed."
         
-    - name: Run MSYS2 Commands
-      run: |
-        C:\msys64\mingw32.exe pacman -Syu
-        C:\msys64\mingw32.exe pacman -S mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua
-        $env:PATH += ";C:\msys64\mingw64\include;C:\msys64\mingw64\bin;C:\msys64\mingw64\lib"
-   
     - name: Build Napture
       run: |
         echo "Building Napture..."
         cd napture
+        export PKG_CONFIG_PATH=/usr/lib/pkgconfig
         cargo build --release
         echo "Napture built successfully."
-      
+    
+    - name: Install Inno Setup
+      run: |
+        echo "Installing Inno Setup..."
+        wget "https://jrsoftware.org/download.php/is.exe" -O is.exe
+        wine is.exe /VERYSILENT /NORESTART
+        echo "Inno Setup installed."
+    
     - name: Create Installer
       run: |
         echo "Creating Installer..."
         cd installer
-        & 'C:\Program Files\Inno Setup 6\ISCC.exe' setup.iss
+        wine "C:\\Program Files\\Inno Setup 6\\ISCC.exe" setup.iss
         echo "Installer created successfully."
       
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: NaptureWindowsSetup.exe
-        path: installer\setup.exe
+        path: installer/setup.exe
+  
   upload:
    name: "Upload Release"
    runs-on: ubuntu-24.04
