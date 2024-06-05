@@ -12,7 +12,7 @@ const fs = require('fs');
 let captchas = {};
 
 const app = express();
-const port = 6969;
+const port = 8000;
 const apiKeysEnabled = false
 
 app.use(bodyParser.urlencoded({
@@ -44,11 +44,6 @@ const apilimiter = new FastRateLimit({
   ttl       : 60 * 60  // time-to-live value of token bucket (in seconds)
 });
 
-const globallimiter = new FastRateLimit({
-  threshold : 100, // available tokens over timespan
-  ttl       : 10 * 60  // time-to-live value of token bucket (in seconds)
-});
-
 app.set('trust proxy', 1);
 
 async function connectToMongo() {
@@ -67,9 +62,6 @@ app.post('/domain', async (req, res) => {
     if (!limiter.hasTokenSync(req.ip)) {
         return res.status(429).send("Try again in an hour")
     }
-    if (!globallimiter.consumeSync("Global")) {
-        return res.status(429).send("The DNS is under attack, try again in 10 minutes or use a diferent registrar")
-    }
 
     const secretKey = generateSecretKey(24);
 
@@ -83,7 +75,7 @@ app.post('/domain', async (req, res) => {
 });
 
 app.post('/domainapi/:apiKey', async (req, res) => {
-    if (!apilimiter.consumeSync(req.params.apiKey)) {
+    if (!apilimiter.hasTokenSync(req.params.apiKey)) {
         return res.status(429).send("The hourly limit for your API key has been reached")
     }
 
@@ -130,7 +122,7 @@ async function do_the_register_shit(newDomain, res, secretKey, req){
             return res.status(409).send();
         }
 
-        const offensiveWords = ["nigg", "sex", "porn", "igg"];
+        const offensiveWords = ["nigg", "sex", "porn"];
 
         if (offensiveWords.some(word => newDomain.name.includes(word))) {
             return res.status(400).send("The given domain is offensive.");
