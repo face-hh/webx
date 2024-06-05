@@ -32,7 +32,6 @@ jobs:
     - name: Install AppImageTool
       run: |
         echo "Installing AppImageTool..."
-        cd napture
         wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
         chmod +x appimagetool-x86_64.AppImage
         echo "AppImageTool installed."
@@ -41,15 +40,16 @@ jobs:
         echo "Creating Napture AppImage..."
         cd napture
         mkdir -p AppDir/usr/bin
-        cp -r target/release/ AppDir/usr/bin/
+        cp target/release/webx AppDir/usr/bin/
         cp io.github.face_hh.Napture.desktop AppDir/
         cp io.github.face_hh.Napture.svg AppDir/
-        ./appimagetool-x86_64.AppImage AppDir --appimage-extract
+         ../appimagetool-x86_64.AppImage AppDir --appimage-extract
+        mv Napture-x86_64.AppImage ../napture-x86_64.AppImage
         echo "AppImage created successfully."
     - name: Publish AppImage to Releases
       uses: actions/upload-artifact@v4.3.3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        path: /napture/napture-x86_64.AppImage
+        path: napture-x86_64.AppImage
         name: napture-x86_64.AppImage
