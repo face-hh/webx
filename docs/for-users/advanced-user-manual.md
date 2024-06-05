@@ -17,10 +17,10 @@ This section contains content from contributors and 3rd parties. It has been mar
 
 Since WebX is an open-source network, there are different browsers available, like the following:
 
-| Provider | Where to get it it | Maintainer | Recommended | Notes |
-| -------- | ------------------ | ---------- | ----------- | ----- |
-| Napture | Go to the [releases tab of the official WebX repository](https://github.com/face-hh/webx/releases/latest). | :heavy_check_mark: **Official WebX service** | YES | Open source |
-| Bussinga | Go to the [Bussinga repository](https://github.com/codingMASTER398/bussinga/releases/latest). | [codingMASTER398](https://github.com/codingMASTER398) | YES if you are a Windows user. | As of Napture 1.2.2, Bussinga 0.0.1 seems to work better. |
-| Fapture | Go to the [Fapture repository](https://github.com/nojasm/fapture/) | [nojasm](https://github.com/nojasm/) | ??? | No releases, needs to be compiled by the end user.<br/> Webview based. |
+| Provider | Where to get it it | Maintainer | Recommended |
+| -------- | ------------------ | ---------- | ----------- |
+| Napture | Go to the [releases tab of the official WebX repository](https://github.com/face-hh/webx/releases/latest). | :heavy_check_mark: **Official WebX service** | YES |
+| Bussinga | Go to the [Bussinga repository](https://github.com/codingMASTER398/bussinga/releases/latest). | [codingMASTER398](https://github.com/codingMASTER398) | YES if you are a Windows user. As of Napture 1.2.2, Bussinga 0.0.1 seems to work better on MS Windows. |
+| Fapture | Go to the [Fapture repository](https://github.com/nojasm/fapture/) | [nojasm](https://github.com/nojasm/) | Kind off. Compatible with both CSS 3.25 and standard CSS 3. Has no releases and needs to be compiled by the end user. Webview based. |
 
 ###### Something is wrong with this table? As 3rd party browsers get updated, this table can get outdated over time. [Make a PR to help keep it up to date.](https://github.com/face-hh/webx/blob/main/docs) Thanks in advance!
