@@ -11,6 +11,7 @@ env:
 
 jobs:
   build:
+    name: "Build Napture"
     runs-on: ubuntu-24.04
 
     steps:
@@ -31,10 +32,12 @@ jobs:
         echo "Napture built successfully."
     - name: Install AppImageTool
       run: |
+        echo "Starting artifact upload phase..."
         echo "Installing AppImageTool..."
         wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
         chmod +x appimagetool-x86_64.AppImage
         echo "AppImageTool installed."
+    #DEBUGGING: LIST FILES TO FIND THE APPIMAGE.
     - name: Create Napture AppImage
       run: |
         echo "Creating Napture AppImage..."
@@ -45,12 +48,34 @@ jobs:
         cp io.github.face_hh.Napture.svg AppDir/
         ARCH=x86_64
          ../appimagetool-x86_64.AppImage AppDir --appimage-extract
+        ls
         mv webx-x86_64.AppImage ../Bussin.Napture-x86_64.AppImage
         echo "AppImage created successfully."
-    - name: Publish AppImage to Releases
-      uses: actions/upload-artifact@v4.3.3
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Rename AppImage
+      run: |
+        echo "Renaming AppImage..."
+        mv naputure-x86_64.AppImage naputure-v${{ github.sha }}.AppImage
+        echo "AppImage renamed successfully."
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
       with:
-        path: Bussin.Napture-x86_64.AppImage
-        name: Bussin.Napture-x86_64.AppImage
+        name: napture-v${{ github.sha }}.AppImage
+        path: napture-v${{ github.sha }}.AppImage
+  upload:
+   name: "Upload Release"
+   runs-on: ubuntu-24.04
+   steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: Bussin.Napture-x86_64.AppImage
+      - name: Publish AppImage to Releases
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: napture-v${{ github.sha }}.AppImage
+          asset_name: napture-v${{ github.sha }}.AppImage
+          asset_content_type: application/octet-stream
