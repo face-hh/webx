@@ -8,12 +8,12 @@ Here you'll find usefull resources, like the User manual for using the WebX and 
 
 ## Main manuals
 
-[User manual](user-start.md)
+[User manual](for-users/basic-user-manual.md)
 
-[Developer documentation](dev-start.md)
+[Developer documentation](for-developers/dev-start.md)
 
 ## Useful links
 
-[Keybinds](user-advanced.md#keybinds)
+[Keybinds](for-users/advanced-user-manual.md#keybinds)
 
 [WebX API reference](dev-publish.md#webx-dns)
