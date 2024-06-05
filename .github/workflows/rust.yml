@@ -4,15 +4,13 @@ on:
   push:
     branches:
       - master
-    paths:
-      - 'napture/**'
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-    name: "Build Napture"
+    name: "Build Napture (Ubuntu)"
     runs-on: ubuntu-24.04
 
     steps:
@@ -40,7 +38,6 @@ jobs:
         wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
         chmod +x appimagetool-x86_64.AppImage
         echo "AppImageTool installed."
-    #DEBUGGING: LIST FILES TO FIND THE APPIMAGE.
     - name: Create Napture AppImage
       run: |
         echo "Creating Napture AppImage..."
@@ -66,16 +63,53 @@ jobs:
         path: napture-v${{ github.sha }}.AppImage
       env:
         UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}
+  build_win:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install Inno Setup
+      run: |
+        echo "Downloading Inno Setup..."
+        Invoke-WebRequest -Uri 'https://jrsoftware.org/download.php/is.exe' -OutFile 'C:\is.exe'
+        echo "Installing Inno Setup..."
+        Start-Process -Wait -FilePath 'C:\is.exe' -ArgumentList '/VERYSILENT /NORESTART'
+        echo "Inno Setup installed."
+        
+    - name: Build Napture
+      run: |
+        echo "Building WebX..."
+        cd napture
+        cargo build --release
+        echo "WebX built successfully."
+      
+    - name: Create Installer
+      run: |
+        echo "Creating Installer..."
+        cd installer
+        & 'C:\Program Files\Inno Setup 6\ISCC.exe' setup.iss
+        echo "Installer created successfully."
+      
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: NaptureWindowsSetup.exe
+        path: installer\setup.exe
   upload:
    name: "Upload Release"
    runs-on: ubuntu-24.04
    needs:
       - build
    steps:
-      - name: Download Artifact
+      - name: Download Ubuntu Artifact
         uses: actions/download-artifact@v4.1.7
         with:
           name: napture-v${{ github.sha }}.AppImage
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: NaptureWindowsSetup.exe
       - name: Download Dependencies
         run: |
             sudo add-apt-repository universe
@@ -88,4 +122,4 @@ jobs:
         run: |
             wget -q https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
             chmod +x pyuploadtool-x86_64.AppImage
-            ./pyuploadtool-x86_64.AppImage napture-v${{ github.sha }}.AppImage*
+            ./pyuploadtool-x86_64.AppImage napture-v${{ github.sha }}.AppImage* NaptureWindowsSetup.exe
