@@ -1,27 +1,14 @@
----
-# https://vitepress.dev/reference/default-theme-home-page
-layout: home
+# Welcome to Bussin WebX
+### An alternative to the World Wide Web
 
-hero:
-  name: "Welcome to WebX"
-  tagline: "An alternative to the World Wide Web"
-  actions:
-    - theme: brand
-      text: User manual
-      link: /user-manual
-    - theme: alt
-      text: Developer docs
-      link: /dev-start
+Here you'll find usefull resources, like the User manual for using the WebX and the full developer docs.
 
-features:
-  - title: How to use Napture
-    details: WebX's official browser.
-    link: /user-manual
-  - title: How to publish a site & register a domain
-    details: yourcoolsite.sigma is waiting.
-    link: /dev-publish
-  - title: How to code WebX sites
-    details: Learn HTML++, CSS 3.25, and Luau.
-    link: /dev-start
----
+## Main manuals
 
+[User manual](user-start.md)
+[Developer documentation](dev-start.md)
+
+## Useful links
+
+[Keybinds](user-advanced.md#keybinds)
+[WebX API reference](dev-publish.md#webx-dns)
