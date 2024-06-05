@@ -93,9 +93,9 @@ jobs:
 
     - name: Set PATH
       run: |
-        PATH=C:\msys64\mingw64\include;%PATH%
-        PATH=C:\msys64\mingw64\bin;%PATH%
-        PATH=C:\msys64\mingw64\lib;%PATH%
+        set PATH=C:\msys64\mingw64\include;%PATH%
+        set PATH=C:\msys64\mingw64\bin;%PATH%
+        set PATH=C:\msys64\mingw64\lib;%PATH%
 
     - name: Build Napture
       run: |
