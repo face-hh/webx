@@ -13,7 +13,7 @@ use mlua::{OwnedFunction, Value};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Map;
 
-use crate::{lualog, globals::LUA_TIMEOUTS};
+use crate::{globals::LUA_TIMEOUTS, lualog};
 use glib::translate::FromGlib;
 use glib::SourceId;
 
@@ -46,20 +46,28 @@ fn set_timeout(_lua: &Lua, func: LuaOwnedFunction, ms: u64) -> LuaResult<i32> {
     if let Ok(mut timeouts) = LUA_TIMEOUTS.lock() {
         if ms == 0 {
             if let Err(e) = func.call::<_, ()>(()) {
-                lualog!("error", format!("error calling function in set_timeout: {}", e));
+                lualog!(
+                    "error",
+                    format!("error calling function in set_timeout: {}", e)
+                );
             }
             return Ok(-1);
         } else {
             let handle = glib::spawn_future_local(async move {
                 glib::timeout_future(std::time::Duration::from_millis(ms)).await;
                 if let Err(e) = func.call::<_, ()>(()) {
-                    lualog!("error", format!("error calling function in set_timeout: {}", e));
+                    lualog!(
+                        "error",
+                        format!("error calling function in set_timeout: {}", e)
+                    );
                 }
             });
             timeouts.push(handle.source().clone());
             if let Some(id) = handle.as_raw_source_id() {
                 return Ok(id as i32);
-            } else { return Ok(-1); }
+            } else {
+                return Ok(-1);
+            }
         }
     }
     Err(LuaError::runtime("couldn't create timeout"))
@@ -67,21 +75,15 @@ fn set_timeout(_lua: &Lua, func: LuaOwnedFunction, ms: u64) -> LuaResult<i32> {
 
 pub(crate) fn clear_timeout(id: i32) -> LuaResult<()> {
     if id > 0 {
-        let id = unsafe {SourceId::from_glib(id.try_into().unwrap())};
-        if let Some(source) = glib::MainContext::default()
-             .find_source_by_id(&id) {
+        let id = unsafe { SourceId::from_glib(id.try_into().unwrap()) };
+        if let Some(source) = glib::MainContext::default().find_source_by_id(&id) {
             source.destroy();
         }
     }
     Ok(())
 }
 
-fn get(
-    lua: &Lua,
-    class: String,
-    tags: Rc<RefCell<Vec<Tag>>>,
-    multi: bool
-) -> LuaResult<LuaTable<>> {
+fn get(lua: &Lua, class: String, tags: Rc<RefCell<Vec<Tag>>>, multi: bool) -> LuaResult<LuaTable> {
     let global_table = lua.create_table()?;
 
     let tags_ref = tags.borrow();
@@ -121,7 +123,9 @@ fn get(
                 lua.create_function(move |_, label: Option<String>| {
                     let label = if let Some(label) = label {
                         label
-                    } else { "".to_string()};
+                    } else {
+                        "".to_string()
+                    };
                     tags2.borrow()[i].widget.set_contents_(label);
                     Ok(())
                 })?,
@@ -231,12 +235,16 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
 }
 
 // todo: make this async if shit breaks
-pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: String) -> LuaResult<()> {
+pub(crate) async fn run(
+    luacode: String,
+    tags: Rc<RefCell<Vec<Tag>>>,
+    taburl: String,
+) -> LuaResult<()> {
     let lua = Lua::new_with(
         /*StdLib::COROUTINE | StdLib::STRING |
         StdLib::TABLE | StdLib::MATH,*/
         StdLib::ALL_SAFE,
-        LuaOptions::new().catch_rust_panics(true)
+        LuaOptions::new().catch_rust_panics(true),
     )?;
     let globals = lua.globals();
 
@@ -347,8 +355,8 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
         lua.to_value(&json)
     })?;
 
-    let json_stringify = lua.create_function(|lua, table: LuaTable| {
-        match serde_json::to_string(&table) {
+    let json_stringify =
+        lua.create_function(|lua, table: LuaTable| match serde_json::to_string(&table) {
             Ok(value) => Ok(lua.to_value(&value)?),
             Err(_) => {
                 lualog!(
@@ -357,69 +365,82 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
                 );
                 Ok(lua.null())
             }
-        }
-    })?;
+        })?;
 
     let json_parse = lua.create_function(|lua, json: String| {
         match serde_json::from_str::<serde_json::Value>(&json) {
             Ok(value) => Ok(lua.to_value(&value)?),
             Err(_) => {
-                lualog!(
-                    "error",
-                    format!("Failed to parse JSON. Returning null.")
-                );
+                lualog!("error", format!("Failed to parse JSON. Returning null."));
                 Ok(lua.null())
             }
         }
     })?;
 
-    let require = lua.create_async_function(|lua, module: String| async move {
-        if !module.starts_with("http://") && !module.starts_with("https://") {
-            lualog!("error", "Module argument must be a URL.");
-            return Ok(lua.null());
-        }
+    window_table.set("link", taburl.clone())?;
+    window_table.set("query", query_table)?;
 
-        let handle = thread::spawn(move || {
-            let client = reqwest::blocking::Client::new();
+    let require = lua.create_async_function(move |lua, module: String| {
+        let taburl = taburl.clone();
+        async move {
+            if let Ok(mut uri) = url::Url::parse(&taburl) {
+                let result = if uri.scheme() == "file" {
+                    if let Ok(mut segments) = uri.path_segments_mut() {
+                        segments.pop_if_empty();
+                        segments.push(&module);
+                    }
 
-            let req = client.get(module);
+                    if let Ok(path) = uri.to_file_path() {
+                        if let Ok(contents) = std::fs::read_to_string(path) {
+                            contents
+                        } else {
+                            lualog!("error", format!("file does not exist"));
+                            return Ok(lua.null());
+                        }
+                    } else {
+                        lualog!("error", format!("invalid file path"));
+                        return Ok(lua.null());
+                    }
+                } else {
+                    let handle = thread::spawn(move || {
+                        let client = reqwest::blocking::Client::new();
+                        let req = client.get(module);
+                        let res = match req.send() {
+                            Ok(res) => res,
+                            Err(e) => {
+                                return format!("Failed to send request: {}", e).into();
+                            }
+                        };
 
-            let res = match req.send() {
-                Ok(res) => res,
-                Err(e) => {
-                    return format!("Failed to send request: {}", e).into();
+                        let text = res.text().unwrap_or_default();
+                        text
+                    });
+
+                    match handle.join() {
+                        Ok(result) => result,
+                        Err(_) => {
+                            lualog!(
+                                "error",
+                                format!("Failed to join request thread at fetch request. Originates from the Lua runtime. Returning null.")
+                            );
+                            "null".to_string()
+                        }
+                    }
+                };
+
+                if let Err(e) = lua.sandbox(true) {
+                    lualog!("error", format!("failed to enable sandbox: {}", e));
+                    return Err(LuaError::runtime("failed to enable sandbox"));
+                } else {
+                    let load = lua.load(result);
+                    return load.eval::<LuaValue>();
                 }
-            };
-
-            let errcode = Rc::new(RefCell::new(res.status().as_u16()));
-
-            let text = res.text().unwrap_or_default();
-
-            text
-        });
-
-        let result = match handle.join() {
-            Ok(result) => result,
-            Err(_) => {
-                lualog!(
-                    "error",
-                    format!("Failed to join request thread at fetch request. Originates from the Lua runtime. Returning null.")
-                );
-                "null".to_string()
             }
-        };
 
-        if let Err(e) = lua.sandbox(true) {
-            lualog!("error", format!("failed to enable sandbox: {}", e));
-            Err(LuaError::runtime("failed to enable sandbox"))
-        } else {
-            let load = lua.load(result);
-            load.eval::<LuaValue>()
+            lualog!("error", "invalid url");
+            Ok(lua.null())
         }
     })?;
-
-    window_table.set("link", taburl)?;
-    window_table.set("query", query_table)?;
 
     json_table.set("stringify", json_stringify)?;
     json_table.set("parse", json_parse)?;
@@ -427,21 +448,19 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
         "get",
-        lua.create_function(move |lua, (class, multiple): (String, Option<bool>) | {
+        lua.create_function(move |lua, (class, multiple): (String, Option<bool>)| {
             get(lua, class, tags.clone(), multiple.unwrap_or(false))
-        })?
+        })?,
     )?;
     globals.set(
         "set_timeout",
-        lua.create_function(move |lua, (func, ms): (LuaOwnedFunction, u64) | {
-           set_timeout(lua, func, ms)
-        })?
+        lua.create_function(move |lua, (func, ms): (LuaOwnedFunction, u64)| {
+            set_timeout(lua, func, ms)
+        })?,
     )?;
     globals.set(
         "clear_timeout",
-        lua.create_function(move |_lua, id: i32| {
-           clear_timeout(id)
-        })?
+        lua.create_function(move |_lua, id: i32| clear_timeout(id))?,
     )?;
     globals.set("fetch", fetchtest)?;
     globals.set("json", json_table)?;
@@ -463,7 +482,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
                 );
                 Err(LuaError::runtime("Failed to run script!"))
             }
-       }
+        }
     }
 }
 
@@ -967,7 +986,9 @@ impl Luable for gtk::Picture {
         self.set_visible(visible);
     }
     fn get_source_(&self) -> String {
-        self.alternative_text().unwrap_or(GString::new()).to_string()
+        self.alternative_text()
+            .unwrap_or(GString::new())
+            .to_string()
     }
     fn set_source_(&self, source: String) {
         let stream = match crate::b9::html::fetch_image_to_pixbuf(source.clone()) {

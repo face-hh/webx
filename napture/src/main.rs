@@ -57,8 +57,8 @@ use historymod::HistoryObject;
 
 use globals::APPDATA_PATH;
 use globals::DNS_SERVER;
-use globals::LUA_TIMEOUTS;
 use globals::LUA_LOGS;
+use globals::LUA_TIMEOUTS;
 use gtk::gdk;
 use gtk::gdk::Display;
 use gtk::gio;
@@ -184,12 +184,19 @@ fn get_time() -> String {
     chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
-fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<RefCell<serde_json::Value>>) {
+fn build_ui(
+    app: &adw::Application,
+    args: Rc<RefCell<Vec<String>>>,
+    config: Rc<RefCell<serde_json::Value>>,
+) {
     let history = Rc::new(RefCell::new(History::new()));
 
-    let default_url = if let Some(dev_build) = args.borrow().get(1) { // cli
+    let default_url = if let Some(dev_build) = args.borrow().get(1) {
+        // cli
         dev_build.to_string()
-    } else { DEFAULT_URL.to_string() };
+    } else {
+        DEFAULT_URL.to_string()
+    };
 
     let default_dns_url = fetch_dns(default_url.clone());
 
@@ -221,7 +228,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         "file.png",
         // cursor_pointer.as_ref(),
         tabs.clone(),
-        default_tab_url.clone()
+        default_tab_url.clone(),
     );
 
     history
@@ -312,7 +319,9 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
             if let Some(res) = entry.as_object() {
                 if let (Some(raw_url), Some(raw_date)) = (res.get("url"), res.get("date")) {
                     if let (Some(url), Some(date)) = (raw_url.as_str(), raw_date.as_str()) {
-                        history.borrow_mut().add_to_history(url.to_owned(), date.to_owned(), false);
+                        history
+                            .borrow_mut()
+                            .add_to_history(url.to_owned(), date.to_owned(), false);
                     }
                 }
             }
@@ -360,9 +369,11 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
     let rc_search_refresh = rc_search.clone();
     refresh_button.connect_clicked({
         let history = history.clone();
-        history
-            .borrow_mut()
-            .add_to_history(rc_search_refresh.borrow().text().to_string(), get_time(), true);
+        history.borrow_mut().add_to_history(
+            rc_search_refresh.borrow().text().to_string(),
+            get_time(),
+            true,
+        );
         move |_button| {
             handle_search_update(
                 rc_scroll_refresh.clone(),
@@ -438,11 +449,10 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         }
     });
 
-    glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || { // every 5 seconds remove "stale" timeouts
+    glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || {
+        // every 5 seconds remove "stale" timeouts
         let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
-        timeouts.retain(|source| {
-            !source.is_destroyed()
-        });
+        timeouts.retain(|source| !source.is_destroyed());
         glib::ControlFlow::Continue
     });
 }
@@ -592,8 +602,12 @@ fn fetch_dns(url: String) -> String {
         "https://{}/domain/{}/{}",
         DNS_SERVER.lock().unwrap().as_str(),
         url.split('.').next().unwrap_or(""),
-        url.split('.').nth(1).unwrap_or("")
-            .split('/').next().unwrap_or(""),
+        url.split('.')
+            .nth(1)
+            .unwrap_or("")
+            .split('/')
+            .next()
+            .unwrap_or(""),
     );
 
     let client = match client.build() {
@@ -608,8 +622,7 @@ fn fetch_dns(url: String) -> String {
         let status = response.status();
 
         if let Ok(json) = response.json::<DomainInfo>() {
-            let path = url.split_once('/')
-                .unwrap_or(("", "")).1;
+            let path = url.split_once('/').unwrap_or(("", "")).1;
             json.ip + &format!("/{}", path)
         } else {
             lualog!(
@@ -740,7 +753,11 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
         // set the DNS server to the new value
         DNS_SERVER.lock().unwrap().clear();
         DNS_SERVER.lock().unwrap().push_str(&dns);
-        set_config(String::from("dns"), serde_json::Value::String(dns.to_string()), false)
+        set_config(
+            String::from("dns"),
+            serde_json::Value::String(dns.to_string()),
+            false,
+        )
     });
 
     let scroll = gtk::ScrolledWindow::builder().build();
@@ -879,7 +896,8 @@ fn get_config() -> serde_json::Value {
     let contents = fs::read_to_string(&json_path).expect("Failed to read configuration for theme.");
 
     println!("{:?}", json_path);
-    let json_contents: serde_json::Value = serde_json::from_str(&contents).expect("Failed to parse JSON");
+    let json_contents: serde_json::Value =
+        serde_json::from_str(&contents).expect("Failed to parse JSON");
 
     json_contents
 }
@@ -888,7 +906,8 @@ fn set_config(property: String, value: serde_json::Value, array: bool) {
     let json_path = PathBuf::from(APPDATA_PATH.lock().unwrap().clone()).join("config.json");
     let contents = fs::read_to_string(&json_path).expect("Failed to read configuration for theme.");
 
-    let mut json_contents: serde_json::Value = serde_json::from_str(&contents).expect("Failed to parse JSON");
+    let mut json_contents: serde_json::Value =
+        serde_json::from_str(&contents).expect("Failed to parse JSON");
 
     if array {
         if json_contents[property.clone()].is_array() {
@@ -900,7 +919,7 @@ fn set_config(property: String, value: serde_json::Value, array: bool) {
 
     if let Ok(updated_json) = serde_json::to_string_pretty(&json_contents) {
         match fs::write(&json_path, &updated_json) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => {
                 eprintln!("ERROR: Failed to save config to disk. Error: {}", err);
             }

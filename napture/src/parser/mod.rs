@@ -31,13 +31,18 @@ pub fn parse(input: &str) -> Result<HashMap<String, HashMap<String, String>>, Pa
             current_declarations.clear();
         } else if line.ends_with('}') {
             if let Some(selector) = current_selector.take() {
-                result.entry(selector).and_modify(|val: &mut HashMap<String, String>| {
-                    for (key, value) in current_declarations.iter() {
-                        val.insert(key.clone(), value.clone());
-                    }
-                }).or_insert(current_declarations.clone());
+                result
+                    .entry(selector)
+                    .and_modify(|val: &mut HashMap<String, String>| {
+                        for (key, value) in current_declarations.iter() {
+                            val.insert(key.clone(), value.clone());
+                        }
+                    })
+                    .or_insert(current_declarations.clone());
             } else {
-                return Err(ParseError { message: String::from("Closing brace without opening selector") } );
+                return Err(ParseError {
+                    message: String::from("Closing brace without opening selector"),
+                });
             }
         } else {
             let parts: Vec<&str> = line.split(':').collect();
@@ -46,13 +51,17 @@ pub fn parse(input: &str) -> Result<HashMap<String, HashMap<String, String>>, Pa
                 let value = parts[1].trim_end_matches(';').trim().to_string();
                 current_declarations.insert(property, value);
             } else {
-                return Err(ParseError { message: String::from("Closing brace without opening selector") } );
+                return Err(ParseError {
+                    message: String::from("Closing brace without opening selector"),
+                });
             }
         }
     }
 
     if current_selector.is_some() {
-        return Err(ParseError { message: String::from("Closing brace without opening selector") } );
+        return Err(ParseError {
+            message: String::from("Closing brace without opening selector"),
+        });
     }
 
     Ok(result)

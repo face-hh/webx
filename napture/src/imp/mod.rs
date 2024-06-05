@@ -18,14 +18,12 @@ impl ObjectSubclass for Window {
 impl ObjectImpl for Window {
     fn constructed(&self) {
         self.parent_constructed();
-
     }
 }
 impl WidgetImpl for Window {}
 impl WindowImpl for Window {
     // Save window state right before the window will be closed
     fn close_request(&self) -> glib::Propagation {
-
         glib::Propagation::Proceed
     }
 }
