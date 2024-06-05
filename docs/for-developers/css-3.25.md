@@ -162,12 +162,56 @@ As of B9 v1.2.2, built-in colors (such as `red`, `orange`, `lightblue`, and othe
 | `underline` | Any of the following: `none`, `single`, `double`, `low`, `error` | Gives the text an underline. |
 | `underline-color` | Any `HEX` value | If underline is present, this will set the color of the overline. |
 
-## Input and textarea
+### Input and textarea
 > Width and height are considered "Layout" directives, but since they are only supported by `<input>` and `<textarea>` (as of B9 1.2.2), they have their own category for now.
 
 | <div style="width:150px">Property</div> | Possible value | Explanation |
 | -------- | ----- | ----------- |
 | `width` | Any `px` value | Sets the width (horizontal size) of the item. |
 | `height` | Any `px` value | Sets the height (vertical size) of the item. |
+
+## All CSS 3.25 properties
+
+| Property             |
+|----------------------|
+| `direction`          |
+| `align_items`        |
+| `width`              |
+| `height`             |
+| `line_height`        |
+| `color`              |
+| `wrap`               |
+| `background_color`   |
+| `font_family`        |
+| `font_weight`        |
+| `underline`          |
+| `underline_color`    |
+| `overline`           |
+| `overline_color`     |
+| `strikethrough`      |
+| `strikethrough_color`|
+| `margin_top`         |
+| `margin_bottom`      |
+| `margin_left`        |
+| `margin_right`       |
+| `border_style`       |
+| `border_color`       |
+| `border_width`       |
+| `border_radius`      |
+| `padding`            |
+| `font_size`          |
+| `gap`                |
+| `opacity`            |
+
+## Browser compatibility
+This table will give you an insigh of what features are *not* supported by 3rd party WebX browsers. To ensure it is up to date, check the "Current version". 
+
+| Browser | Rendering engine | Not compatible with | Explanation | Current version |
+| ------- | ---------------- | ------------------- | ----------- | --------------- |
+| Bussin Napture | B9 | Nothing. Everything is supported! | Official WebX browser, features only get added to documentation after being added to B9 | **v1.2.2** |
+| Bussinga | Tauri with JS | `line_height`, `color`, `wrap`, `background_color`, `font_family`, `font_weight`, `underline`, `underline_color`, `overline`, `overline_color`, `strikethrough`, `strikethrough_color`, `border_style`, `border_color`, `border_width`, `border_radius`, `font_size`, `opacity` | No explanation provided. | **v0.0.1** |
+| Fapture | Google Chrome V8 | Nothing. Everything is supported! | It is a WebView based browser, so regular CSS 3 parsing is used to render CSS 3.25. | ***No version number provided*** |
+
+###### Something is wrong with this table? As 3rd party browsers get updated, this table can get outdated over time. [Make a PR to help keep it up to date.](https://github.com/face-hh/webx/blob/main/docs) Thanks in advance!
 
 That would be it for styling! Now it's time for the fun part: scripting!
