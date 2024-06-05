@@ -389,8 +389,6 @@ pub(crate) async fn run(
                     segments.extend(&module.split("/").collect::<Vec<&str>>());
                 }
 
-                println!("{}", uri);
-
                 let result = if uri.scheme() == "file" {
                     if let Ok(path) = uri.to_file_path() {
                         if let Ok(contents) = std::fs::read_to_string(path) {
