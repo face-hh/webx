@@ -118,6 +118,6 @@ We're done with the HTML++, **but you must note one more thing**.
 
 {% hint style="info" %}
 Never give a class the same name than a supported HTML++ tag. [This is because of how Luau gets elements.](luau.md)
-{% hint %}
+{% endhint %}
 
 Now, let's move onto styling.
