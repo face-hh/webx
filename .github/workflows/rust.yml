@@ -82,6 +82,8 @@ jobs:
       - name: Publish AppImage to Releases
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_CONTINUOUS_RELEASE_NAME: "Automatic Build (${{ github.sha }})"
+          GITHUB_CONTINUOUS_RELEASE_TAG: "workflow-build-${{ github.sha }}"
         run: |
             wget -q https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
             chmod +x pyuploadtool-x86_64.AppImage
