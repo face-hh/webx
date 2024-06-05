@@ -44,7 +44,7 @@ jobs:
         cp -r target/release/ AppDir/usr/bin/
         cp io.github.face_hh.Napture.desktop AppDir/
         cp io.github.face_hh.Napture.svg AppDir/
-        ./appimagetool-x86_64.AppImage AppDir
+        ./appimagetool-x86_64.AppImage AppDir --appimage-extract
         echo "AppImage created successfully."
     - name: Publish AppImage to Releases
       uses: actions/upload-artifact@v4.3.3
