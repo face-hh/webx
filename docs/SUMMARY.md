@@ -4,7 +4,7 @@
 
 ## For users
 
-* [User manual](user-start.md)
+* [User manual](for-users/basic-user-manual.md)
 * [Advanced user manual](for-users/advanced-user-manual.md)
 
 ## For developers
