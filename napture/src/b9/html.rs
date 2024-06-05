@@ -888,9 +888,7 @@ async fn fetch_file(url: String) -> String {
     }
 }
 
-async fn fetch_from_github(url: String) -> String {
-    let client: reqwest::ClientBuilder = reqwest::Client::builder();
-
+pub(crate) fn get_github_url(url: String) -> String {
     let branch = if url.contains("tree") {
         url.split('/').nth(6).unwrap_or("main")
     } else {
@@ -904,14 +902,18 @@ async fn fetch_from_github(url: String) -> String {
     })
     .join("/");
 
-    let url = format!(
+    format!(
         "https://raw.githubusercontent.com/{}/{}/{}/{}",
         url.split('/').nth(3).unwrap_or(""),
         url.split('/').nth(4).unwrap_or(""),
         branch,
         path,
-    );
+    )
+}
 
+async fn fetch_from_github(url: String) -> String {
+    let client: reqwest::ClientBuilder = reqwest::Client::builder();
+    let url = get_github_url(url);
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {

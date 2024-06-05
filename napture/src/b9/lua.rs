@@ -384,12 +384,14 @@ pub(crate) async fn run(
         let taburl = taburl.clone();
         async move {
             if let Ok(mut uri) = url::Url::parse(&taburl) {
-                let result = if uri.scheme() == "file" {
-                    if let Ok(mut segments) = uri.path_segments_mut() {
-                        segments.pop_if_empty();
-                        segments.push(&module);
-                    }
+                if let Ok(mut segments) = uri.path_segments_mut() {
+                    segments.pop_if_empty();
+                    segments.extend(&module.split("/").collect::<Vec<&str>>());
+                }
 
+                println!("{}", uri);
+
+                let result = if uri.scheme() == "file" {
                     if let Ok(path) = uri.to_file_path() {
                         if let Ok(contents) = std::fs::read_to_string(path) {
                             contents
@@ -404,7 +406,15 @@ pub(crate) async fn run(
                 } else {
                     let handle = thread::spawn(move || {
                         let client = reqwest::blocking::Client::new();
-                        let req = client.get(module);
+                        let req = client.get(if let Ok(_) = url::Url::parse(&module) {
+                            module
+                        } else {
+                            if uri.domain().unwrap_or("").to_lowercase() == "github.com" {
+                                crate::b9::html::get_github_url(uri.to_string())
+                            } else { 
+                                uri.to_string()
+                            }
+                        });
                         let res = match req.send() {
                             Ok(res) => res,
                             Err(e) => {
