@@ -90,10 +90,7 @@ jobs:
     - name: Set PATH
       run: |
         echo "Setting PATH..."
-        echo "C:\\msys64\\mingw64\\bin" >> $GITHUB_PATH
-        echo "C:\\msys64\\usr\\bin" >> $GITHUB_PATH
-        echo "C:\\msys64\\mingw64\\include" >> $GITHUB_PATH
-        echo "C:\\msys64\\mingw64\\lib" >> $GITHUB_PATH
+        $Env:Path += ';C:\msys64\mingw64\include;C:\msys64\mingw64\bin;C:\msys64\mingw64\lib'
 
     - name: Verify pkg-config
       shell: powershell
