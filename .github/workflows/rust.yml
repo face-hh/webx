@@ -43,6 +43,8 @@ jobs:
         cp target/release/webx AppDir/usr/bin/
         cp io.github.face_hh.Napture.desktop AppDir/
         cp io.github.face_hh.Napture.svg AppDir/
+        ARCH=x86_64
+        APPIMAGETOOL_APP_NAME="Bussin.Napture-x86_64"
          ../appimagetool-x86_64.AppImage AppDir --appimage-extract
         mv Napture-x86_64.AppImage ../napture-x86_64.AppImage
         echo "AppImage created successfully."
