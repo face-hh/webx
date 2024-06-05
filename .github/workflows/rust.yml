@@ -83,7 +83,7 @@ jobs:
         rustup default stable-gnu
     - name: Download and install MSYS2
       run: |
-        Invoke-WebRequest -Uri 'https://repo.msys2.org/distrib/x86_64/msys2-x86_64-<version>.exe' -OutFile 'C:\msys2-x86_64.exe'
+        Invoke-WebRequest -Uri 'https://repo.msys2.org/distrib/x86_64/msys2-x86_64-20240507.exe' -OutFile 'C:\msys2-x86_64.exe'
         Start-Process -Wait -FilePath 'C:\msys2-x86_64.exe' -ArgumentList '/VERYSILENT /NORESTART'
         
     - name: Run MSYS2 Commands
