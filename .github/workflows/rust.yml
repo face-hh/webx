@@ -40,7 +40,7 @@ jobs:
         echo "Creating Napture AppImage..."
         cd napture
         mkdir -p AppDir/usr/bin
-        cp target/debug/napture AppDir/usr/bin/
+        cp target/release/napture AppDir/usr/bin/
         cp -r resources AppDir/usr/
         cp ../webx-github-actions/napture/io.github.face_hh.Napture.desktop AppDir/
         cp ../webx-github-actions/napture/io.github.face_hh.Napture.svg AppDir/
