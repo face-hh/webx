@@ -64,14 +64,14 @@ This isn't the standard web, **HTTP**/HTTPS are **not** supported for neither sc
 ```html
 <head>
     <title>My cool web</title>
-    <link href="https://buss.log/icon.ico"> <!--This image will be the page's icon--> // [!code highlight]
+    <link href="https://buss.log/icon.ico"> <!--This image will be the page's icon-->
 
     <meta name="theme-color" content="#000000">
     <meta name="description" content="My cool web">
 
-    <link href="styles.css"> <!--This CSS file will be the page's styles--> // [!code highlight]
+    <link href="styles.css"> <!--This CSS file will be the page's styles-->
     <!--This script tag will be the page's script-->
-    <script src="script.lua" /> // [!code highlight]
+    <script src="script.lua" />
 </head>
 
 <body>

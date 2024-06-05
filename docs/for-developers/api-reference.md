@@ -32,8 +32,10 @@ Ratelimits provided in headers.
 ```
 {% endhint %}
 
-## `GET` /domains
+## `GET` /domains`?amount={x}&page={y}`
+Being `amount` and `page` optional. `amount` for the amount of domains you want the response to have per page (defaults to 15), and `page` what page you want to view.
 *Allows you to get the list of all working domains from the network.*
+
 {% hint style="info" %}
 ### YOU SEND
 | REQUEST METHOD | TARGET URL |
@@ -43,21 +45,31 @@ Ratelimits provided in headers.
 
 {% hint style="info" %}
 ### RETURNS
+
+{% code title="response.json" overflow="wrap" lineNumbers="true" %}
+
 ```json
-[
-    {
-        "tld":"it",
-        "name":"register",
-        "ip":"https://github.com/face-hh/webx-registrar"
-    },
-    {
-        "tld":"it",
-        "name":"dingle",
-        "ip":"https://github.com/face-hh/dingle-frontend"
-    }
+{
+    "domains": [
+        {
+            "tld": "it",
+            "name": "register",
+            "ip": "https://github.com/face-hh/webx-registrar"
+        },
+        {
+            "tld": "it",
+            "name": "dingle",
+            "ip": "https://github.com/face-hh/dingle-frontend"
+        }
+    ],
     ...
-]
+    "page": 1,
+    "limit": 15
+}
 ```
+
+{% endcode %}
+
 {% endhint %}
 
 ## `GET` /tlds
