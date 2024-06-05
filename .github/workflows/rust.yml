@@ -41,16 +41,14 @@ jobs:
         cd napture
         mkdir -p AppDir/usr/bin
         cp -r target/release/ AppDir/usr/bin/
-        cp ../webx-github-actions/napture/io.github.face_hh.Napture.desktop AppDir/
-        cp ../webx-github-actions/napture/io.github.face_hh.Napture.svg AppDir/
+        cp io.github.face_hh.Napture.desktop AppDir/
+        cp io.github.face_hh.Napture.svg AppDir/
         ./appimagetool-x86_64.AppImage AppDir
         echo "AppImage created successfully."
     - name: Publish AppImage to Releases
-      uses: actions/upload-release-asset@v1
+      uses: actions/upload-artifact@v4.3.3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: napture-x86_64.AppImage
-        asset_name: napture-x86_64.AppImage
-        asset_content_type: application/octet-stream
+        path: napture-x86_64.AppImage
+        name: napture-x86_64.AppImage
