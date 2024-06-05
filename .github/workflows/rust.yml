@@ -31,23 +31,20 @@ jobs:
         export PKG_CONFIG_PATH=/usr/lib/pkgconfig
         cargo build --release
         echo "Napture built successfully."
-    - name: Install AppImageTool
+    - name: Install linuxdeploy
       run: |
         echo "Starting artifact upload phase..."
-        echo "Installing AppImageTool..."
-        wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-        chmod +x appimagetool-x86_64.AppImage
-        echo "AppImageTool installed."
+        echo "Installing linuxdeploy..."
+        wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage
+        echo "linuxdeploy installed."
     - name: Create Napture AppImage
       run: |
         echo "Creating Napture AppImage..."
         cd napture
-        mkdir -p AppDir/usr/bin
-        cp target/release/webx AppDir/usr/bin/
-        cp io.github.face_hh.Napture.desktop AppDir/
-        cp io.github.face_hh.Napture.svg AppDir/
+        mv target/release/webx target/release/napture
         ARCH=x86_64
-         ../appimagetool-x86_64.AppImage AppDir
+         ../linuxdeploy-x86_64.AppImage --appdir AppDir -e target/release/napture -d io.github.face_hh.Napture.desktop -i io.github.face_hh.Napture.svg
         mv Napture-x86_64.AppImage ../Bussin.Napture-x86_64.AppImage
         echo "AppImage created successfully."
     - name: Rename AppImage
