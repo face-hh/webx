@@ -56,7 +56,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: napture-v${{ github.sha }}.AppImage
+        name: napture-linux-nightly.AppImage
         path: napture-v${{ github.sha }}.AppImage
       env:
         UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}  
@@ -104,7 +104,7 @@ jobs:
       - name: Upload DMG Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: napture-v${{ github.sha }}.dmg
+          name: napture-macos-nightly.dmg
           path: napture/target/release/Napture-macos-universial.dmg
         
   build_win:
@@ -148,7 +148,7 @@ jobs:
     - name: Upload Napture
       uses: actions/upload-artifact@v4
       with:
-        name: napture-v${{ github.sha }}.exe.zip
+        name: napture-windows-nightly.exe
         path: |
           napture/target/release/webx.exe
           napture/target/release/libs/*
@@ -164,15 +164,15 @@ jobs:
       - name: Download Ubuntu Artifact
         uses: actions/download-artifact@v4.1.7
         with:
-          name: napture-v${{ github.sha }}.AppImage
+          name: napture-linux-nightly.AppImage
       - name: Download Windows Artifact
         uses: actions/download-artifact@v2
         with:
-          name: napture-v${{ github.sha }}.exe.zip
+          name: napture-windows-nightly.exe
       - name: Download macOS Artifact
         uses: actions/download-artifact@v2
         with:
-          name: napture-v${{ github.sha }}.dmg    
+          name: napture-macos-nightly.dmg    
       - name: Download Dependencies
         run: |
             sudo add-apt-repository universe
@@ -185,6 +185,6 @@ jobs:
           token: ${{ env.GITHUB_TOKEN }}
           files: |
             napture-v${{ github.sha }}.AppImage
-            napture-v${{ github.sha }}.exe.zip
+            napture-v${{ github.sha }}.exe
             napture-v${{ github.sha }}.dmg
           prerelease: true
