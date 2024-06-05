@@ -2,31 +2,42 @@
 
 Luau is a typed scripting language derived from Lua. Instead of JavaScript, we use Luau to power WebX.
 
-:::danger TO-DO
+{% hint style="danger" %}
+### Requires reviewing
 This part of the documentation is not finished / requires reviewing. [See the repo.](https://github.com/face-hh/webx/blob/main/docs/).
-:::
+{% endhint %}
 
 ## The fundamentals: SET and GET.
 
 The Luau API is as simple as learning two things: you can SET and you can GET. You can GET to access elements from your page's HTML++, and you can SET to modify them.
 
-:::tip You come from JavaScript?
+{% hint style="info" %}
+### You come from JavaScript?
 GET would be equivalent to your `document.*` query selectors and getElementById / ClassName, while SET would be equivalent to give a value to props like "href", "opacity", and so on.
-:::
+{% endhint %}
 
 ### GET
 
 In fact, the function to get an element is just called "get".
+{% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 local myItem = get("myItem")
 ```
+
+{% endcode %}
+
 > Much shorter compared to JS :wink:
+
+{% code overflow="wrap" lineNumbers="true" %}
 
 ```diff
 - document.querySelector("myItem")
 - document.getElementByClassName("myItem")
 + local myItem = get("myItem")
 ```
+
+{% endcode %}
 
 Note that we use the same function to get items by their tag name or by their class.
 
@@ -35,12 +46,17 @@ Note that we use the same function to get items by their tag name or by their cl
 > What about "`querySelectorAll()`?
 
 **Just add "true" to the `get` function to get all the elements of the same class / tag name.
-```lua{4}
+
+{% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
+```lua
 -- Will give a single anchor
 local all_hyperlinks = get("a");
 -- Will give all anchors (or hyperlinks, them the way you prefer)
 local all_hyperlinks = get("a", true);
 ```
+
+{% endcode %}
 
 :::tip
 When you don't pass `true`, if you select a tag or a class name that is repeated, the first one in the HTML++ will be taken.
@@ -50,7 +66,9 @@ When you don't pass `true`, if you select a tag or a class name that is repeated
 
 Now, to interact with the element, you can use `get_{prop}` **and `set_{prop}`** functions. Here's an example:
 
-```lua{4,8}
+{% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
+```lua
 local myanchor = get("a")
 
 -- This will GET the href property
@@ -61,11 +79,15 @@ print(myurl)
 myanchor.set_href("buss://skibidi.rizz")
 ```
 
+{% endcode %}
+
 It's that easy! *Scroll to the bottom for a list of available SET and GET directives.*
 
 ### Events
 
 The Luau API has also support for detecting **events**. Similar to JS's `onclick`. To use them, create a function that's called on an event, just like you would do in JS. Example:
+
+{% code title="script.lua" overflow="wrap" lineNumbers="true" %}
 
 ```lua
 get("a").on_click(function()
@@ -76,6 +98,8 @@ get("input").on_input(function(content)
     print(content)
 end)
 ```
+
+{% endcode %}
 
 :::info
 `on_input` is only supported by `<input>` and `<textarea>`
@@ -89,6 +113,8 @@ Output from the `print()` function will be logged by Napture Logs. As we told yo
 
 If you need to make an HTTP request to interact with an API, you can use the `fetch` function. It should look like this:
 
+{% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 local test = true;
 
@@ -99,6 +125,9 @@ local res = fetch({
     body = '{ "test": ' .. test .. '}'
 })
 ```
+
+{% endcode %}
+
 Variable names are self explanatory, you give the function the `URL` you want to fetch, the HTTP method you want to use, which can be "GET", "POST", "DELETE", etc..., the headres of the HTTP request, and the body, which would be the content itself of your request.
 
 ### Full lists

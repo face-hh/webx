@@ -6,6 +6,8 @@ CSS 3.25 looks similar to regular CSS 3, but with some differences. Note that B9
 
 This is an example of a CSS 3.25 file.
 
+{% code title="styles.css" overflow="wrap" lineNumbers="true" %}
+
 ```css
 div {
     border-color: #616161;
@@ -24,7 +26,6 @@ h1 {
 }
 
 p {
-    color:antiquewhite;
     font-size: 16px;
     line-height: 1.5;
     font-family: Iosevka;
@@ -60,7 +61,7 @@ ul, ol {
 }
 
 ok {
-    color: red;
+    color: #FF3232;
 }
 
 select {
@@ -79,12 +80,14 @@ hr {
 }
 ```
 
+{% endcode %}
+
 Looks like a lot, huh? It's not that complicated. It's just about taking a few things into account and then just checking a list of properties.
 
 ## Take into account
 
 1. **No selectors are required:** You don't need to use a dot to select a class (e.g. `.myClass {}`). Since there's no ID's to differentiate with, just put the class name without anything (e.g. `myClass{}`).
-2. **Use specific units:** Only **px** for measures and **HEX** (#123456) for colors are supported. No RGBa, no HSL, no em, no viewport units...
+2. **Use specific units:** Only **pt** for measures and **HEX** (#123456) for colors are supported. No RGBa, no HSL, no em, no viewport units...
 3. **Don't touch the body:** As of B9 v1.2.2, styling the body itself might not work properly.
 4. **Remember how the CSS box model works:** We use CSS 3's standard box model, where a box has a SIZE, then a PADDING, then a BORDER ~~and an OUTLINE~~*, and then a MARGIN.
 5. **Events are not supported:** As of B9 v1.2.2, events (like `:focused`, `:hover`, and so on) are not supported.
@@ -148,6 +151,14 @@ Noted that? Now let's get to the styling features.
 
 {% hint style="warning" %}
 As of B9 v1.2.2, built-in colors (such as `red`, `orange`, `lightblue`, and other colors from CSS3) are **not** supported.
+{% endhint %}
+
+<!--added this based on `b9/css.rs at line 146`, which has this:
+properties.font_size = properties.font_size.replace("px", "pt");
+-->
+
+{% hint style="warning" %}
+**On runtime, `px` values get translated to `pt` values** by B9 ***only for `font-size`***.
 {% endhint %}
 
 ### Text underline / overline / strikethrough
