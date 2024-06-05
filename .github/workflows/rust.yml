@@ -143,7 +143,7 @@ jobs:
     - name: Copy files to workspace
       run: |
         mkdir -p napture/target/release/libs
-        cp C:/msys64/mingw64/lib/* napture/target/release/libs
+        cp -r C:/msys64/mingw64/lib/* napture/target/release/libs
   
     - name: Zip Napture files
       run: |
