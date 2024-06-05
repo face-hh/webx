@@ -44,7 +44,8 @@ This section contains content from contributors and 3rd parties. It has been mar
 ###### Something is wrong with this table? As 3rd party browsers get updated, this table can get outdated over time. [Make a PR to help keep it up to date.](https://github.com/face-hh/webx/blob/main/docs) Thanks in advance!
 
 <!-- FOR DEVELOPERS: this is missing information (idk what info (if i knew i'd put it) but im sure theres something missing)-->
-Of course, we recommend using the official Bussin Registrar, which looks kinda like this (***note for contributors: please update the screenshot***):
+Of course, we recommend using the official Bussin Registrar, which looks kinda like this:
+<!-- (***note for contributors: please update the screenshot***) -->
 
 ![Screenshot](png4.jpeg)
 <!-- TO ANY DEV REVIEWING THE PR - SORRY MAN MY SCREEN IS JUST TOO SMALL FOR THIS XD - someome go take the actual napture and make a better screenshot, thanks-->
@@ -55,14 +56,17 @@ What we care about is the Publish form. Every other registrer should use the sam
 
 Your domain needs three simple things.
 
-:::info Website name
+{% hint style="info" %}
+### Website name
 The name of your website for the URI. It will be here:
 
 buss://**{here}**.tld
 
 Note that there is a max of 24 characters for your domain.
-:::
-:::info TLD
+{% endhint %}
+
+{% hint style="info" %}
+### TLD
 The Top-Level Domain you'd like your website to have. It will be here:
 
 buss://name.**{here}**
@@ -90,10 +94,12 @@ There is a limited amount of options. You can choose from the following:
 | .ohio | One of the 50 states of the United States of America. Used in cringe TikTok memes to represent extremely weird and out-of-context stuff. Could be used for a maybe-too-much original website :wink: |
 
 In a nutshell, choose from "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu", "ohio" 
-:::
-:::info IP
+{% endhint %}
+
+{% hint style="info" %}
+### IP
 The IP / GitHub URL I told you about before. Give it to the system so it can access it and serve your website.
-:::
+{% endhint %}
 
 ### Community Rules
 
@@ -111,22 +117,26 @@ WebX is supervised by the team at Bussin, who administrates the WebX API. Any we
 10. If your website contains content that encourages harmful behavior, including self-harm, suicide, substance abuse, or dangerous challanges, it will be removed.
 11. If your website's domain contains words or content that are considered against any of the rules listed before, it will be removed.
 
-:::danger BUSSIN WEBX COMMUNITY RULES AGREEMENT
+{% hint style="danger" %}
+## BUSSIN WEBX COMMUNITY RULES AGREEMENT
 By publishing content to this platform ("Bussin Napture"/"Bussin WebX"), ***you agree to comply with all rules and regulations set forth by the administrators***. **The administrators reserve the right to interpret and enforce these rules at their discretion.**
-:::
+{% endhint %}
 
-:::warning Reporting websites that don't follow the rules
+{% hint style="warning" %}
+### Reporting websites that don't follow the rules
 To report websites that are not following the listed rules, please use [the Discord server](https://discord.gg/cNwWvdWj42) or contact `FaceDev` on [Twitter](https://twitter.com/facedevstuff) or Discord.
-:::
+{% endhint %}
 
 If you submit a website that is not against the rules, you should start seeing it on the Dingle search results and in your `buss://` URL. Plus, your domain provider should give you a "Secret key" (or "Secret code", "API Key", or however they call it, but it is always the same key).
 
-:::danger VERY IMPORTANT THING ABOUT YOUR SECRET KEY
+{% hint style="danger" %}
+VERY IMPORTANT THING ABOUT YOUR SECRET KEY
 ### DO NOT LOOSE IT AND DO NOT SHARE IT WITH ANYONE.
 Do not loose it because it is required if you want to edit your IP or shut down your domain, and do not share it with anyone because it can compromise your website.
-:::
+{% endhint %}
 
-:::details What to do if it doesn't work
+{% hint style="info" %}
+What to do if it doesn't work
 There are a few reasons it could be wrong:
 ### 1. Code not matching the WebX standard.
 If your site doesn't work, check if your code is correct. Maybe it's that.
@@ -136,6 +146,6 @@ There is a global cooldown on how many domains can be registered (*there are rea
 WebX is a recently setup project and it's uptime is not of a 100%. It could be down for repairing.
 
 For these reasons we recommend joining [the Discord server](https://discord.gg/cNwWvdWj42), where the development team keeps everyone updated on issues with the network.
-:::
+{% endhint %}
 
 Do you see your website on the Dingle search results? If no, check "*What to do if it doesn't work*". If it does, congratulations! You already know how to code for WebX and you got a website up and running! Well done, man. :saluting_face:
