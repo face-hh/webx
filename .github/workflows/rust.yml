@@ -144,13 +144,12 @@ jobs:
       run: |
         echo "Copying DLLs to workspace..."
         mkdir -p napture/target/release/libs
-        C:\msys64\usr\bin\bash.exe -lc "find /mingw64/lib -name '*.dll' -exec cp --parents \{\} /c/projects/napture/target/release/libs \;"
-
+        C:\msys64\usr\bin\bash.exe -lc "find /mingw64/lib -name '*.dll' -exec cp --parents {} /c/projects/napture/target/release/libs \;"
     - name: Move DLLs to Executable Directory
       run: |
         echo "Moving DLLs to executable directory..."
         cd napture/target/release
-        move libs\*.dll .
+        for /R %i in (*.dll) do move "%i" .
   
     - name: Zip Napture files
       run: |
@@ -162,7 +161,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: napture-windows-nightly
-        path: napture/target/release/napture-windows-nightly.tar.gz
+        path: napture/target/release/napture-windows-nightly.zip
           
   upload:
    name: "Upload Release"
@@ -199,6 +198,6 @@ jobs:
           generate_release_notes: true
           files: |
             *.AppImage
-            *.tar.gz
+            *.zip
             *.dmg
           prerelease: true
