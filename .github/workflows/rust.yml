@@ -92,7 +92,7 @@ jobs:
         echo "MSYS2 packages installed."
 
     - name: Set PATH
-    - run: |
+      run: |
         PATH=C:\msys64\mingw64\include;%PATH%
         PATH=C:\msys64\mingw64\bin;%PATH%
         PATH=C:\msys64\mingw64\lib;%PATH%
