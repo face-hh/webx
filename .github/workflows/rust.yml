@@ -62,60 +62,12 @@ jobs:
         name: napture-v${{ github.sha }}.AppImage
         path: napture-v${{ github.sha }}.AppImage
       env:
-        UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}
-  build_win:
-    runs-on: ubuntu-24.04
-    name: Build Napture (Windows)
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Install Dependencies
-      run: |
-        echo "Installing dependencies..."
-        sudo apt-get update
-        sudo apt-get install -y libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev 
-        sudo add-apt-repository universe
-        sudo apt install libfuse2
-        sudo dpkg --add-architecture i386
-        sudo apt-get update
-        sudo apt-get install -y wine-stable innoextract
-        echo "Dependencies installed."
-        
-    - name: Build Napture
-      run: |
-        echo "Building Napture..."
-        cd napture
-        export PKG_CONFIG_PATH=/usr/lib/pkgconfig
-        cargo build --release
-        echo "Napture built successfully."
-    
-    - name: Install Inno Setup
-      run: |
-        echo "Installing Inno Setup..."
-        wget "https://jrsoftware.org/download.php/is.exe" -O is.exe
-        wine is.exe /VERYSILENT /NORESTART
-        echo "Inno Setup installed."
-    
-    - name: Create Installer
-      run: |
-        echo "Creating Installer..."
-        cd installer
-        wine "C:\\Program Files\\Inno Setup 6\\ISCC.exe" setup.iss
-        echo "Installer created successfully."
-      
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: NaptureWindowsSetup.exe
-        path: installer/setup.exe
-  
+        UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}  
   upload:
    name: "Upload Release"
    runs-on: ubuntu-24.04
    needs:
       - build
-      - build_win
    steps:
       - name: Download Ubuntu Artifact
         uses: actions/download-artifact@v4.1.7
@@ -137,4 +89,4 @@ jobs:
         run: |
             wget -q https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
             chmod +x pyuploadtool-x86_64.AppImage
-            ./pyuploadtool-x86_64.AppImage napture-v${{ github.sha }}.AppImage* NaptureWindowsSetup.exe
+            ./pyuploadtool-x86_64.AppImage napture-v${{ github.sha }}.AppImage*
