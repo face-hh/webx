@@ -148,7 +148,7 @@ jobs:
     - name: Upload Napture
       uses: actions/upload-artifact@v4
       with:
-        name: napture-v${{ github.sha }}.exe
+        name: napture-v${{ github.sha }}.zip
         path: |
           napture/target/release/Napture-windows-x86_64.exe
           napture/target/release/libs/*
@@ -169,7 +169,7 @@ jobs:
       - name: Download Windows Artifact
         uses: actions/download-artifact@v2
         with:
-          name: napture-v${{ github.sha }}.exe
+          name: napture-v${{ github.sha }}.zip
       - name: Download MacOS Artifact
         uses: actions/download-artifact@v2
         with:
@@ -186,6 +186,6 @@ jobs:
           token: ${{ env.GITHUB_TOKEN }}
           files: |
             napture-v${{ github.sha }}-linux.AppImage
-            napture-v${{ github.sha }}-windows.exe
+            napture-v${{ github.sha }}-windows.zip
             napture-v${{ github.sha }}-macos.dmg
           prerelease: true
