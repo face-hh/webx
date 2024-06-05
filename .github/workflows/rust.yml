@@ -75,6 +75,10 @@ jobs:
         uses: actions/download-artifact@v4.1.7
         with:
           name: napture-v${{ github.sha }}.AppImage
+      - name: Download Dependencies
+        run: |
+            sudo add-apt-repository universe
+            sudo apt install libfuse2
       - name: Publish AppImage to Releases
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
