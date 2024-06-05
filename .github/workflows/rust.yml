@@ -139,16 +139,23 @@ jobs:
         cd napture
         cargo build --release --verbose
         echo "Napture built successfully."
-
-    - name: Copy files to workspace
+        
+    - name: Copy DLLs to Workspace
       run: |
         mkdir -p napture/target/release/libs
-        cp -r C:/msys64/mingw64/lib/* napture/target/release/libs
+        cd C:/msys64/mingw64/lib
+        find . -name "*.dll" -exec cp --parents \{\} ../../../../napture/target/release/libs \;
+  
+    - name: Move DLLs to Executable Directory
+      run: |
+        cd napture/target/release
+        find libs -name "*.dll" -exec mv {} . \;
+        rm -rf libs
   
     - name: Zip Napture files
       run: |
         cd napture/target/release
-        tar -czvf napture-windows-nightly.tar.gz webx.exe libs
+        tar -czvf napture-windows-nightly.tar.gz webx.exe *.dll
   
     - name: Upload Napture
       uses: actions/upload-artifact@v4
