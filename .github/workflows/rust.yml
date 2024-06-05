@@ -90,6 +90,9 @@ jobs:
     - name: Set PATH
       shell: cmd
       run: |
+        echo "C:\msys64\mingw64\bin" >> $env:GITHUB_PATH
+        echo "C:\msys64\mingw64\inlcude" >> $env:GITHUB_PATH
+        echo "C:\msys64\mingw64\lib" >> $env:GITHUB_PATH
         set PATH=C:\msys64\mingw64\include;%PATH%
         set PATH=C:\msys64\mingw64\bin;%PATH%
         set PATH=C:\msys64\mingw64\lib;%PATH%
@@ -98,6 +101,9 @@ jobs:
       shell: cmd
       run: |
         echo "Building Napture..."
+        set PATH=C:\msys64\mingw64\include;%PATH%
+        set PATH=C:\msys64\mingw64\bin;%PATH%
+        set PATH=C:\msys64\mingw64\lib;%PATH%
         cd napture
         cargo build --release
         echo "Napture built successfully."
