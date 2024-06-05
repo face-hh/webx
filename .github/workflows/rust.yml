@@ -66,51 +66,29 @@ jobs:
         
   build_win:
     name: Build Napture (Windows)
-    runs-on: ubuntu-24.04
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
+  
     - name: Install Dependencies
       run: |
         echo "Installing dependencies..."
-        sudo apt-get update
-        sudo apt-get install -y libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev 
-        sudo add-apt-repository universe
-        sudo apt install libfuse2
-        sudo dpkg --add-architecture i386
-        sudo apt-get update
-        sudo apt-get install -y wine-stable innoextract
+        choco install -y gtk-runtime
         echo "Dependencies installed."
 
     - name: Build Napture
       run: |
         echo "Building Napture..."
         cd napture
-        export PKG_CONFIG_PATH=/usr/lib/pkgconfig
         cargo build --release
         echo "Napture built successfully."
-        
-    - name: Install Inno Setup
-      run: |
-        echo "Installing Inno Setup..."
-        wget "https://jrsoftware.org/download.php/is.exe" -O is.exe
-        wine is.exe /VERYSILENT /NORESTART
-        echo "Inno Setup installed."
-        
-    - name: Create Installer
-      run: |
-        echo "Creating Installer..."
-        cd installer
-        wine "C:\\Program Files\\Inno Setup 6\\ISCC.exe" setup.iss
-        echo "Installer created successfully."
-  
+
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v2
       with:
-        name: NaptureInstaller.exe
-        path: installer/setup.exe
-      env:
-          UPLOAD_URL: ${{ steps.upload.outputs.upload_url }} 
+        name: napture-v${{ github.sha }}.exe
+        path: napture/target/release/webx.exe
   upload:
    name: "Upload Release"
    runs-on: ubuntu-24.04
@@ -136,10 +114,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ env.GITHUB_TOKEN }}
           files: |
             napture-v${{ github.sha }}.AppImage
-            NaptureInstaller.exe
+            napture-v${{ github.sha }}.exe
           prerelease: true
           
       #    GITHUB_CONTINUOUS_RELEASE_NAME: "Automatic Build (${{ github.sha }})"
