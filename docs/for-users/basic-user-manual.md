@@ -56,13 +56,13 @@ Go [here](https://github.com/face-hh/webx/releases) for the releases tab. Always
 
 It's very easy. This is your startpage:
 
-![Screenshot](/png1.png)
+![Screenshot](png1.png)
 
 This is Dingle, WebX's official search engine. Just like a normal search engine, type in a query, and then click on one of the results to visit a website.
 
-![Screenshot](/png2.png)
+![Screenshot](png2.png)
 
-See! Easy! Websites will or won't have a description. That depends if the developer added a [description](htmlpp.md#meta) or not.
+See! Easy! Websites will or won't have a description. That depends if the developer added a [description](../for-developers/html++.md#head-metadata-in-html) or not.
 
 Also, don't forget you can hit `CONTROL` + `SHIFT` + `S` in your keyboard to open the Settings menu.
 

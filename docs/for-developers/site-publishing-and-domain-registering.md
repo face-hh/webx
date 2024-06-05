@@ -28,7 +28,7 @@ Now that you have your IP / GitHub URL, you just need to register a domain, prov
 
 ## Getting my domain
 
-Domains can be registered via our API (see [next page](webx-api.md)). There are different providers, like these ones:
+Domains can be registered via our API (see [next page](api-reference.md#post-domain)). There are different providers, like these ones:
 
 {% hint style="danger" %}
 ### Outdated section

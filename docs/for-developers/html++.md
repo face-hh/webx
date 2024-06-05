@@ -122,7 +122,7 @@ We're done with the HTML++, **but you must note one more thing**.
 > Every tag that is made for the body (`<h1>`, `<p>`, `<input>`, etc...) has support for a property called "`class`". You might know them for CSS 3 styling, but here they are more important as they are used **for scripting aswell**. Therefore, HTML 5's standard `id` is not supported. Keep that in mind.
 
 {% hint style="info" %}
-Never give a class the same name than a supported HTML++ tag. [This is because of how Luau gets elements.](luau.md)
+Never give a class the same name than a supported HTML++ tag. [This is because of how Luau gets elements.](luau.md#get)
 {% endhint %}
 
 Now, let's move onto styling.
