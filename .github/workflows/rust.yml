@@ -50,7 +50,7 @@ jobs:
         cp io.github.face_hh.Napture.svg AppDir/
         ARCH=x86_64
          ../appimagetool-x86_64.AppImage AppDir
-        mv webx-x86_64.AppImage ../Bussin.Napture-x86_64.AppImage
+        mv Napture-x86_64.AppImage ../Bussin.Napture-x86_64.AppImage
         echo "AppImage created successfully."
     - name: Rename AppImage
       run: |
