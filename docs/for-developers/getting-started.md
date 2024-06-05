@@ -23,13 +23,14 @@ Let's start with the basics. In order to make a web, you'll need to make a proje
 *The index file **must** be called "index.html".
 {% endhint %}
 
-:::warning
+{% hint style="warning" %}
 As of version 1.2.2, WebX does **not** support routing, so no multiple pages (`/index.html`, `/hello.html`) are supported.
-:::
+{% endhint %}
 
 ### Don't get confused
 And hey, now that we talk about versioning, you might want to know this:
-:::tip Don't get confused with naming
+{% hint style="success" %}
+### Don't get confused with naming
 Napture and B9 are connected, but they are not the same!
 - **WebX** - The entire project, including the DNS and all that stuff.
 - **Napture** - The browser itself, used to render websites using the B9 engine.
@@ -37,7 +38,7 @@ Napture and B9 are connected, but they are not the same!
 They both have the same version number. **Currently, the Latest version is v1.2.2**.
 
 *If an update releases and the documentation isn't up to date yet, you should see an alert at the beggining of this page. Contributors will try to keep this documentation up to date as soon as updates get released.*
-:::
+{% endhint %}
 
 ### Dev menus and settings
 Plus, before starting, you might want to note these keybinds somewhere:
