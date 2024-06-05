@@ -174,7 +174,7 @@ local all_parragraphs = get("p", true)
 
 #### SET
 | <div style="width: 150px;">Function</div> | x | Explanation |
-| -------- | - | ------ | ----------- |
+| -------- | - | ----------- |
 | `set_contents(x)` | `x` must be the name of the target tag or class name. It should be a string. | Gets the text content of any item. |
 | `set_href(x)` | `x` must be the URL you want to set the `href` property to. It should be a string. | Sets the `href` value of an anchor. |
 | `set_source(x)` | `x` must be the URL you want to set the `src` property to. It should be a string. | Sets the `src` value of an image. |
