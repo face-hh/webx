@@ -183,6 +183,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           token: ${{ env.GITHUB_TOKEN }}
+          name: Nightly Build (nightly-${{ github.GITHUB.ref }})
+          tag_name: nightly-${{ github.GITHUB.ref }}
           files: |
             napture-v${{ github.sha }}.AppImage
             napture-v${{ github.sha }}.exe
