@@ -82,9 +82,25 @@ jobs:
         rustup toolchain install stable-gnu 
         rustup default stable-gnu
     - name: Download and install MSYS2
-      run: |
-        Invoke-WebRequest -Uri 'https://repo.msys2.org/distrib/x86_64/msys2-x86_64-20240507.exe' -OutFile 'C:\msys2-x86_64.exe'
-        Start-Process -Wait -FilePath 'C:\msys2-x86_64.exe' -ArgumentList '/VERYSILENT /NORESTART'
+        run: |
+          $retryCount = 3
+          $downloadSucceeded = $false
+          for ($i = 1; $i -le $retryCount; $i++) {
+            Write-Host "Downloading MSYS2 (Attempt $i)..."
+            try {
+                Invoke-WebRequest -Uri 'https://repo.msys2.org/distrib/x86_64/msys2-x86_64-20240507.exe' -OutFile 'C:\msys2-x86_64.exe' -ErrorAction Stop
+                $downloadSucceeded = $true
+                break
+            } catch {
+                Write-Host "Failed to download MSYS2 (Attempt $i). Retrying..."
+            }
+          }
+          if (-not $downloadSucceeded) {
+            Write-Error "Failed to download MSYS2 after $retryCount attempts."
+              exit 1
+          }
+          Start-Process -Wait -FilePath 'C:\msys2-x86_64.exe' -ArgumentList '/VERYSILENT /NORESTART'
+  shell: powershell
         
     - name: Run MSYS2 Commands
       run: |
