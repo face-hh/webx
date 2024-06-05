@@ -178,8 +178,8 @@ local all_parragraphs = get("p", true)
 | `get_contents(x)` | `x` must be the name of the target tag or class name. It should be a string. | If there is any kind of string content (like text) inside of the target item, it returns it as a string. If not, returns an empty string (`""`). If there is both text and HTML++ tags, it will only return the text, and if there are tags but no text, will return the empty string. Won't return text inside of nested tags (nested tag = tag inside of the target item's tag). | Gets the text content of any item. |
 | `set_href(x)` | `x` must be the URL you want to set the `href` property to. It should be a string. | No return. | Sets the `href` value of an anchor. |
 | `set_source(x)` | `x` must be the URL you want to set the `src` property to. It should be a string. | No return. | Sets the `src` value of an image. |
-| `set_opacity(x)` | `x` must be the value you want to set the `opacity` property to. It's should be a number between 0 and 1. Decimals supported. | No return. | Sets the `opacity` value of any item. |
-| `set_visible(x)` | `x` must be **TO DO** | No return. | **TO DO** |
+| `set_opacity(x)` | `x` must be the value you want to set the `opacity` property to. It should be a float between 0 and 1. | No return. | Sets the `opacity` value of any item. |
+| `set_visible(x)` | `x` must be the value you want to set the `visible` property to. It should be a boolean value, `true` or `false`. | No return. | **TO DO** :danger: |
 
 {% hint style="danger" %}
 ### TO DO
