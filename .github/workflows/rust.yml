@@ -189,7 +189,7 @@ jobs:
           tag_name: nightly
           generate_release_notes: true
           files: |
-            napture-linux-nightly.AppImage
-            napture-windows-nightly.exe
-            napture-macos-nightly.dmg
+            /napture-linux-nightly.AppImage
+            /napture-windows-nightly.exe
+            /napture-macos-nightly.dmg
           prerelease: true
