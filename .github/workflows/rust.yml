@@ -168,7 +168,7 @@ jobs:
       - name: Download Windows Artifact
         uses: actions/download-artifact@v2
         with:
-          name: napture-v${{ github.sha }}.exe
+          name: napture-v${{ github.sha }}.exe.zip
       - name: Download macOS Artifact
         uses: actions/download-artifact@v2
         with:
