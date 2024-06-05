@@ -1,4 +1,5 @@
-use std::sync::Mutex;
+use std::sync::{Mutex, Arc};
+use glib::Source;
 
 use lazy_static::lazy_static;
 
