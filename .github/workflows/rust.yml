@@ -48,13 +48,13 @@ jobs:
         cp io.github.face_hh.Napture.svg AppDir/
         ARCH=x86_64
          ../appimagetool-x86_64.AppImage AppDir --appimage-extract
-        ls
+        cd AppDir && ls
         mv webx-x86_64.AppImage ../Bussin.Napture-x86_64.AppImage
         echo "AppImage created successfully."
     - name: Rename AppImage
       run: |
         echo "Renaming AppImage..."
-        mv naputure-x86_64.AppImage naputure-v${{ github.sha }}.AppImage
+        mv naputure-x86_64.AppImage napture-v${{ github.sha }}.AppImage
         echo "AppImage renamed successfully."
 
     - name: Upload Artifact
@@ -65,11 +65,13 @@ jobs:
   upload:
    name: "Upload Release"
    runs-on: ubuntu-24.04
+   needs:
+      - build
    steps:
       - name: Download Artifact
         uses: actions/download-artifact@v4.1.7
         with:
-          name: Bussin.Napture-x86_64.AppImage
+          name: napture-v${{ github.sha }}.AppImage
       - name: Publish AppImage to Releases
         uses: actions/upload-release-asset@v1
         env:
@@ -77,5 +79,5 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: napture-v${{ github.sha }}.AppImage
-          asset_name: napture-v${{ github.sha }}.AppImage
+          asset_name: Bussin.Napture-x86_64.AppImage
           asset_content_type: application/octet-stream
