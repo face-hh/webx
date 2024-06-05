@@ -150,8 +150,8 @@ jobs:
       run: |
         echo "Moving DLLs to executable directory..."
         cd napture/target/release
-        find libs -name "*.dll" -exec mv {} . \;
-        rm -rf libs
+        move libs\*.dll .
+        rmdir /s /q libs
   
     - name: Zip Napture files
       run: |
