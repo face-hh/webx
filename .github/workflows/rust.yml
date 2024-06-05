@@ -156,7 +156,7 @@ jobs:
       run: |
         echo "Zipping Napture files..."
         cd napture/target/release
-        tar -czvf napture-windows-nightly.tar.gz webx.exe *.dll
+        7z a -tzip napture-windows-nightly.zip webx.exe *.dll
   
     - name: Upload Napture
       uses: actions/upload-artifact@v4
