@@ -148,7 +148,7 @@ jobs:
     - name: Upload Napture
       uses: actions/upload-artifact@v4
       with:
-        name: napture-v${{ github.sha }}.exe
+        name: napture-v${{ github.sha }}.exe.zip
         path: |
           napture/target/release/webx.exe
           napture/target/release/libs/*
