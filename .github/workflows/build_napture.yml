@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master
-#    paths: temp: just for testing purposes uncomment before merge
-#      - napture/*
+    paths: 
+      - napture/*
 
 env:
   CARGO_TERM_COLOR: always
