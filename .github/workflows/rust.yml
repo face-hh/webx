@@ -183,11 +183,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           token: ${{ env.GITHUB_TOKEN }}
-          name: Nightly Build
+          name: Nightly Build (${{ github.ref }})
           tag_name: nightly
           generate_release_notes: true
           files: |
-            /home/runner/work/webx-github-actions/webx-github-actions/napture-linux-nightly.AppImage
-            /home/runner/work/webx-github-actions/webx-github-actions/napture-windows-nightly.exe
-            /home/runner/work/webx-github-actions/webx-github-actions/napture-macos-nightly.dmg
+            *.AppImage
+            *.exe
+            *.dmg
           prerelease: true
