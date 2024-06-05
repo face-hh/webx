@@ -14,13 +14,14 @@ jobs:
 
       - name: Install dependencies and update AUR
         run: |
-          sudo pacman -Syu --noconfirm git base-devel
+          sudo pacman -S --noconfirm git base-devel
           mkdir -p ~/.ssh
           echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -t rsa aur.archlinux.org >> ~/.ssh/known_hosts
-          cd aur
-          cp ../PKGBUILD .
+          mkdir -p .github/aur  # Create aur/ relative to the workflow file
+          cd .github/aur
+          cp ../../PKGBUILD .
           makepkg --printsrcinfo > .SRCINFO
           git add PKGBUILD .SRCINFO
           git commit -m "Update PKGBUILD for version ${{ github.event.release.tag_name }}"
