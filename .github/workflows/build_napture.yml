@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master
-    paths:
-      - napture/*
+#    paths: temp: just for testing purposes uncomment before merge
+#      - napture/*
 
 env:
   CARGO_TERM_COLOR: always
@@ -146,13 +146,7 @@ jobs:
       run: |
         echo "Copying DLLs to workspace..."
         mkdir -p napture/target/release/libs
-        C:\msys64\usr\bin\bash.exe -lc "find /mingw64/lib -name '*.dll' -exec cp --parents {} /c/projects/napture/target/release/libs \;"
-    - name: Move DLLs to Executable Directory
-      shell: cmd
-      run: |
-        echo "Moving DLLs to executable directory..."
-        cd napture/target/release
-        for /R %i in (*.dll) do move "%i" .
+        move *.dll napture/target/release/"
   
     - name: Zip Napture files
       run: |
