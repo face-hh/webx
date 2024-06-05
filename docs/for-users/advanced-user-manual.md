@@ -12,7 +12,7 @@ This short page includes some additional things you might want to know about how
 
 {% hint style="danger" %}
 ### Outdated section
-This section contains content from contributos and 3rd parties. It has been marked as outdated. This alert will stay until the content below gets updated.
+This section contains content from contributors and 3rd parties. It has been marked as outdated. This alert will stay until the content below gets updated.
 {% endhint %}
 
 Since WebX is an open-source network, there are different browsers available, like the following:
