@@ -41,7 +41,7 @@ This section contains content from contributors and 3rd parties. It has been mar
 | WebX Registry | Go to [`https://kitty.yachts/`](https://kitty.yachts/) on a WWW browser. | tlochsta | ??? | *No notes.* |
 | tr.operium.org | Go to [`http://tr.operium.org:1139/`](http://tr.operium.org:1139/) on a WWW browser. **Not HTTP secure**. | miaunescu0 | ??? | *No notes.* |
 
-###### Something is wrong with this table? As 3rd party browsers get updated, this table can get outdated over time. [Make a PR to help keep it up to date.](https://github.com/face-hh/webx/blob/main/docs) Thanks in advance!
+###### Something is wrong with this table? As 3rd party browsers get updated, this table can get outdated over time. [Make a PR to help keep it up to date.](https://github.com/face-hh/webx/tree/master/docs) Thanks in advance!
 
 <!-- FOR DEVELOPERS: this is missing information (idk what info (if i knew i'd put it) but im sure theres something missing)-->
 Of course, we recommend using the official Bussin Registrar, which looks kinda like this:

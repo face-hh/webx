@@ -223,6 +223,6 @@ This table will give you an insigh of what features are *not* supported by 3rd p
 | Bussinga | Tauri with JS | `line_height`, `color`, `wrap`, `background_color`, `font_family`, `font_weight`, `underline`, `underline_color`, `overline`, `overline_color`, `strikethrough`, `strikethrough_color`, `border_style`, `border_color`, `border_width`, `border_radius`, `font_size`, `opacity` | No explanation provided. | **v0.0.1** |
 | Fapture | Google Chrome V8 | Nothing. Everything is supported! | It is a WebView based browser, so regular CSS 3 parsing is used to render CSS 3.25. | ***No version number provided*** |
 
-###### Something is wrong with this table? As 3rd party browsers get updated, this table can get outdated over time. [Make a PR to help keep it up to date.](https://github.com/face-hh/webx/blob/main/docs) Thanks in advance!
+###### Something is wrong with this table? As 3rd party browsers get updated, this table can get outdated over time. [Make a PR to help keep it up to date.](https://github.com/face-hh/webx/tree/master/docs) Thanks in advance!
 
 That would be it for styling! Now it's time for the fun part: scripting!
