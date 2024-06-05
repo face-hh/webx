@@ -1,13 +1,3 @@
----
-outline: deep
-prev:
-  text: 'Getting started'
-  link: 'dev-start'
-next:
-  text: 'CSS 3.25'
-  link: 'css'
----
-
 # HTML++
 
 HTML++ looks similar to regular HTML5, but with some differences. Note that B9 is a new engine, not all classic HTML5 features are supported.
@@ -15,6 +5,8 @@ HTML++ looks similar to regular HTML5, but with some differences. Note that B9 i
 ## Basic structure.
 
 Same as regular HTML5, the `html` tag, with the `head` for metadata and `body` for your page's content.
+
+{% code title="index.html" overflow="wrap" lineNumbers="true" %}
 
 ```html
 <html>
@@ -27,11 +19,15 @@ Same as regular HTML5, the `html` tag, with the `head` for metadata and `body` f
 </html>
 ```
 
+{% endcode %}
+
 ## `<head>`: Metadata in HTML++
 
 A complete WebX head looks like this:
 
-```html:line-numbers=2
+{% code title="index.html" overflow="wrap" lineNumbers="true" %}
+
+```html
 <head>
     <title>My cool web</title>
     <link href="https://buss.log/icon.ico">
@@ -44,6 +40,8 @@ A complete WebX head looks like this:
 </head>
 ```
 
+{% endcode %}
+
 Let's explain everything. `<title>` and `<meta name="*">` are tags you know from classic HTML5. `<title>` will give a Title to your page, which will be displayed on both the browser's tab and the search results. `<meta name="description" content="*">` will give Dingle a description to show on the search results, and `theme-color` will give your page that specific theme color (unused as of now).
 
 Now, let's go beyond the standard. You might wonder, why do links have no `rel` attribute? And why is the `script` tag self-closing? (which might even be rendered as an error by your IDE).
@@ -51,9 +49,9 @@ Now, let's go beyond the standard. You might wonder, why do links have no `rel` 
 ## Linking in HTML++
 
 You can link images (as much as you like), stylesheets and scripts (only 1 of each type).
-:::info
+{% hint style="info" %}
 Audio and video support are being worked on, but as of B9 1.2.2 they are not supported. [See PR](https://github.com/face-hh/webx/pull/150).
-:::
+{% endhint %}
 
 The thing is, B9 does not use `rel` to define what to do with each thing. It uses the **order** of your tags, being the first tag of each kind the one that will be used for it's specific purpose. In other words: your first `<link>` has to href an image and will be your site's icon, your second `<link>` has to href a stylesheet and will be the source for the page's CSS 3.25, and your `<script>` tag should be the third one, and will be the source for the page's Luau script.
 
