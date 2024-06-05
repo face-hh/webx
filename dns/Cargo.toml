@@ -1,0 +1,25 @@
+[package]
+name = "webx_dns"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+log = "0.4.21"
+toml = "0.8.13"
+sled = "0.34.7"
+regex = "1.10.4"
+colored = "2.1.0"
+mongodb = "2.8.2"
+anyhow = "1.0.86"
+futures = "0.3.30"
+actix-web = "4.6.0"
+macros-rs = "1.2.1"
+prettytable = "0.10.0"
+actix-governor = "0.5.0"
+pretty_env_logger = "0.5.0"
+clap-verbosity-flag = "2.2.0"
+
+tokio = { version = "1.38.0", features = ["full"] }
+clap = { version = "4.5.4", features = ["derive"] }
+rand = { version = "0.8.5", features = ["small_rng"] }
+serde = { version = "1.0.203", features = ["derive"] }

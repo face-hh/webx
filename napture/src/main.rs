@@ -57,6 +57,7 @@ use historymod::HistoryObject;
 
 use globals::APPDATA_PATH;
 use globals::DNS_SERVER;
+use globals::LUA_TIMEOUTS;
 use globals::LUA_LOGS;
 use gtk::gdk;
 use gtk::gdk::Display;
@@ -64,7 +65,6 @@ use gtk::gio;
 use gtk::CssProvider;
 use serde::Deserialize;
 
-use gtk::glib;
 use gtk::prelude::*;
 
 use directories::ProjectDirs;
@@ -187,9 +187,14 @@ fn get_time() -> String {
 fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<RefCell<serde_json::Value>>) {
     let history = Rc::new(RefCell::new(History::new()));
 
-    let default_dns_url = fetch_dns(DEFAULT_URL.to_string());
+    let default_url = if let Some(dev_build) = args.borrow().get(1) { // cli
+        dev_build.to_string()
+    } else { DEFAULT_URL.to_string() };
+
+    let default_dns_url = fetch_dns(default_url.clone());
+
     let default_tab_url = if default_dns_url.is_empty() {
-        DEFAULT_URL.to_string()
+        default_url.clone()
     } else {
         default_dns_url
     };
@@ -203,18 +208,26 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
     let search = gtk::SearchEntry::builder()
         .css_name("search")
         .width_request(500)
-        .text(DEFAULT_URL)
+        .text(default_url.clone())
         .build();
     let empty_label = gtk::Label::new(Some(""));
     let headerbar = gtk::HeaderBar::builder().build();
 
     let tabs_widget = gtk::Box::builder().css_name("tabs").spacing(6).build();
 
+    let tab1 = make_tab(
+        // tabs_widget.clone(),
+        "New Tab",
+        "file.png",
+        // cursor_pointer.as_ref(),
+        tabs.clone(),
+        default_tab_url.clone()
+    );
+
     history
         .borrow_mut()
         .add_to_history(default_tab_url.clone(), get_time(), true);
 
-    let mut tab1 = make_tab("New Tab", "file.png", tabs.clone(), default_tab_url);
     let current_tab = tab1.clone();
 
     let refresh_button = make_refresh_button();
@@ -243,11 +256,6 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
     let rc_scroll = Rc::new(RefCell::new(scroll.clone()));
     let rc_tab = Rc::new(RefCell::new(current_tab.clone()));
     let rc_search = Rc::new(RefCell::new(search.clone()));
-
-    // CLI command
-    if let Some(dev_build) = args.borrow().get(1) {
-        tab1.url = dev_build.to_string();
-    }
 
     let app_ = Rc::new(RefCell::new(app.clone()));
 
@@ -429,6 +437,14 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
             );
         }
     });
+
+    glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || { // every 5 seconds remove "stale" timeouts
+        let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
+        timeouts.retain(|source| {
+            !source.is_destroyed()
+        });
+        glib::ControlFlow::Continue
+    });
 }
 
 // commented code here was an attempt at implementing multiple tabs.
@@ -573,12 +589,14 @@ fn fetch_dns(url: String) -> String {
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
 
     let clienturl = format!(
-        "https://{}/domain/{}/{}",
+        "{}/domain/{}/{}",
         DNS_SERVER.lock().unwrap().as_str(),
         url.split('.').next().unwrap_or(""),
-        url.split('.').nth(1).unwrap_or(""),
+        url.split('.').nth(1).unwrap_or("")
+            .split('/').next().unwrap_or(""),
     );
 
+    
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
@@ -591,7 +609,9 @@ fn fetch_dns(url: String) -> String {
         let status = response.status();
 
         if let Ok(json) = response.json::<DomainInfo>() {
-            json.ip
+            let path = url.split_once('/')
+                .unwrap_or(("", "")).1;
+            json.ip + &format!("/{}", path)
         } else {
             lualog!(
                 "debug",

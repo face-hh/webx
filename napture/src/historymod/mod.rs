@@ -1,7 +1,6 @@
 mod imp;
 
 use glib::Object;
-use gtk::glib;
 use serde::{Deserialize, Serialize};
 use serde_json::Map;
 

@@ -1,41 +1,35 @@
 # Domain Management API
 
-This folder includes the source code of the **API** for the **Bussin DNS**.
-
-This docu created with chatGpt4o [ChatGpt Chat link](https://chatgpt.com/share/847ddf83-5fd9-42e7-bdac-fee8168d974c)
-
-This is a simple Domain Management API built with Express.js and MongoDB. It provides endpoints to create, read, update, and delete domain information, along with rate limiting for certain operations.
+This is a Domain Management API built with Actix Web and MongoDB. It provides endpoints to create, read, update, and delete domain information, along with rate limiting for certain operations.
 
 ## Table of Contents
 
 - [Endpoints](#endpoints)
   - [GET /](#get-)
   - [POST /domain](#post-domain)
-  - [POST /domainapi/:apiKey](#post-domainapiapikey)
   - [GET /domain/:name/:tld](#get-domainnametld)
   - [PUT /domain/:key](#put-domainkey)
-  - [DELETE /domain/:id](#delete-domainid)
+  - [DELETE /domain/:key](#delete-domainkey)
   - [GET /domains](#get-domains)
   - [GET /tlds](#get-tlds)
-
 
 ## Endpoints
 
 ### GET /
 
-Returns a simple message with the available endpoints.
+Returns a simple message with the available endpoints and rate limits.
 
 **Response:**
 
 ```
 Hello, world! The available endpoints are:
 GET /domains,
-GET /domain/:name/:tld,
+GET /domain/{name}/{tld},
 POST /domain,
-PUT /domain/:key,
-DELETE /domain/:key,
+PUT /domain/{key},
+DELETE /domain/{key},
 GET /tlds.
-Ratelimits provided in headers.
+Ratelimits are as follows: 10 requests per 60s.
 ```
 
 ### POST /domain
@@ -46,14 +40,14 @@ Creates a new domain entry.
 
 - Method: `POST`
 - URL: `/domain`
-- Headers: 
+- Headers:
   - `Content-Type: application/json`
 - Body:
   ```json
   {
-    "tld": "example_tld",
-    "ip": "example_ip",
-    "name": "example_name"
+  	"tld": "example_tld",
+  	"ip": "example_ip",
+  	"name": "example_name"
   }
   ```
 
@@ -62,50 +56,14 @@ Creates a new domain entry.
 - `200 OK` if the domain is successfully created.
   ```json
   {
-    "tld": "example_tld",
-    "ip": "example_ip",
-    "name": "example_name",
-    "secret_key": "generated_secret_key"
+  	"tld": "example_tld",
+  	"ip": "example_ip",
+  	"name": "example_name",
+  	"secret_key": "generated_secret_key"
   }
   ```
-- `400 Bad Request` if the request body is invalid.
+- `400 Bad Request` if the request body is invalid, the TLD is non-existent, the name is too long (24 chars), or the domain is offensive.
 - `409 Conflict` if the domain already exists.
-- `429 Too Many Requests` if the rate limit is exceeded.
-
-### POST /domainapi/:apiKey
-
-Creates a new domain entry using an API Key. This is disabled by default as you will need to come up with your own way of validating and distributing API Keys.
-
-**Request:**
-
-- Method: `POST`
-- URL: `/domainapi/:apiKey`
-- Headers: 
-  - `Content-Type: application/json`
-- Body:
-  ```json
-  {
-    "tld": "example_tld",
-    "ip": "example_ip",
-    "name": "example_name"
-  }
-  ```
-
-**Response:**
-
-- `200 OK` if the domain is successfully created.
-  ```json
-  {
-    "tld": "example_tld",
-    "ip": "example_ip",
-    "name": "example_name",
-    "secret_key": "generated_secret_key"
-  }
-  ```
-- `400 Bad Request` if the request body is invalid.
-- `403 Not allowed` if the API key system is disabled.
-- `409 Conflict` if the domain already exists.
-- `429 Too Many Requests` if the rate limit is exceeded.
 
 ### GET /domain/:name/:tld
 
@@ -124,9 +82,9 @@ Fetches a domain entry by name and TLD.
 - `200 OK` if the domain is found.
   ```json
   {
-    "tld": "example_tld",
-    "name": "example_name",
-    "ip": "example_ip"
+  	"tld": "example_tld",
+  	"name": "example_name",
+  	"ip": "example_ip"
   }
   ```
 - `404 Not Found` if the domain is not found.
@@ -146,7 +104,7 @@ Updates the IP address of a domain entry using its secret key.
 - Body:
   ```json
   {
-    "ip": "new_ip_address"
+  	"ip": "new_ip_address"
   }
   ```
 
@@ -155,27 +113,25 @@ Updates the IP address of a domain entry using its secret key.
 - `200 OK` if the IP address is successfully updated.
   ```json
   {
-    "ip": "new_ip_address"
+  	"ip": "new_ip_address"
   }
   ```
-- `400 Bad Request` if the request body or key is invalid.
 - `404 Not Found` if the domain is not found.
 
-### DELETE /domain/:id
+### DELETE /domain/:key
 
 Deletes a domain entry using its secret key.
 
 **Request:**
 
 - Method: `DELETE`
-- URL: `/domain/:id`
+- URL: `/domain/:key`
 - Parameters:
-  - `id`: The secret key of the domain.
+  - `key`: The secret key of the domain.
 
 **Response:**
 
 - `200 OK` if the domain is successfully deleted.
-- `400 Bad Request` if the request parameter is invalid.
 - `404 Not Found` if the domain is not found.
 
 ### GET /domains
@@ -200,7 +156,6 @@ Fetches all domain entries.
     ...
   ]
   ```
-- `500 Internal Server Error` if there is an error retrieving the domains.
 
 ### GET /tlds
 
@@ -215,9 +170,9 @@ Fetches the list of allowed top-level domains.
 
 - `200 OK` with a list of TLDs.
   ```json
-  ["mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu"]
+  ["example_tld1", "example_tld2", ...]
   ```
 
 ---
 
-This README provides a comprehensive overview of the API's endpoints and their expected behavior. Adjust the `<repository_url>` and `<repository_directory>` placeholders to match your actual repository details.
+This README provides an overview of the API's endpoints and their expected behavior based on the provided code. Please note that the actual list of allowed TLDs and offensive words are loaded from the application's configuration.
