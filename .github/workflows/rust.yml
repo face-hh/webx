@@ -77,13 +77,27 @@ jobs:
         echo "Installing Inno Setup..."
         Start-Process -Wait -FilePath 'C:\is.exe' -ArgumentList '/VERYSILENT /NORESTART'
         echo "Inno Setup installed."
+    - name: Install Rust with GNU target
+      run: |
+        rustup toolchain install stable-gnu 
+        rustup default stable-gnu
+    - name: Download and install MSYS2
+      run: |
+        Invoke-WebRequest -Uri 'https://repo.msys2.org/distrib/x86_64/msys2-x86_64-<version>.exe' -OutFile 'C:\msys2-x86_64.exe'
+        Start-Process -Wait -FilePath 'C:\msys2-x86_64.exe' -ArgumentList '/VERYSILENT /NORESTART'
         
+    - name: Run MSYS2 Commands
+      run: |
+        C:\msys64\mingw32.exe pacman -Syu
+        C:\msys64\mingw32.exe pacman -S mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua
+        $env:PATH += ";C:\msys64\mingw64\include;C:\msys64\mingw64\bin;C:\msys64\mingw64\lib"
+   
     - name: Build Napture
       run: |
-        echo "Building WebX..."
+        echo "Building Napture..."
         cd napture
         cargo build --release
-        echo "WebX built successfully."
+        echo "Napture built successfully."
       
     - name: Create Installer
       run: |
