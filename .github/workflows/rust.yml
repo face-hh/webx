@@ -86,10 +86,8 @@ jobs:
       run: |
         echo "Installing MSYS2 packages..."
         pacman --noconfirm -S mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua mingw-w64-x86_64-pkg-config
-        pkg-config --help
 
     - name: Set PATH
-      shell: cmd
       run: |
         echo "::add-path::C:\msys64\mingw64\bin"
         echo "::add-path::C:\msys64\usr\bin"
@@ -99,6 +97,7 @@ jobs:
     - name: Build Napture
       run: |
         echo "Building Napture..."
+        pkg-config --help
         cd napture
         cargo build --release
         echo "Napture built successfully."
