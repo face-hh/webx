@@ -22,4 +22,5 @@ Since WebX is an open-source network, there are different browsers available, li
 | Napture | Go to the [releases tab of the official WebX repository](https://github.com/face-hh/webx/releases/latest). | :heavy_check_mark: **Official WebX service** | YES | Open source |
 | Bussinga | Go to the [Bussinga repository](https://github.com/codingMASTER398/bussinga/releases/latest). | [codingMASTER398](https://github.com/codingMASTER398) | YES if you are a Windows user. | As of Napture 1.2.2, Bussinga 0.0.1 seems to work better. |
 | Fapture | Go to the [Fapture repository](https://github.com/nojasm/fapture/) | [nojasm](https://github.com/nojasm/) | ??? | No releases, needs to be compiled by the end user.<br/> Webview based. |
+
 *Anything wrong with this table? As 3rd party browsers are not managed by us, they can change over time leaving this table outdated. [You can make a PR on our repo to help keep it up to date.](https://github.com/face-hh/webx/blob/main/docs) Thanks in advance!*
