@@ -2,7 +2,7 @@
 
 ## Welcome to WebX development!
 {% hint style="info" %}
-Note this is guide is up to date for **B9 ENGINE - v1.2.2** (Napture and B9's version number are syncronised). If the browser gets a new release, wait for someone to commit / PR an update to the docs ([or make a commit yourself, if you feel like helping](https://github.com/face-hh/webx/blob/main/docs/)).
+Note this is guide is up to date for **B9 ENGINE - v1.2.2** (Napture and B9's version number are synchronized). If the browser gets a new release, wait for someone to commit / PR an update to the docs ([or make a commit yourself, if you feel like helping](https://github.com/face-hh/webx/blob/main/docs/)).
 {% endhint %}
 
 ### What we'll see

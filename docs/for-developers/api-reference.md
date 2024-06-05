@@ -43,7 +43,7 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
 | `GET` | https://api.buss.lol/domains |
 {% endhint %}
 
-{% hint style="info" %}
+{% hint style="success" %}
 ### RETURNS
 
 {% code title="response.json" overflow="wrap" lineNumbers="true" %}
@@ -81,7 +81,7 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
 | `GET` | https://api.buss.lol/tlds |
 {% endhint %}
 
-{% hint style="info" %}
+{% hint style="success" %}
 ### RETURNS
 `200 OK`
 ```json
@@ -99,7 +99,7 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
 | `GET` | https://api.buss.lol/domain/name/tld |
 {% endhint %}
 
-{% hint style="info" %}
+{% hint style="success" %}
 ### RETURNS
 ### IF DOMAIN DOES EXIST
 ```json
@@ -132,7 +132,54 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
 *Being `{name}` the `name` you want to use as the domain, `{tld}` the TLD you want to use, and `{ip}` the IP / GitHub URL you want to serve from.*
 {% endhint %}
 
+{% hint style="success" %}
+### RETURNS
+### IF THE DOMAIN IS CREATED
+`200 OK`
+```json
+{
+    "tld": "example_tld",
+    "ip": "example_ip",
+    "name": "example_name",
+    "secret_key": "generated_secret_key"
+}
+```
+{% endhint %}
+
+{% hint style="warning" %}
+### IF THE BODY OF YOUR `POST` REQUEST IS NOT VALID
+`400 Bad Request`
+
+### IF `{name}` (domain name) IS ALREADY REGISTERED WITH THAT TLD
+`409 Bad Request`
+
+### IF RATE LIMIT HAS BEEN EXCEEDED
+`429 Too Many Requests`
+{% endhint %}
+
+## `POST` /domain/check
+*Allows you to "search" for domains using domain names and TLDs*
 {% hint style="info" %}
+### YOU SEND
+| REQUEST METHOD | TARGET URL | HEADERS |
+| -------------- | ---------- | ------- |
+| `POST` | https://api.buss.lol/domain/check | *None* |
+
+***AND BODY:***
+```json
+{
+    "tld": "{tld}",
+    "name": "{name}"
+}
+```
+*Being `{name}` the `name` you want to search for, and `{tld}` an ***optional*** parameter to also search for a specific TLD.* 
+{% endhint %}
+
+{% hint style="info" %}
+Quick reminder: unless specified, all parameters are required.
+{% endhint %}
+
+{% hint style="success" %}
 ### RETURNS
 ### IF THE DOMAIN IS CREATED
 `200 OK`
@@ -176,16 +223,24 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
 *Being `{ip}` the new IP you want to set for your domain.*
 {% endhint %}
 
-{% hint style="info" %}
+{% hint style="success" %}
 ### RETURNS
 ### IF THE IP IS CORRECTLY UPDATED
 `200 OK`
+
+{% code title="response.json" overflow="wrap" lineNumbers="true" %}
+
 ```json
 {
     "ip": "new_ip"
 }
 ```
 
+{% endcode %}
+
+{% endhint %}
+
+{% hint style="warning" %}
 ### IF THE BODY OF YOUR `PUT` REQUEST IS NOT VALID *OR* SPECIFIED `KEY` IS NOT VALID
 `400 Bad Request`
 
@@ -204,7 +259,7 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
 *Being `:key` your domain's secret key.*
 {% endhint %}
 
-{% hint style="info" %}
+{% hint style="success" %}
 ### RETURNS
 ### IF THE DOMAIN IS CORRECTLY REMOVED
 `200 OK`
@@ -218,7 +273,7 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
 `404 Bad Request`
 {% endhint %}
 
-## `POST` /domainapi/`:apiKey`
+## `POST` /registry/domain
 *Allows to create your own domain using an API key.*
 
 {% hint style="warning" %}
@@ -229,9 +284,9 @@ This is disabled by default as you will need to come up with your own way of val
 ### YOU SEND
 | REQUEST METHOD | TARGET URL | HEADERS |
 | -------------- | ---------- | ------- |
-| `POST` | https://api.buss.lol/domainapi/:apiKey | `Content-Type: application/json` |
+| `POST` | https://api.buss.lol/registry/domain/ | `Content-Type: application/json; Authorization = name:token` |
 
-*Being `:apiKey` your API key.*
+*Being `:token` your API key.*
 
 ***AND BODY:***
 ```json
@@ -244,7 +299,7 @@ This is disabled by default as you will need to come up with your own way of val
 *Being `{name}` the `name` you want to use as the domain, `{tld}` the TLD you want to use, and `{ip}` the IP / GitHub URL you want to serve from.*
 {% endhint %}
 
-{% hint style="info" %}
+{% hint style="success" %}
 ### RETURNS
 ### IF THE DOMAIN IS SUCCESSFULLY CREATED
 `200 OK`
