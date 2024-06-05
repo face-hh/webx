@@ -82,11 +82,18 @@ jobs:
             sudo add-apt-repository universe
             sudo apt install libfuse2
       - name: Publish AppImage to Releases
+        uses: softprops/action-gh-release@v2.0.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_CONTINUOUS_RELEASE_NAME: "Automatic Build (${{ github.sha }})"
-          GITHUB_CONTINUOUS_RELEASE_TAG: "workflow-build-${{ github.sha }}"
-        run: |
-            wget -q https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
-            chmod +x pyuploadtool-x86_64.AppImage
-            ./pyuploadtool-x86_64.AppImage napture-v${{ github.sha }}.AppImage*
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            napture-v${{ github.sha }}.AppImage*
+          prerelease: true
+          
+      #    GITHUB_CONTINUOUS_RELEASE_NAME: "Automatic Build (${{ github.sha }})"
+      #    GITHUB_CONTINUOUS_RELEASE_TAG: "workflow-build-${{ github.sha }}"
+       # run: | OLD VERISON
+       #     wget -q https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
+      #      chmod +x pyuploadtool-x86_64.AppImage
+      #     ./pyuploadtool-x86_64.AppImage napture-v${{ github.sha }}.AppImage*
