@@ -73,10 +73,11 @@ jobs:
         uses: actions/download-artifact@v4.1.7
         with:
           name: napture-v${{ github.sha }}.AppImage
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: NaptureWindowsSetup.exe
+          # Windows is still a WIP.
+  #    - name: Download Windows Artifact
+    #    uses: actions/download-artifact@v2
+   #     with:
+    #      name: NaptureWindowsSetup.exe
       - name: Download Dependencies
         run: |
             sudo add-apt-repository universe
