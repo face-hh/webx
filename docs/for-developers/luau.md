@@ -19,6 +19,7 @@ GET would be equivalent to your `document.*` query selectors and getElementById 
 ### GET
 
 In fact, the function to get an element is just called "get".
+
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
 
 ```lua
@@ -29,12 +30,13 @@ local myItem = get("myItem")
 
 > Much shorter compared to JS :wink:
 
-{% code overflow="wrap" lineNumbers="true" %}
+{% code title="javascript.js" overflow="wrap" lineNumbers="true" %}
 
-```diff
-- document.querySelector("myItem")
-- document.getElementByClassName("myItem")
-+ local myItem = get("myItem")
+```js
+// too long
+document.querySelector("h1")
+// even longer!?
+document.getElementByClassName("myItem")
 ```
 
 {% endcode %}
@@ -58,9 +60,9 @@ local all_hyperlinks = get("a", true);
 
 {% endcode %}
 
-:::tip
+{% hint style="success" %}
 When you don't pass `true`, if you select a tag or a class name that is repeated, the first one in the HTML++ will be taken.
-:::
+{% endhint %}
 
 ### SET
 
@@ -101,13 +103,13 @@ end)
 
 {% endcode %}
 
-:::info
+{% hint style="success" %}
 `on_input` is only supported by `<input>` and `<textarea>`
-:::
+{% endhint %}
 
-:::tip
+{% hint style="success" %}
 Output from the `print()` function will be logged by Napture Logs. As we told you before, you can open them with `CONTROL` + `SHIFT` + `P`
-:::
+{% endhint %}
 
 ### HTTP Fetching
 
@@ -133,13 +135,14 @@ Variable names are self explanatory, you give the function the `URL` you want to
 ### Full lists
 All the `get_{x}`, `set_{x}` and `on_{x}` available functions.
 
-:::tip
+{% hint style="success" %}
 On every function, whenever `x` is expected to be a string or a number, it can always be passed both as a string/number directly or as a Lua variable.
-:::
+{% endhint %}
 
 #### GET
 | Function | x | Return | Explanation |
 | -------- | - | ------ | ----------- |
+| `get_contents(x)` | `x` must be the name of the target tag or class name. It should be a string. | If there is any kind of string content (like text) inside of the target item, it returns it as a string. If not, returns an empty string (`""`). | Gets the `href` value of an anchor. |
 | `get_href(x)` | `x` must be the name of the target tag or class name. It should be a string. | If `href` exists in the target item, returns it as a string. If not, returns an empty string (`""`). | Gets the `href` value of an anchor. |
 | `get_source(x)` | `x` must be the name of the target tag or class name. It should be a string. | If `src` exists in the target item, returns it as a string. If not, returns an empty string (`""`). | Gets the `src` value of an image. |
 | `get_opacity(x)` | `x` must be the name of the target tag or class name. It should be a string. | If `opacity` exists, returns it as a number. Keep in mind if you don't give an opacity value to an item, it defaults to `1`, so it can't be `null` nor an empty string. | Gets the `opacity` value of any item. |
@@ -152,9 +155,10 @@ On every function, whenever `x` is expected to be a string or a number, it can a
 | `set_opacity(x)` | `x` must be the value you want to set the `opacity` property to. It's should be a number between 0 and 1. Decimals supported. | No return. | Sets the `opacity` value of any item. |
 | `set_visible(x)` | `x` must be **TO DO** | No return. | **TO DO** |
 
-:::danger TO DO
+{% hint style="danger" %}
+### TO DO
 This part requires reviewing / finishing. [See the repo.](https://github.com/face-hh/webx/blob/main/docs/).
-:::
+{% endhint %}
 
 #### EVENTS
 > Event functions do not have a return. As showed before, put them inside of a function. Every time they get triggered the code of the functions will be executed.
