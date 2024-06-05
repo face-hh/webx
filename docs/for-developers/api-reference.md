@@ -62,13 +62,15 @@ Ratelimits provided in headers.
 
 ## `GET` /tlds
 *Allows you to get the list of all valid TLDS.*
-:::info YOU SEND
+{% hint style="info" %}
+### YOU SEND
 | REQUEST METHOD | TARGET URL |
 | -------------- | ---------- |
 | `GET` | https://api.buss.lol/tlds |
 {% endhint %}
 
-:::info RETURNS
+{% hint style="info" %}
+### RETURNS
 `200 OK`
 ```json
 ["mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu"]
@@ -78,13 +80,15 @@ Ratelimits provided in headers.
 ## `GET` /domain/`name`/`tld`
 *Allows you to get the data from a specific domain.*<br/>
 ***Being `name` the domain name (e.g. "register") and `tld` it's TLD (e.g. "it").***
-:::info YOU SEND
+{% hint style="info" %}
+### YOU SEND
 | REQUEST METHOD | TARGET URL |
 | -------------- | ---------- |
 | `GET` | https://api.buss.lol/domain/name/tld |
 {% endhint %}
 
-:::info RETURNS
+{% hint style="info" %}
+### RETURNS
 ### IF DOMAIN DOES EXIST
 ```json
 {
@@ -95,11 +99,12 @@ Ratelimits provided in headers.
 ```
 ### IF DOMAIN DOES NOT EXIST
 *Does not return anything.*
-:::
+{% endhint %}
 
 ## `POST` /domain
 *Allows you to register a domain from the API*
-:::info YOU SEND
+{% hint style="info" %}
+### YOU SEND
 | REQUEST METHOD | TARGET URL | HEADERS |
 | -------------- | ---------- | ------- |
 | `POST` | https://api.buss.lol/domain | `Content-Type: application/json` |
@@ -113,9 +118,10 @@ Ratelimits provided in headers.
 }
 ```
 *Being `{name}` the `name` you want to use as the domain, `{tld}` the TLD you want to use, and `{ip}` the IP / GitHub URL you want to serve from.*
-:::
+{% endhint %}
 
-:::info RETURNS
+{% hint style="info" %}
+### RETURNS
 ### IF THE DOMAIN IS CREATED
 `200 OK`
 ```json
@@ -126,7 +132,9 @@ Ratelimits provided in headers.
     "secret_key": "generated_secret_key"
 }
 ```
+{% endhint %}
 
+{% hint style="warning" %}
 ### IF THE BODY OF YOUR `POST` REQUEST IS NOT VALID
 `400 Bad Request`
 
@@ -135,11 +143,12 @@ Ratelimits provided in headers.
 
 ### IF RATE LIMIT HAS BEEN EXCEEDED
 `429 Too Many Requests`
-:::
+{% endhint %}
 
 ## `PUT` /domain/`key`
 *Allows you to update your domain's IP / GitHub URL. The code's source, basically.*
-:::info YOU SEND
+{% hint style="info" %}
+### YOU SEND
 | REQUEST METHOD | TARGET URL | HEADERS |
 | -------------- | ---------- | ------- |
 | `PUT` | https://api.buss.lol/domain/:key | `Content-Type: application/json` |
@@ -153,9 +162,10 @@ Ratelimits provided in headers.
 }
 ```
 *Being `{ip}` the new IP you want to set for your domain.*
-:::
+{% endhint %}
 
-:::info RETURNS
+{% hint style="info" %}
+### RETURNS
 ### IF THE IP IS CORRECTLY UPDATED
 `200 OK`
 ```json
@@ -169,7 +179,7 @@ Ratelimits provided in headers.
 
 ### IF THE DOMAIN IS NOT FOUND
 `404 Bad Request`
-:::
+{% endhint %}
 
 ## `DELETE` /domain/`key`
 *Allows you to delete your domain from the network. You cannot undo that, so be careful.*
@@ -198,11 +208,13 @@ Ratelimits provided in headers.
 
 ## `POST` /domainapi/`:apiKey`
 *Allows to create your own domain using an API key.*
-:::warning
+
+{% hint style="warning" %}
 This is disabled by default as you will need to come up with your own way of validating and distributing API Keys.
 {% endhint %}
 
-:::info YOU SEND
+{% hint style="info" %}
+### YOU SEND
 | REQUEST METHOD | TARGET URL | HEADERS |
 | -------------- | ---------- | ------- |
 | `POST` | https://api.buss.lol/domainapi/:apiKey | `Content-Type: application/json` |
@@ -239,7 +251,8 @@ This is disabled by default as you will need to come up with your own way of val
 `400 Bad Request`
 
 ### IF THE API KEY SYSTEM IS DISABLED
-It can be.
+(It can be.)
+
 `403 Not allowed`
 
 ### IF THE REQUEST DOMAIN IS ALREADY REGISTERED
