@@ -2,9 +2,8 @@
 
 Luau is a typed scripting language derived from Lua. Instead of JavaScript, we use Luau to power WebX.
 
-{% hint style="danger" %}
-### Requires reviewing
-This part of the documentation is not finished / requires reviewing. [See the repo.](https://github.com/face-hh/webx/blob/main/docs/).
+{% hint style="info" %}
+Note: We say "Luau" as it is what we use in our backend, but you do not need to install it. **You can write regular Lua and your code will work fine.**
 {% endhint %}
 
 ## The fundamentals: SET and GET.
