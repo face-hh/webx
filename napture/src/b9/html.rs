@@ -810,8 +810,9 @@ async fn fetch_file(url: String) -> String {
 
     if url.starts_with("file://") {
         let path = url
-            .replace("file:///", "")
-            .replace("file://", "");
+            .replace("file://", "")
+            .replace("/", std::path::MAIN_SEPARATOR_STR)
+            .trim_start_matches("\\").to_string();
         
         println!("{path}");
 

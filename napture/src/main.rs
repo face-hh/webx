@@ -21,7 +21,7 @@ macro_rules! lualog {
             "<span foreground=\"#FF0000\">[{}]</span> | {} {}\n",
             now.format("%Y-%m-%d %H:%M:%S"),
             problem_type,
-            $s
+            html_escape::encode_double_quoted_attribute(&$s)
         );
 
         if let Ok(mut lua_logs) = $crate::globals::LUA_LOGS.lock() {
