@@ -64,7 +64,8 @@ jobs:
       env:
         UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}
   build_win:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    name: Build Napture (Windows)
 
     steps:
     - uses: actions/checkout@v2
