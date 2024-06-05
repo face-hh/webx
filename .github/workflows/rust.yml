@@ -140,14 +140,19 @@ jobs:
         cargo build --release --verbose
         echo "Napture built successfully."
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: napture-v${{ github.sha }}.exe
-        path: |
-          napture/target/release/webx.exe
-          C:\msys64\mingw64\lib\*
+    - name: Copy files to workspace
+      run: |
+        mkdir -p napture/target/release/libs
+        cp C:/msys64/mingw64/lib/* napture/target/release/libs
 
+    - name: Upload Napture
+      uses: actions/upload-artifact@v4
+      with:
+        name: Napture-windows-x86_64
+        path: |
+          napture/target/release/Napture-windows-x86_64.exe
+          napture/target/release/libs/*
+          
   upload:
    name: "Upload Release"
    runs-on: ubuntu-24.04
