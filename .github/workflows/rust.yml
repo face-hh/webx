@@ -116,6 +116,7 @@ jobs:
    runs-on: ubuntu-24.04
    needs:
       - build
+      - build_win
    steps:
       - name: Download Ubuntu Artifact
         uses: actions/download-artifact@v4.1.7
