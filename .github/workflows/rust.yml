@@ -107,7 +107,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: napture-macos-nightly.dmg
-          path: napture/target/release/Napture-macos-universial.dmg
+          path: napture/target/release/napture-macos-nightly.dmg
         
   build_win:
     name: Build Napture (Windows)
