@@ -92,7 +92,7 @@ You cannot embed `<style>` tags or write inline scripts in your HTML. Due to tha
 
 {% hint style="success" %}
 If you mess up something in your head, the title bar will notify you about that. Given image is an example of how it would look like:
-![Screenshot](png3.png)
+![Screenshot](../png3.png)
 {% endhint %}
 
 Well, your head is done. Great! Now let's move on onto the body.

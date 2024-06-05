@@ -125,7 +125,7 @@ Noted that? Now let's get to the styling features.
 {% endhint %}
 
 {% hint style="info" %}
-![Border preview](borderstyles.png)
+![Border preview](../borderstyles.png)
 {% endhint %}
 
 ### Layout
