@@ -153,7 +153,7 @@ On every function, whenever `x` is expected to be a string or a number, it can a
 | `get_source()` | If `src` exists in the target item, returns it as a string. If not, returns an empty string (`""`). | Gets the `src` value of an image. |
 | `get_opacity()` | If `opacity` exists, returns it as a number. Keep in mind if you don't give an opacity value to an item, it defaults to `1`, so it can't be `null` nor an empty string. | Gets the `opacity` value of any item. |
 
-##### Example usage of GET and GETTING FUNCTIONS
+Example usage of GET and GETTING FUNCTIONS
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
 
@@ -173,21 +173,68 @@ local all_parragraphs = get("p", true)
 {% endcode %}
 
 #### SET
-| <div style="width: 150px;">Function</div> | x | Explanation |
+| <div style="width: 150px">Function</div> | x | Explanation |
 | -------- | - | ----------- |
 | `set_contents(x)` | `x` must be the name of the target tag or class name. It should be a string. | Gets the text content of any item. |
 | `set_href(x)` | `x` must be the URL you want to set the `href` property to. It should be a string. | Sets the `href` value of an anchor. |
 | `set_source(x)` | `x` must be the URL you want to set the `src` property to. It should be a string. | Sets the `src` value of an image. |
 | `set_opacity(x)` | `x` must be the value you want to set the `opacity` property to. It should be a float between 0 and 1. | Sets the `opacity` value of any item. |
-| `set_visible(x)` | `x` must be the value you want to set the `visible` property to. It should be a boolean value, `true` or `false`. | :danger: **Upcoming feature** - Not released yet (as of B9 1.2.2) - Changes if the item is visible or not. If set to false, the item `dissapears`, and if set to `true`, appears. Defaults to `true`. It's just visual, elements never get removed from the code and are always accessible from there.  |
+| `set_visible(x)` | `x` must be the value you want to set the `visible` property to. It should be a boolean value, `true` or `false`. | :warning: **Upcoming feature** - ***Not released yet (as of B9 1.2.2)*** - Changes if the item is visible or not. If set to false, the item `dissapears`, and if set to `true`, appears. Defaults to `true`. It's just visual, elements never get removed from the code and are always accessible from there.  |
+
+Example usage of SET
+
+{% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
+```lua
+-- first, we get
+local test = get("myclass")
+
+-- now, we set
+test.set_opacity(0.75)
+test.set_contents("This text will be set as the content of the element")
+
+-- example: get an anchor and set it's href to the Dingle search engine and its text content to "Search with Dingle"
+get("a").set_href("buss://dingle.it")
+get("a").set_contents("Search with Dingle")
+```
+
+{% endcode %}
 
 #### EVENTS
 > Event functions do not have a return. As showed before, put them inside of a function. Every time they get triggered the code of the functions will be executed.
 
-| Function | x | Trigger | Explanation |
-| -------- | - | ------- | ----------- |
-| `on_click(x)` | `x` must be the name of the target tag or class name. It should be a string. | A mouse click. | Supported by all tags. Each click over the item triggers it once. |
-| `on_input(x)` | `x` must be the name of the target tag or class name. It should be a string. | Editing the content of a field. | Supported by `<input>` and `<textarea>` tags. Each change triggers it once. This means, if I type 2 letters and remove 1 (3 changes), it should be called three times. |
-| `on_submit(x)` | `x` must be the name of the target tag or class name. It should be a string. | Submitting the content of a field. Basically hitting `ENTER` key with the field focused. | Supported by `<input>` and `<textarea>` tags. Each hit triggers it once. |
+| Function | Trigger | Explanation |
+| -------- | ------- | ----------- |
+| `on_click(function)` | A mouse click. | Supported by all tags. Each click over the item triggers it once. |
+| `on_input(function)` | Editing the content of a field. | Supported by `<input>` and `<textarea>` tags. Each change triggers it once. This means, if I type 2 letters and remove 1 (3 changes), it should be called three times. |
+| `on_submit(function)` | Submitting the content of a field. Basically hitting `ENTER` key with the field focused. | Supported by `<input>` and `<textarea>` tags. Each hit triggers it once. |
+
+Example usage of EVENTS
+
+{% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
+```lua
+-- first, we get. this time we'll use a different class name, just in case.
+local test = get("mybutton")
+-- note: no, buttons are *not* supported as a tag, but any item supports the on_click event, so you can just use an anchor as a button with some styling to make it look like one.
+
+-- now, we do stuff when it gets clicked
+test.on_click(function()
+    test.set_contents("i was clicked!")
+end)
+
+-- a very slightly more complex example:
+
+local input = get("input") -- will get an <input> item
+local h1 = get("h1")
+
+input.on_submit(function()
+    h1.set_contents("your input was: " + input.get_contents())
+)
+```
+
+{% endcode %}
+
+#### OTHER FUNCTIONS
 
 That's it! You're ready to write fully functional WebX code! However, we're not done yet. Your beautiful code must be published to the WebX somehow, right? Let's find out about that.
