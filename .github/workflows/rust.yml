@@ -88,13 +88,19 @@ jobs:
         pacman --noconfirm -S mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua mingw-w64-x86_64-pkg-config
 
     - name: Set PATH
+      run: |
+        echo "Setting PATH..."
+        echo "C:\\msys64\\mingw64\\bin" >> $GITHUB_PATH
+        echo "C:\\msys64\\usr\\bin" >> $GITHUB_PATH
+        echo "C:\\msys64\\mingw64\\include" >> $GITHUB_PATH
+        echo "C:\\msys64\\mingw64\\lib" >> $GITHUB_PATH
+
+    - name: Verify pkg-config
       shell: powershell
       run: |
-        echo "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-        echo "C:\msys64\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-        echo "C:\msys64\mingw64\include" | Out-File -FilePath $env:GITHUB_PATH -Append
-        echo "C:\msys64\mingw64\lib" | Out-File -FilePath $env:GITHUB_PATH -Append
-        echo "PATH is now: $env:Path"
+        echo "Verifying pkg-config installation..."
+        which pkg-config
+        pkg-config --version
 
     - name: Build Napture
       run: |
