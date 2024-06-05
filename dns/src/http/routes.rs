@@ -1,7 +1,7 @@
 use super::{models::*, AppState};
-use crate::{config::Config, http::helpers, kv, secret};
+use crate::{http::helpers, kv, secret};
 use futures::stream::StreamExt;
-use mongodb::{bson::doc, options::FindOptions, Collection};
+use mongodb::{bson::doc, options::FindOptions};
 use std::env;
 
 use actix_web::{
@@ -16,24 +16,25 @@ pub(crate) async fn index() -> impl Responder {
 	 )
 }
 
-pub(crate) async fn create_logic(domain: Domain, config: &Config, collection: &Collection<Domain>) -> Result<Domain, HttpResponse> {
+pub(crate) async fn create_logic(domain: Domain, app: &AppState) -> Result<Domain, HttpResponse> {
     helpers::validate_ip(&domain)?;
 
-    if !config.tld_list().contains(&domain.tld.as_str()) || !domain.name.chars().all(|c| c.is_alphabetic() || c == '-') || domain.name.len() > 24 {
+    if !app.config.tld_list().contains(&domain.tld.as_str()) || !domain.name.chars().all(|c| c.is_alphabetic() || c == '-') || domain.name.len() > 24 {
         return Err(HttpResponse::BadRequest().json(Error {
             msg: "Failed to create domain",
             error: "Invalid name, non-existent TLD, or name too long (24 chars).".into(),
         }));
     }
 
-    if config.offen_words().iter().any(|word| domain.name.contains(word)) {
+    if app.config.offen_words().iter().any(|word| domain.name.contains(word)) {
         return Err(HttpResponse::BadRequest().json(Error {
             msg: "Failed to create domain",
             error: "The given domain name is offensive.".into(),
         }));
     }
 
-    let existing_domain = collection
+    let existing_domain = app
+        .db
         .find_one(doc! { "name": &domain.name, "tld": &domain.tld }, None)
         .await
         .map_err(|_| HttpResponse::InternalServerError().finish())?;
@@ -42,7 +43,7 @@ pub(crate) async fn create_logic(domain: Domain, config: &Config, collection: &C
         return Err(HttpResponse::Conflict().finish());
     }
 
-    collection.insert_one(&domain, None).await.map_err(|_| HttpResponse::Conflict().finish())?;
+    app.db.insert_one(&domain, None).await.map_err(|_| HttpResponse::Conflict().finish())?;
 
     Ok(domain)
 }
@@ -52,7 +53,7 @@ pub(crate) async fn create_domain(domain: web::Json<Domain>, app: Data<AppState>
     let mut domain = domain.into_inner();
     domain.secret_key = Some(secret_key);
 
-    match create_logic(domain, &app.config, &app.db).await {
+    match create_logic(domain, app.as_ref()).await {
         Ok(domain) => HttpResponse::Ok().json(domain),
         Err(error) => error,
     }
@@ -88,7 +89,7 @@ pub(crate) async fn elevated_domain(domain: web::Json<Domain>, app: Data<AppStat
     let mut domain = domain.into_inner();
     domain.secret_key = Some(secret_key);
 
-    match create_logic(domain, &app.config, &app.db).await {
+    match create_logic(domain, app.as_ref()).await {
         Ok(domain) => HttpResponse::Ok().json(domain),
         Err(error) => error,
     }
@@ -203,4 +204,4 @@ pub(crate) async fn get_domains(query: web::Query<PaginationParams>, app: Data<A
 }
 
 #[actix_web::get("/tlds")]
-pub(crate) async fn get_tlds(config: Data<Config>) -> impl Responder { HttpResponse::Ok().json(&*config.tld_list()) }
+pub(crate) async fn get_tlds(app: Data<AppState>) -> impl Responder { HttpResponse::Ok().json(&*app.config.tld_list()) }
