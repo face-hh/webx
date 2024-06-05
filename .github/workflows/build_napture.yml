@@ -146,7 +146,7 @@ jobs:
       run: |
         echo "Copying DLLs to workspace..."
         mkdir -p napture/target/release/libs
-        move *.dll napture/target/release/
+        Get-ChildItem -Recurse -Filter *.dll -File -Force | ForEach-Object { Move-Item -Force -Path $_.FullName -Destination ../ }
   
     - name: Zip Napture files
       run: |
