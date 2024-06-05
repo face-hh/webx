@@ -146,6 +146,7 @@ jobs:
         mkdir -p napture/target/release/libs
         C:\msys64\usr\bin\bash.exe -lc "find /mingw64/lib -name '*.dll' -exec cp --parents {} /c/projects/napture/target/release/libs \;"
     - name: Move DLLs to Executable Directory
+      shell: cmd
       run: |
         echo "Moving DLLs to executable directory..."
         cd napture/target/release
