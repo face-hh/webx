@@ -1,9 +1,9 @@
 # WebX Developer Guide
 
 ## Welcome to WebX development!
-:::info
+{% hint style="info" %}
 Note this is guide is up to date for **B9 ENGINE - v1.2.2** (Napture and B9's version number are syncronised). If the browser gets a new release, wait for someone to commit / PR an update to the docs ([or make a commit yourself, if you feel like helping](https://github.com/face-hh/webx/blob/main/docs/)).
-:::
+{% endhint %}
 
 ### What we'll see
 WebX websites are developed with HTML++, CSS3.25, and [Luau](https://luau-lang.org). In this guide, you'll basically find:
@@ -19,9 +19,9 @@ Let's start with the basics. In order to make a web, you'll need to make a proje
 - styles.css
 - script.lua
 ```
-:::warning
+{% hint style="warning" %}
 *The index file **must** be called "index.html".
-:::
+{% endhint %}
 
 :::warning
 As of version 1.2.2, WebX does **not** support routing, so no multiple pages (`/index.html`, `/hello.html`) are supported.

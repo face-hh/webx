@@ -83,14 +83,14 @@ This isn't the standard web, **HTTP**/HTTPS are **not** supported for neither sc
   <script src="script2.lua" />
 </body>
 ```
-:::info
-You cannot embed `<style>` tags or write inline scripts in your HTML. Due to that, the script tag must be self closing, even thought your IDE might mark that as an error.
-:::
+{% hint style="info" %}
+You cannot embed `<style>` tags or write inline scripts in your HTML. Due to that, the script tag must be self closing, even though your IDE might mark that as an error.
+{% endhint %}
 
-:::tip
+{% hint style="success" %}
 If you mess up something in your head, the title bar will notify you about that. Given image is an example of how it would look like:
 ![Screenshot](png3.png)
-:::
+{% endhint %}
 
 Well, your head is done. Great! Now let's move on onto the body.
 
