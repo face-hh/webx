@@ -166,11 +166,11 @@ jobs:
         with:
           name: napture-linux-nightly.AppImage
       - name: Download Windows Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: napture-windows-nightly.exe
       - name: Download macOS Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: napture-macos-nightly.dmg    
       - name: Download Dependencies
