@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    paths:
+      - /napture/*
 
 env:
   CARGO_TERM_COLOR: always
@@ -185,7 +187,6 @@ jobs:
           token: ${{ env.GITHUB_TOKEN }}
           name: Nightly Build
           tag_name: nightly
-          tag: nightly
           generate_release_notes: true
           files: |
             napture-linux-nightly.AppImage
