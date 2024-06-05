@@ -85,14 +85,12 @@ jobs:
       shell: msys2 {0}
       run: |
         echo "Installing MSYS2 packages..."
-        pacman --noconfirm -S mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua
+        pacman --noconfirm -S mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua mingw-w64-x86_64-pkg-config
 
     - name: Set PATH
       shell: cmd
       run: |
-        set PATH=C:\msys64\mingw64\include;%PATH%
         set PATH=C:\msys64\mingw64\bin;%PATH%
-        set PATH=C:\msys64\mingw64\lib;%PATH%
 
     - name: Build Napture
       shell: cmd
@@ -107,6 +105,7 @@ jobs:
       with:
         name: napture-v${{ github.sha }}.exe
         path: napture/target/release/webx.exe
+
   upload:
    name: "Upload Release"
    runs-on: ubuntu-24.04
@@ -137,10 +136,3 @@ jobs:
             napture-v${{ github.sha }}.AppImage
             napture-v${{ github.sha }}.exe
           prerelease: true
-          
-      #    GITHUB_CONTINUOUS_RELEASE_NAME: "Automatic Build (${{ github.sha }})"
-      #    GITHUB_CONTINUOUS_RELEASE_TAG: "workflow-build-${{ github.sha }}"
-       # run: | OLD VERISON
-       #     wget -q https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
-      #      chmod +x pyuploadtool-x86_64.AppImage
-      #     ./pyuploadtool-x86_64.AppImage napture-v${{ github.sha }}.AppImage*
