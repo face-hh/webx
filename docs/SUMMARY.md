@@ -1,13 +1,17 @@
 # Table of contents
 
+* [Welcome to WebX](README.md)
+
 ## For users
+
 * [User manual](user-start.md)
-* [Advanced user manual](user-advanced.md)
+* [Advanced user manual](for-users/advanced-user-manual.md)
 
 ## For developers
-* [Getting started](/dev-start)
-* [HTML++](/htmlpp)
-* [CSS 3.25](/css)
-* [Luau](/luau)
-* [Site publishing & Domain registering](/dev-publish)
-* [API Reference](/webx-api)
+
+* [Getting started](for-developers/getting-started.md)
+* [HTML++](for-developers/html++.md)
+* [CSS 3.25](for-developers/css-3.25.md)
+* [Luau](for-developers/luau.md)
+* [Site publishing & Domain registering](for-developers/site-publishing-and-domain-registering.md)
+* [API Reference](for-developers/api-reference.md)
