@@ -59,7 +59,9 @@ The thing is, B9 does not use `rel` to define what to do with each thing. It use
 This isn't the standard web, **HTTP**/HTTPS are **not** supported for neither script tags & link tags that href a stylesheet. Both files must be available locally, in the same path as the `index.html`. As we told you before, the three files must be in the root. HTTP is supported for the icon's link and for images.
 {% endhint %}
 
-```html:line-numbers=2
+{% code title="index.html" overflow="wrap" lineNumbers="true" %}
+
+```html
 <head>
     <title>My cool web</title>
     <link href="https://buss.log/icon.ico"> <!--This image will be the page's icon--> // [!code highlight]
@@ -81,6 +83,9 @@ This isn't the standard web, **HTTP**/HTTPS are **not** supported for neither sc
   <script src="script2.lua" />
 </body>
 ```
+
+{% endcode %}
+
 {% hint style="info" %}
 You cannot embed `<style>` tags or write inline scripts in your HTML. Due to that, the script tag must be self closing, even though your IDE might mark that as an error.
 {% endhint %}
@@ -103,7 +108,7 @@ Currently, you can use the following HTML tags:
 - Horizontal rule (`<hr>`), which creates a horizontal line on the entire page.
 - Images (`<img>`), with a `src` property for the local path / HTTP URI of the image. They are unresizeable, so your image must already be of the desired size (use any image editing tool for that, e.g. [GIMP](https://www.gimp.org/)).
 {% hint style="warning" %}
-Additionally, **as of B9 v1.2.2** images are currently broken on Microsoft Windows&tm; and will only work if you follow the [Guide of Compilation for Napture - Windows.](https://github.com/face-hh/webx?tab=readme-ov-file#windows-1).
+Additionally, **as of B9 v1.2.2** images are currently broken on *Microsoft Windows*; and will only work if you follow the [Guide of Compilation for Napture - Windows.](https://github.com/face-hh/webx?tab=readme-ov-file#windows-1).
 {% endhint %}
 - Inputs (`<input>`) are one-line text fields. You can interact with them with WebX's Luau API.
 - Textareas (`<textarea>`) are equivalent to inputs, but they are *multi-line* text fields instead of *one-line*.

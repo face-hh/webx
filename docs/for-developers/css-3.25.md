@@ -89,9 +89,9 @@ Looks like a lot, huh? It's not that complicated. It's just about taking a few t
 4. **Remember how the CSS box model works:** We use CSS 3's standard box model, where a box has a SIZE, then a PADDING, then a BORDER ~~and an OUTLINE~~*, and then a MARGIN.
 5. **Events are not supported:** As of B9 v1.2.2, events (like `:focused`, `:hover`, and so on) are not supported.
 
-:::info
+{% hint style="info" %}
 *Outline is not supported by B9 as of 1.2.2
-:::
+{% endhint %}
 
 Noted that? Now let's get to the styling features.
 
@@ -108,8 +108,10 @@ Noted that? Now let's get to the styling features.
 | `border-style` | Any of the following: `none`, `hidden`, `dotted`, `dashed`, `solid`, `double`, `groove`, `ridge`, `inset`, `outset` | Gives the border a custom style. *Since there are a lot of options, scroll down for an image preview of each one*. |
 | `border-radius` | Any `px` value | Gives the border a custom roundness. |
 | `opacity` | Any numeric value from 0 to 1. Decimals (0.5) supported. | Gives the item a custom opacity. Opacity is the opposite of transparency, being opacity = 1 a fully visible item, opacity = 0 a transparent, invisible item, and opacity = 0.5 something in between, half transparent and half opaque. |
+| `background-color` | Any `HEX` value | Gives the item a background color. If not set, will use the default one depending on the user's theme (or not at all). |
 
-:::warning About margin
+{% hint style="warning" %}
+### About margin
 `margin` by itself is not supported by B9 as of 1.2.2. You need to give a direction. If you want to set the padding of the top of the box, use `margin-top`, for example.
 | CSS 3.25 directive | Direction |
 | --------- | -------- |
@@ -117,11 +119,11 @@ Noted that? Now let's get to the styling features.
 | `margin-bottom` | Bottom of the box (DOWN) |
 | `margin-left` | Left of the box |
 | `margin-right` | Right of the box |
-:::
+{% endhint %}
 
-:::info Border style preview
+{% hint style="info" %}
 ![Border preview](borderstyles.png)
-:::
+{% endhint %}
 
 ### Layout
 > Use these in combination with `<div>`s to organise your layout.
@@ -130,6 +132,8 @@ Noted that? Now let's get to the styling features.
 | -------- | ----- | ----------- |
 | `gap` | Any `px` value | Sets the amount of space (in pixels) that will be created between all the elements that are inside of a `<div>` |
 | `direction` | `row` or `column` | The direction all the items inside of the `<div>` will follow. Default is `column`. Similar to CSS 3's flex display (*but no "display: flex;" required here*). |
+| `wrap` | `wrap` or `nowrap` | If enabled, when there are too many elements inside of a parent container, they will be moved to the next line (they will be *wrapped*). If not, the elements will just overflow. Defaults to `nowrap`. |
+| `align_items` | Any of the following: `fill`, `start`, `end`, `center` | Defines if the items should be aligned to the center of the container, to the start, or to the end. If set to fill, the item will expand to fill all available horizontal space within its container instead of just moving to get aligned. Defaults to `fill`. |
 
 ### Text
 > Use these to style your texts
@@ -137,14 +141,14 @@ Noted that? Now let's get to the styling features.
 | <div style="width:150px">Property</div> | Possible value | Explanation |
 | -------- | ----- | ----------- |
 | `font-size` | Any `px` value | Gives the text a custom size. There is a default for each text tag (`h1`, `h2`, `p`...) |
-| `font-height` | Any `px` value | Gives the text a custom line-height. There is a default for each text tag. |
+| `line-height` | Any `px` value | Gives the text a custom line-height. There is a default for each text tag. |
 | `font-family` | String value | Gives the text a custom font. `<link>` does not support font files, so the end user must have that font installed. As of B9 v1.2.2, fallback fonts don't seem to be supported. |
 | `font-weight` | Any of the following: `ultralight`, `light`, `normal`, `bold`, `ultrabold`, `heavy` | Gives the text a custom font weight. |
 | `color` | Any `HEX` value | Gives the text a custom color. |
 
-:::warning
+{% hint style="warning" %}
 As of B9 v1.2.2, built-in colors (such as `red`, `orange`, `lightblue`, and other colors from CSS3) are **not** supported.
-:::
+{% endhint %}
 
 ### Text underline / overline / strikethrough
 > Non-standard, this feature doesn't exist on CSS 3.
