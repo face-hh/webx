@@ -1,4 +1,4 @@
-name: Rust
+name: Napture Nightly
 
 on:
   push:
@@ -185,6 +185,6 @@ jobs:
           token: ${{ env.GITHUB_TOKEN }}
           files: |
             napture-v${{ github.sha }}.AppImage
-            napture-v${{ github.sha }}.exe
+            napture-v${{ github.sha }}.exe.zip
             napture-v${{ github.sha }}.dmg
           prerelease: true
