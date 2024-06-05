@@ -47,14 +47,13 @@ jobs:
         cp io.github.face_hh.Napture.desktop AppDir/
         cp io.github.face_hh.Napture.svg AppDir/
         ARCH=x86_64
-         ../appimagetool-x86_64.AppImage AppDir --appimage-extract
-        cd AppDir && ls
+         ../appimagetool-x86_64.AppImage AppDir
         mv webx-x86_64.AppImage ../Bussin.Napture-x86_64.AppImage
         echo "AppImage created successfully."
     - name: Rename AppImage
       run: |
         echo "Renaming AppImage..."
-        mv naputure-x86_64.AppImage napture-v${{ github.sha }}.AppImage
+        mv Bussin.Napture-x86_64.AppImage napture-v${{ github.sha }}.AppImage
         echo "AppImage renamed successfully."
 
     - name: Upload Artifact
