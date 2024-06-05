@@ -63,6 +63,8 @@ jobs:
       with:
         name: napture-v${{ github.sha }}.AppImage
         path: napture-v${{ github.sha }}.AppImage
+      env:
+        UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}
   upload:
    name: "Upload Release"
    runs-on: ubuntu-24.04
@@ -81,4 +83,4 @@ jobs:
           asset_path: napture-v${{ github.sha }}.AppImage
           asset_name: Bussin.Napture-x86_64.AppImage
           asset_content_type: application/octet-stream
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ env.UPLOAD_URL }}
