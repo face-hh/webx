@@ -66,14 +66,14 @@ Ratelimits provided in headers.
 | REQUEST METHOD | TARGET URL |
 | -------------- | ---------- |
 | `GET` | https://api.buss.lol/tlds |
-:::
+{% endhint %}
 
 :::info RETURNS
 `200 OK`
 ```json
 ["mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu"]
 ```
-:::
+{% endhint %}
 
 ## `GET` /domain/`name`/`tld`
 *Allows you to get the data from a specific domain.*<br/>
@@ -82,7 +82,7 @@ Ratelimits provided in headers.
 | REQUEST METHOD | TARGET URL |
 | -------------- | ---------- |
 | `GET` | https://api.buss.lol/domain/name/tld |
-:::
+{% endhint %}
 
 :::info RETURNS
 ### IF DOMAIN DOES EXIST
@@ -173,30 +173,34 @@ Ratelimits provided in headers.
 
 ## `DELETE` /domain/`key`
 *Allows you to delete your domain from the network. You cannot undo that, so be careful.*
-:::info YOU SEND
+{% hint style="info" %}
+### YOU SEND
 | REQUEST METHOD | TARGET URL | HEADERS |
 | -------------- | ---------- | ------- |
 | `DELETE` | https://api.buss.lol/domain/:key | *No headers required* |
 
 *Being `:key` your domain's secret key.*
-:::
+{% endhint %}
 
-:::info RETURNS
+{% hint style="info" %}
+### RETURNS
 ### IF THE DOMAIN IS CORRECTLY REMOVED
 `200 OK`
+{% endhint %}
 
+{% hint style="warning" %}
 ### IF THE REQUEST HAS AN INVALID PARAMETER
 `400 Bad Request`
 
 ### IF THE DOMAIN IS NOT FOUND
 `404 Bad Request`
-:::
+{% endhint %}
 
 ## `POST` /domainapi/`:apiKey`
 *Allows to create your own domain using an API key.*
 :::warning
 This is disabled by default as you will need to come up with your own way of validating and distributing API Keys.
-:::
+{% endhint %}
 
 :::info YOU SEND
 | REQUEST METHOD | TARGET URL | HEADERS |
@@ -214,9 +218,10 @@ This is disabled by default as you will need to come up with your own way of val
 }
 ```
 *Being `{name}` the `name` you want to use as the domain, `{tld}` the TLD you want to use, and `{ip}` the IP / GitHub URL you want to serve from.*
-:::
+{% endhint %}
 
-:::info RETURNS
+{% hint style="info" %}
+### RETURNS
 ### IF THE DOMAIN IS SUCCESSFULLY CREATED
 `200 OK`
 ```json
@@ -227,7 +232,9 @@ This is disabled by default as you will need to come up with your own way of val
     "secret_key": "generated_secret_key"
 }
 ```
+{% endhint %}
 
+{% hint style="warning" %}
 ### IF THE BODY OF YOUR `POST` REQUEST IS NOT VALID
 `400 Bad Request`
 
@@ -240,4 +247,4 @@ It can be.
 
 ### IF THE RATE LIMIT IS EXCEEDED
 `429 Too many requests`
-:::
+{% endhint %}
