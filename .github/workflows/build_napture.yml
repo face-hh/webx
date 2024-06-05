@@ -146,7 +146,7 @@ jobs:
       run: |
         echo "Copying DLLs to workspace..."
         mkdir -p napture/target/release/libs
-        move *.dll napture/target/release/"
+        move *.dll napture/target/release/".
   
     - name: Zip Napture files
       run: |
