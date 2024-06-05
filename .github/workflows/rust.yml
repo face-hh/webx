@@ -61,7 +61,7 @@ jobs:
       env:
         UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}  
   build_macos:
-    name: Build Napture (MacOS)
+    name: Build Napture (macOS)
     runs-on: macos-latest
 
     steps:
@@ -150,7 +150,7 @@ jobs:
       with:
         name: napture-v${{ github.sha }}.exe
         path: |
-          napture/target/release/napture-v${{ github.sha }}.exe
+          napture/target/release/webx.exe
           napture/target/release/libs/*
           
   upload:
@@ -169,7 +169,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: napture-v${{ github.sha }}.exe
-      - name: Download MacOS Artifact
+      - name: Download macOS Artifact
         uses: actions/download-artifact@v2
         with:
           name: napture-v${{ github.sha }}.dmg    
@@ -184,7 +184,7 @@ jobs:
         with:
           token: ${{ env.GITHUB_TOKEN }}
           files: |
-            napture-v${{ github.sha }}-linux.AppImage
-            napture-v${{ github.sha }}-windows.exe
-            napture-v${{ github.sha }}-macos.dmg
+            napture-v${{ github.sha }}.AppImage
+            napture-v${{ github.sha }}.exe
+            napture-v${{ github.sha }}.dmg
           prerelease: true
