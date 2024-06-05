@@ -50,14 +50,14 @@ jobs:
     - name: Rename AppImage
       run: |
         echo "Renaming AppImage..."
-        mv Bussin.Napture-x86_64.AppImage napture-v${{ github.sha }}.AppImage
+        mv Bussin.Napture-x86_64.AppImage napture-linux-nightly.AppImage
         echo "AppImage renamed successfully."
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: napture-linux-nightly.AppImage
-        path: napture-v${{ github.sha }}.AppImage
+        path: napture-linux-nightly.AppImage
       env:
         UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}  
   build_macos:
@@ -100,7 +100,7 @@ jobs:
       - name: Pack Napture into DMG
         run: |
           cd napture/target/release
-          create-dmg Napture-macos-universial.dmg Napture.app
+          create-dmg napture-macos-nightly.dmg Napture.app
       - name: Upload DMG Artifact
         uses: actions/upload-artifact@v4
         with:
