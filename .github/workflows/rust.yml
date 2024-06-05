@@ -151,7 +151,6 @@ jobs:
         echo "Moving DLLs to executable directory..."
         cd napture/target/release
         move libs\*.dll .
-        rmdir /q /s libs
   
     - name: Zip Napture files
       run: |
