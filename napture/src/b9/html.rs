@@ -473,7 +473,15 @@ fn render_html(
             css.push_str(&list_box.style());
 
             html_view.append(&list_box);
-            render_list(element, &list_box, &tags, css);
+            render_list(element, 
+                &list_box, 
+                &tags, 
+                css,
+                scroll.clone(),
+                previous_css_provider.clone(),
+                searchbar.clone(),
+                current_tab.clone()
+            );
 
             tags.borrow_mut().push(Tag {
                 classes: element.classes.clone(),
@@ -737,6 +745,10 @@ fn render_list(
     list_box: &gtk::Box,
     tags: &Rc<RefCell<Vec<Tag>>>,
     css: &mut String,
+    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    previous_css_provider: Option<CssProvider>,
+    searchbar: Rc<RefCell<gtk::SearchEntry>>,
+    current_tab: Rc<RefCell<Tab>>,
 ) {
     for (i, child) in element.children.iter().enumerate() {
         match child {
@@ -755,30 +767,59 @@ fn render_list(
                         .halign(gtk::Align::Start)
                         .build();
 
-                    let label = gtk::Label::builder()
-                        .label(&decode_html_entities(
-                            el.children
-                                .first()
-                                .unwrap_or(&Node::Text(String::new()))
-                                .text()
-                                .unwrap_or(""),
-                        ))
+                    let li_box = gtk::Box::builder()
                         .css_name("li")
                         .css_classes(el.classes.clone())
+                        .valign(gtk::Align::Center)
                         .halign(gtk::Align::Start)
-                        .selectable(true)
                         .build();
 
-                    css.push_str(&label.style());
+                    for child in el.children.iter() {
+                        match child {
+                            Node::Text(_) => {
+                                render_p(child, el, &li_box, css, &tags);
+                            }
+                            Node::Element(el) => {
+                                if el.name.as_str() == "a" {
+                                    render_a(
+                                        el,
+                                        li_box.clone(),
+                                        tags.clone(),
+                                        css,
+                                        scroll.clone(),
+                                        previous_css_provider.clone(),
+                                        searchbar.clone(),
+                                        current_tab.clone(),
+                                    );
+                                } else {
+                                    render_html(
+                                        el,
+                                        el.children.first(),
+                                        li_box.clone(),
+                                        true,
+                                        tags.clone(),
+                                        css,
+                                        scroll.clone(),
+                                        previous_css_provider.clone(),
+                                        searchbar.clone(),
+                                        current_tab.clone(),
+                                    );
+                                }
+                            }
+                            Node::Comment(_) => {}
+                        }
+                    }
+
+                    css.push_str(&li_box.style());
 
                     li.append(&lead);
-                    li.append(&label);
+                    li.append(&li_box);
 
                     list_box.append(&li);
 
                     tags.borrow_mut().push(Tag {
                         classes: el.classes.clone(),
-                        widget: Box::new(label),
+                        widget: Box::new(li_box),
                         tied_variables: Vec::new(),
                     });
                 } else {
