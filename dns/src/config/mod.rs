@@ -14,7 +14,7 @@ impl Config {
     pub fn new() -> Self {
         let default_offensive_words = vec!["nigg", "sex", "porn", "igg"];
         let default_tld_list = vec![
-            "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu", "ohio", "fur",
+            "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu", "ohio", "cat",
         ];
 
         Config {
@@ -22,7 +22,7 @@ impl Config {
             server: Server {
                 address: "127.0.0.1".into(),
                 port: 8080,
-                key_db: "storage".into(),
+                key_db: "domains".into(),
                 mongo: Mongo {
                     connection: "".into(),
                     app_name: "DomainApp".into(),

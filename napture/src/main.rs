@@ -573,12 +573,13 @@ fn fetch_dns(url: String) -> String {
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
 
     let clienturl = format!(
-        "https://{}/domain/{}/{}",
+        "{}/domain/{}/{}",
         DNS_SERVER.lock().unwrap().as_str(),
         url.split('.').next().unwrap_or(""),
         url.split('.').nth(1).unwrap_or(""),
     );
 
+    
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
