@@ -185,6 +185,8 @@ jobs:
           token: ${{ env.GITHUB_TOKEN }}
           name: Nightly Build
           tag_name: nightly
+          tag: nightly
+          generate_release_notes: true
           files: |
             napture-linux-nightly.AppImage
             napture-windows-nightly.exe
