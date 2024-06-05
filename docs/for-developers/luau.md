@@ -46,7 +46,7 @@ Note that we use the same function to get items by their tag name or by their cl
 
 > What about "`querySelectorAll()`?
 
-**Just add "true" to the `get` function to get all the elements of the same class / tag name.
+**Just add "true" to the `get` function to get all the elements of the same class / tag name.**
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
 
@@ -172,7 +172,7 @@ local all_parragraphs = get("p", true)
 {% endcode %}
 
 #### SET
-| <div style="width: 150px">Function</div> | x | Explanation |
+| Function | x | Explanation |
 | -------- | - | ----------- |
 | `set_contents(x)` | `x` must be the name of the target tag or class name. It should be a string. | Gets the text content of any item. |
 | `set_href(x)` | `x` must be the URL you want to set the `href` property to. It should be a string. | Sets the `href` value of an anchor. |
@@ -236,4 +236,30 @@ input.on_submit(function()
 
 #### OTHER FUNCTIONS
 
-That's it! You're ready to write fully functional WebX code! However, we're not done yet. Your beautiful code must be published to the WebX somehow, right? Let's find out about that.
+| Function | x | Return | Explanation |
+| -------- | - | ------ |----------- |
+| `print(x)` | `x` must be a string of text, a number or a float, or anything that can be printed to the standard output. | No return. | Will print `x` to Napture Logs. |
+| `fetch(x)` | `x` must be an array with the contents of the HTTP request. | Returns the response of the HTTP request as a string. | Allows to make HTTP requests to fetch APIs. |
+
+{% hint style="info" %}
+### About fetch
+This is what `x` (the content of your request) should look like:
+
+{% code title="fetch.lua" overflow="wrap" lineNumbers="true" %}
+
+```lua
+local response = fetch({
+    url = "https://api.buss.lol/", -- THE URL YOU WANT TO SENT THE REQUEST TO
+    method = "GET", -- HTTP REQUEST METHOD
+    headers = { ["Content-Type"] = "application/json" }, -- REQUEST HEADERS
+    body = '{ "test": ' .. test .. '}' -- REQUEST BODY
+})
+```
+
+{% endcode %}
+
+Basically `url`, `method`, `headers`, and `body`. Remember that `fetch` will return whatever the HTTP request itself returns (the HTTP response, basically).
+
+{% endhint %}
+
+And that's it! You're ready to write fully functional WebX code! However, we're not done yet. Your beautiful code must be published to the WebX somehow, right? Let's find out about that.
