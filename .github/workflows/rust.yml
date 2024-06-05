@@ -10,7 +10,7 @@ env:
 
 jobs:
   build:
-    name: "Build Napture (Ubuntu)"
+    name: Build Napture (Ubuntu)
     runs-on: ubuntu-24.04
 
     steps:
@@ -65,6 +65,7 @@ jobs:
         UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}
   build_win:
     runs-on: windows-latest
+    name: Build Napture (Windows)
 
     steps:
     - uses: actions/checkout@v2
@@ -101,6 +102,7 @@ jobs:
    runs-on: ubuntu-24.04
    needs:
       - build
+      - build_win
    steps:
       - name: Download Ubuntu Artifact
         uses: actions/download-artifact@v4.1.7
