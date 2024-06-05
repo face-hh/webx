@@ -148,7 +148,7 @@ jobs:
     - name: Upload Napture
       uses: actions/upload-artifact@v4
       with:
-        name: Napture-windows-x86_64
+        name: napture-v${{ github.sha }}.exe
         path: |
           napture/target/release/Napture-windows-x86_64.exe
           napture/target/release/libs/*
@@ -185,7 +185,7 @@ jobs:
         with:
           token: ${{ env.GITHUB_TOKEN }}
           files: |
-            napture-v${{ github.sha }}.AppImage
-            napture-v${{ github.sha }}.exe
-            napture-v${{ github.sha }}.dmg
+            napture-v${{ github.sha }}-linux.AppImage
+            napture-v${{ github.sha }}-windows.exe
+            napture-v${{ github.sha }}-macos.dmg
           prerelease: true
