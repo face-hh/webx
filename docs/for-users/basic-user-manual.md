@@ -1,4 +1,4 @@
-# WebX user manual
+# User manual
 
 ## First thing first: Install Napture.
 
