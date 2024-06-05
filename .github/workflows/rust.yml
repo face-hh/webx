@@ -63,6 +63,63 @@ jobs:
         path: napture-v${{ github.sha }}.AppImage
       env:
         UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}  
+build_win:
+    name: Build Napture (Windows)
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Dependencies
+      run: |
+        echo "Installing dependencies..."
+        sudo apt-get update
+        sudo apt-get install -y libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev 
+        sudo add-apt-repository universe
+        sudo apt install libfuse2
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
+        sudo apt-get install -y wine-stable
+        echo "Dependencies installed."
+
+    - name: Build Napture
+      run: |
+        echo "Building Napture..."
+        cd napture
+        export PKG_CONFIG_PATH=/usr/lib/pkgconfig
+        cargo build --release
+        echo "Napture built successfully."
+    - name: Install AppImageTool
+      run: |
+        echo "Starting artifact upload phase..."
+        echo "Installing AppImageTool..."
+        wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x appimagetool-x86_64.AppImage
+        echo "AppImageTool installed."
+    - name: Create Napture AppImage
+      run: |
+        echo "Creating Napture AppImage..."
+        cd napture
+        mkdir -p AppDir/usr/bin
+        cp target/release/webx AppDir/usr/bin/
+        cp io.github.face_hh.Napture.desktop AppDir/
+        cp io.github.face_hh.Napture.svg AppDir/
+        ARCH=x86_64
+         ../appimagetool-x86_64.AppImage AppDir
+        mv Napture-x86_64.AppImage ../Bussin.Napture-x86_64.AppImage
+        echo "AppImage created successfully."
+    - name: Rename AppImage
+      run: |
+        echo "Renaming AppImage..."
+        mv Bussin.Napture-x86_64.AppImage napture-v${{ github.sha }}.AppImage
+        echo "AppImage renamed successfully."
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: napture-v${{ github.sha }}.AppImage
+        path: napture-v${{ github.sha }}.AppImage
+      env:
+        UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}  
   upload:
    name: "Upload Release"
    runs-on: ubuntu-24.04
