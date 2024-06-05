@@ -6,12 +6,12 @@ use serde::Deserialize;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 pub fn validate_ip(domain: &Domain) -> Result<(), HttpResponse> {
-    let http_regex = Regex::new(r"^https?://[a-zA-Z0-9.-]+$").unwrap();
+    let valid_url = Regex::new(r"(?i)\bhttps?://[-a-z0-9+&@#/%?=~_|!:,.;]*[-a-z0-9+&@#/%=~_|]").unwrap();
 
     let is_valid_ip = domain.ip.parse::<Ipv4Addr>().is_ok() || domain.ip.parse::<Ipv6Addr>().is_ok();
-    let is_valid_http = http_regex.is_match(&domain.ip);
+    let is_valid_url = valid_url.is_match(&domain.ip);
 
-    if is_valid_ip || is_valid_http {
+    if is_valid_ip || is_valid_url {
         if domain.name.len() <= 100 {
             Ok(())
         } else {
