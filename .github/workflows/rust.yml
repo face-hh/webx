@@ -27,7 +27,7 @@ jobs:
         echo "Building Napture..."
         cd napture
         export PKG_CONFIG_PATH=/usr/lib/pkgconfig
-        cargo build --verbose
+        cargo build --release
         echo "Napture built successfully."
     - name: Install AppImageTool
       run: |
