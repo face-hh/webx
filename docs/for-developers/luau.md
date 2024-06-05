@@ -141,12 +141,12 @@ On every function, whenever `x` is expected to be a string or a number, it can a
 
 #### GET
 
-| Function | x | y | Return | Explanation |
+| <div style="width: 150px;">Function</div> | x | y | Return | Explanation |
 | -------- | - | - | ------ | ----------- |
 | `get(x, y)` | `x` must be the tag name or class name of the target item. It should be a string. | Can be `true` or can just not be passed at all. In theory it shouldn't be passed as `false`. | No return. | Allows to get items to interact with them. Gets an element using it's tag name or class name. If you pass true as the second argument, every instance with the same class / every instance of the tag will be selected at once. If not, the first coincidence will be chosen. |
 
 #### GETTING FUNCTIONS
-| Function | Return | Explanation |
+| <div style="width: 150px;">Function</div> | Return | Explanation |
 | -------- | ------ | ----------- |
 | `get_contents()` | If there is any kind of string content (like text) inside of the target item, it returns it as a string. If not, returns an empty string (`""`). If there is both text and HTML++ tags, it will only return the text, and if there are tags but no text, will return the empty string. Won't return text inside of nested tags (nested tag = tag inside of the target item's tag). | Gets the text content of any item. |
 | `get_href()` | If `href` exists in the target item, returns it as a string. If not, returns an empty string (`""`). | Gets the `href` value of an anchor. |
@@ -173,18 +173,13 @@ local all_parragraphs = get("p", true)
 {% endcode %}
 
 #### SET
-| Function | x | Return | Explanation |
+| <div style="width: 150px;">Function</div> | x | Explanation |
 | -------- | - | ------ | ----------- |
-| `get_contents(x)` | `x` must be the name of the target tag or class name. It should be a string. | If there is any kind of string content (like text) inside of the target item, it returns it as a string. If not, returns an empty string (`""`). If there is both text and HTML++ tags, it will only return the text, and if there are tags but no text, will return the empty string. Won't return text inside of nested tags (nested tag = tag inside of the target item's tag). | Gets the text content of any item. |
-| `set_href(x)` | `x` must be the URL you want to set the `href` property to. It should be a string. | No return. | Sets the `href` value of an anchor. |
-| `set_source(x)` | `x` must be the URL you want to set the `src` property to. It should be a string. | No return. | Sets the `src` value of an image. |
-| `set_opacity(x)` | `x` must be the value you want to set the `opacity` property to. It should be a float between 0 and 1. | No return. | Sets the `opacity` value of any item. |
-| `set_visible(x)` | `x` must be the value you want to set the `visible` property to. It should be a boolean value, `true` or `false`. | No return. | **TO DO** :danger: |
-
-{% hint style="danger" %}
-### TO DO
-This part requires reviewing / finishing. [See the repo.](https://github.com/face-hh/webx/blob/main/docs/).
-{% endhint %}
+| `set_contents(x)` | `x` must be the name of the target tag or class name. It should be a string. | Gets the text content of any item. |
+| `set_href(x)` | `x` must be the URL you want to set the `href` property to. It should be a string. | Sets the `href` value of an anchor. |
+| `set_source(x)` | `x` must be the URL you want to set the `src` property to. It should be a string. | Sets the `src` value of an image. |
+| `set_opacity(x)` | `x` must be the value you want to set the `opacity` property to. It should be a float between 0 and 1. | Sets the `opacity` value of any item. |
+| `set_visible(x)` | `x` must be the value you want to set the `visible` property to. It should be a boolean value, `true` or `false`. | :danger: **Upcoming feature** - Not released yet (as of B9 1.2.2) - Changes if the item is visible or not. If set to false, the item `dissapears`, and if set to `true`, appears. Defaults to `true`. It's just visual, elements never get removed from the code and are always accessible from there.  |
 
 #### EVENTS
 > Event functions do not have a return. As showed before, put them inside of a function. Every time they get triggered the code of the functions will be executed.
