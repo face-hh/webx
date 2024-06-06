@@ -125,7 +125,6 @@ Variable names are self explanatory, you give the function the `URL` you want to
 * Remember, unlike the JS you're used to on the standard webs, arrays don't start at 0: **they start at 1**.
 
 {% code title="javascript.js" overflow="wrap" lineNumbers="true" %}
-
 ```js
 // World Wide Web JS.
 const firstp = document.getElemenyById("first-parragraph");
@@ -137,11 +136,9 @@ firstp.textContent = fruits[0]; // 'apple'
 secondp.textContent = fruits[1]; // 'banana'
 thirdp.textContent = fruits[2]; // 'cherry'
 ```
-
-{% encode %}
+{% endcode %}
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
-
 ```lua
 -- Bussin WebX Lua.
 local firstp = get("first-parragraph")
@@ -155,8 +152,7 @@ firstp.set_content(fruits[1]) -- 'apple'
 thirdp.set_content(fruits[2]) -- 'banana'
 thirdp.set_content(fruits[3]) -- 'cherry'
 ```
-
-{% encode %}
+{% endcode %}
 
 ## Full lists
 
