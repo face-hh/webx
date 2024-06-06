@@ -38,6 +38,7 @@ use std::cell::RefCell;
 use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
+use const_format::formatcp;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -47,6 +48,9 @@ glib::wrapper! {
 }
 
 static LOGO_PNG: &[u8] = include_bytes!("../file.png");
+
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub static USER_AGENT: &str = formatcp!("Napture/{} (B9/{}; Luau; HTML++; CSS3.25)", VERSION, VERSION);
 
 use b9::css;
 use b9::css::Styleable;
@@ -505,7 +509,7 @@ fn make_tab(
         let dialog = gtk::AboutDialog::builder()
             .modal(true)
             .program_name("Bussin Napture")
-            .version("v1.2.2")
+            .version(&format!("v{}", VERSION))
             .website("https://github.com/face-hh/webx")
             .website_label("GitHub")
             .license_type(gtk::License::Apache20)
@@ -601,7 +605,7 @@ fn fetch_dns(url: String) -> String {
         }
     }
 
-    let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
+    let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder().user_agent(USER_AGENT);
 
     let clienturl = format!(
         "{}/domain/{}/{}",

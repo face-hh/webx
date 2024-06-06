@@ -9,6 +9,7 @@ edition = "2021"
 adw = { version = "0.6.0", package = "libadwaita", features = ["v1_4"] }
 base64 = "0.22.1"
 chrono = "0.4.38"
+const_format = "0.2.32"
 directories = "5.0.1"
 glib = "0.19.4"
 gtk = { version = "0.8.1", package = "gtk4", features = ["v4_12"] }

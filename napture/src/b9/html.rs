@@ -6,6 +6,7 @@ use super::{
     css::{self, Styleable},
     lua,
 };
+use crate::USER_AGENT;
 
 use std::{cell::RefCell, fs, rc::Rc, thread};
 
@@ -867,7 +868,11 @@ pub(crate) fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
         }
     } else {
         let handle = thread::spawn(move || {
-            reqwest::blocking::get(url)
+            reqwest::blocking::Client::builder()
+                .user_agent(USER_AGENT)
+                .build().unwrap()
+                .get(url)
+                .send()
                 .map_err(|e| e.to_string())
                 .and_then(|res| res.bytes().map_err(|e| e.to_string()))
                 .unwrap_or_else(|e| {
@@ -916,7 +921,11 @@ async fn fetch_file(url: String) -> String {
         }
     } else if url.starts_with("https://github.com") {
         fetch_from_github(url).await
-    } else if let Ok(response) = reqwest::get(url.clone()).await {
+    } else if let Ok(response) = reqwest::Client::builder()
+        .user_agent(USER_AGENT)
+        .build().unwrap()
+        .get(url.clone())
+        .send().await {
         let status = response.status();
 
         if let Ok(text) = response.text().await {
@@ -967,7 +976,7 @@ pub(crate) fn get_github_url(url: String) -> String {
 }
 
 async fn fetch_from_github(url: String) -> String {
-    let client: reqwest::ClientBuilder = reqwest::Client::builder();
+    let client: reqwest::ClientBuilder = reqwest::Client::builder().user_agent(USER_AGENT);
     let url = get_github_url(url);
     let client = match client.build() {
         Ok(client) => client,
