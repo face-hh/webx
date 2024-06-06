@@ -47,44 +47,70 @@ macro_rules! clone {
 pub trait Luable: Styleable {
     fn get_css_name(&self) -> String;
 
-    fn get_contents_(&self) -> String;
-    fn get_href_(&self) -> String;
-    fn get_opacity_(&self) -> f64;
-    fn get_source_(&self) -> String;
-
-    fn set_contents_(&self, contents: String);
-    fn set_href_(&self, href: String);
-    fn set_opacity_(&self, amount: f64);
-    fn set_source_(&self, source: String);
-    fn set_visible_(&self, visible: bool);
+    fn get_contents_(&self) -> String {
+        lualog!("warning", format!("get_content is not supported for {}", self.get_css_name()));
+        String::new()
+    }
+    fn get_href_(&self) -> String {
+        lualog!("warning", format!("get_href is not supported for {}", self.get_css_name()));
+        String::new()
+    }
+    fn get_opacity_(&self) -> f64 {
+        lualog!("warning", format!("get_opacity is not supported for {}", self.get_css_name()));
+        1.0
+    }
+    fn get_source_(&self) -> String {
+        lualog!("warning", format!("get_source is not supported for {}", self.get_css_name()));
+        String::new()
+    }
+    fn set_contents_(&self, _contents: String) {
+        lualog!("warning", format!("set_content is not supported for {}", self.get_css_name()));
+    }
+    fn set_href_(&self, _href: String) {
+        lualog!("warning", format!("set_href is not supported for {}", self.get_css_name()));
+    }
+    fn set_opacity_(&self, _amount: f64) {
+        lualog!("warning", format!("set_opacity is not supported for {}", self.get_css_name()));
+    }
+    fn set_source_(&self, _source: String) {
+        lualog!("warning", format!("set_source is not supported for {}", self.get_css_name()));
+    }
+    fn set_visible_(&self, _visible: bool) {
+        lualog!("warning", format!("set_visible is not supported for {}", self.get_css_name()));
+    }
     fn set_inner_html(
         &self,
-        html: String,
-        scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        previous_css_provider: Option<CssProvider>,
-        searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>>;
+        _html: String,
+        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+        _previous_css_provider: Option<CssProvider>,
+        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
+        _current_tab: Rc<RefCell<Tab>>,
+    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
+        lualog!("warning", format!("set_inner_html is not supported for {}", self.get_css_name()));
+        Err(LuaError::runtime("not supported"))
+    }
     fn append_html(
         &self,
-        html: String,
-        scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        previous_css_provider: Option<CssProvider>,
-        searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>>;
+        _html: String,
+        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+        _previous_css_provider: Option<CssProvider>,
+        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
+        _current_tab: Rc<RefCell<Tab>>,
+    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
+        lualog!("warning", format!("append_html is not supported for {}", self.get_css_name()));
+        Err(LuaError::runtime("not supported"))
+    }
 
-    fn _on_click(&self, func: &LuaOwnedFunction);
-    fn _on_submit(&self, func: &LuaOwnedFunction);
-    fn _on_input(&self, func: &LuaOwnedFunction);
+    fn _on_click(&self, _func: &LuaOwnedFunction) {
+        lualog!("warning", format!("on_click is not supported for {}", self.get_css_name()));
+    }
+    fn _on_submit(&self, _func: &LuaOwnedFunction) {
+        lualog!("warning", format!("on_submit is not supported for {}", self.get_css_name()));
+    }
+    fn _on_input(&self, _func: &LuaOwnedFunction) {
+        lualog!("warning", format!("on_input is not supported for {}", self.get_css_name()));
+    }
 }
-
-// use tokio::time::{sleep, Duration};
-
-// async fn sleep_ms(_lua: &Lua, ms: u64) -> LuaResult<()> {
-//     sleep(Duration::from_millis(ms)).await;
-//     Ok(())
-// }
 
 fn set_timeout(_lua: &Lua, func: LuaOwnedFunction, ms: u64) -> LuaResult<i32> {
     if let Ok(mut timeouts) = LUA_TIMEOUTS.lock() {
@@ -147,7 +173,7 @@ fn modify_inner_html(
 
     let dom = match html_parser::Dom::parse(&html) {
         Ok(dom) => dom,
-        Err(e) => {
+        Err(_) => {
             lualog!(
                 "error",
                 "Invalid HTML"
@@ -156,20 +182,6 @@ fn modify_inner_html(
         }
     };
 
-/*
-fn render_html(
-    element: &Element,
-    contents: Option<&Node>,
-    og_html_view: gtk::Box,
-    recursive: bool,
-    tags: Rc<RefCell<Vec<Tag>>>,
-    css: &mut String,
-    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-    previous_css_provider: Option<CssProvider>,
-    searchbar: Rc<RefCell<gtk::SearchEntry>>,
-    current_tab: Rc<RefCell<Tab>>,
-) {
-*/
     for element in dom.children.iter() {
         if let Some(element) = element.element() {
              println!("{:#?}", element);
@@ -396,8 +408,6 @@ pub(crate) async fn run(
 ) -> LuaResult<()> {
     let taburl = { current_tab.borrow().url.clone() };
     let lua = Lua::new_with(
-        /*StdLib::COROUTINE | StdLib::STRING |
-        StdLib::TABLE | StdLib::MATH,*/
         StdLib::ALL_SAFE,
         LuaOptions::new().catch_rust_panics(true),
     )?;
@@ -671,54 +681,6 @@ impl Luable for gtk::Label {
     fn get_contents_(&self) -> String {
         self.text().to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "Most text-based components do not support the \"get_href\" method. Are you perhaps looking for the \"p\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_inner_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn append_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
@@ -733,13 +695,6 @@ impl Luable for gtk::Label {
         self.set_text(&contents);
         self.style();
     }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "Most text-based components do not support the \"set_href\" method. Are you perhaps looking for the \"p\" tag?"
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -752,18 +707,6 @@ impl Luable for gtk::Label {
         });
 
         self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "Text-based components do not support the \"submit\" event. Are you perhaps looking for the \"click\" event?"
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "Text-based components do not support the \"input\" event."
-        );
     }
 }
 
@@ -776,54 +719,6 @@ impl Luable for gtk::DropDown {
     fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_inner_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn append_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
@@ -833,19 +728,6 @@ impl Luable for gtk::DropDown {
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
     }
-    fn set_contents_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"set_content\" method."
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -858,18 +740,6 @@ impl Luable for gtk::DropDown {
         });
 
         self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"input\" event."
-        );
     }
 }
 
@@ -890,47 +760,6 @@ impl Luable for gtk::LinkButton {
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_inner_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn append_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
     }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
@@ -957,18 +786,6 @@ impl Luable for gtk::LinkButton {
 
         self.add_controller(gesture)
     }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"a\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"a\" component does not support the \"input\" event."
-        );
-    }
 }
 
 // div
@@ -980,22 +797,8 @@ impl Luable for gtk::Box {
     fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
     }
     fn set_inner_html(
         &self,
@@ -1020,28 +823,9 @@ impl Luable for gtk::Box {
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
     }
-    fn set_contents_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"set_content\" method."
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -1054,18 +838,6 @@ impl Luable for gtk::Box {
         });
 
         self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"input\" event."
-        );
     }
 }
 
@@ -1079,13 +851,6 @@ impl Luable for gtk::TextView {
         let buffer = self.buffer();
         gtk_buffer_to_text(&buffer)
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"textarea\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
@@ -1098,54 +863,6 @@ impl Luable for gtk::TextView {
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_inner_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn append_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"textarea\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -1158,12 +875,6 @@ impl Luable for gtk::TextView {
         });
 
         self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"textarea\" component does not support the \"submit\" event. Are you perhaps looking for the \"input\" event?"
-        )
     }
     fn _on_input(&self, func: &LuaOwnedFunction) {
         let a = Rc::new(func.clone());
@@ -1185,76 +896,15 @@ impl Luable for gtk::Separator {
     fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
     }
-    fn set_contents_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"set_content\" method."
-        );
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_inner_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn append_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -1268,18 +918,6 @@ impl Luable for gtk::Separator {
 
         self.add_controller(gesture)
     }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"input\" event."
-        );
-    }
 }
 
 // img
@@ -1291,24 +929,11 @@ impl Luable for gtk::Picture {
     fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
-    }
-    fn set_contents_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"set_content\" method."
-        );
     }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
@@ -1317,34 +942,6 @@ impl Luable for gtk::Picture {
         self.alternative_text()
             .unwrap_or(GString::new())
             .to_string()
-    }
-    fn set_inner_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn append_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
     }
     fn set_source_(&self, source: String) {
         let stream = match crate::b9::html::fetch_image_to_pixbuf(source.clone()) {
@@ -1358,13 +955,6 @@ impl Luable for gtk::Picture {
         self.set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
         self.set_alternative_text(Some(&source))
     }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -1375,20 +965,6 @@ impl Luable for gtk::Picture {
                 lualog!("error", e.to_string());
             }
         });
-
-        self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"input\" event."
-        );
     }
 }
 
@@ -1401,59 +977,11 @@ impl Luable for gtk::Entry {
     fn get_contents_(&self) -> String {
         self.text().to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"input\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_inner_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn append_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
     }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
@@ -1461,13 +989,6 @@ impl Luable for gtk::Entry {
     fn set_contents_(&self, contents: String) {
         self.buffer().set_text(contents);
     }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"input\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -1514,13 +1035,6 @@ impl Luable for gtk::Button {
     fn get_contents_(&self) -> String {
         self.label().unwrap_or("".into()).to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"button\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
@@ -1533,53 +1047,6 @@ impl Luable for gtk::Button {
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_inner_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn append_html(
-        &self,
-        _html: String,
-        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-        _previous_css_provider: Option<CssProvider>,
-        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
-        _current_tab: Rc<RefCell<Tab>>,
-    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
-        lualog!(
-            "warning",
-            "Not supported"
-        );
-        Ok(Rc::new(RefCell::new(Vec::new())))
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"button\" component does not support the \"set_href\" method."
-        );
-    }
 
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let a = Rc::new(func.clone());
@@ -1589,17 +1056,5 @@ impl Luable for gtk::Button {
                 lualog!("error", e.to_string());
             }
         });
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"button\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"button\" component does not support the \"input\" event."
-        );
     }
 }
