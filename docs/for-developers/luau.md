@@ -6,11 +6,12 @@ Luau is a typed scripting language derived from Lua. Instead of JavaScript, we u
 Note: We say "Luau" as it is what we use in our backend, but you do not need to install it. **You can write regular Lua and your code will work fine.**
 {% endhint %}
 
-## SET and GET.
+## SET and GET
 
 The Luau API is as simple as learning two things: you can SET and you can GET. You can GET to access elements from your page's HTML++, and you can SET to modify them.
 
 {% hint style="info" %}
+
 #### You come from JavaScript?
 
 GET would be equivalent to your `document.*` query selectors and getElementById / getElementbyClassName, while SET would be equivalent to give a value to props like "href", "opacity", and so on.
@@ -21,20 +22,24 @@ GET would be equivalent to your `document.*` query selectors and getElementById 
 In fact, the function to get an element is just called "get".
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 local my_item = get("my_item")
 ```
+
 {% endcode %}
 
 > Much shorter compared to JS :wink:
 
 {% code title="javascript.js" overflow="wrap" lineNumbers="true" %}
+
 ```js
 // too long
 document.querySelector("h1")
 // even longer!?
 document.getElementByClassName("my_item")
 ```
+
 {% endcode %}
 
 Note that we use the same function to get items by their tag name or by their class.
@@ -46,12 +51,14 @@ Note that we use the same function to get items by their tag name or by their cl
 **Just add "true" to the `get` function to get all the elements of the same class / tag name.**
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 -- Will give a single anchor
 local all_hyperlinks = get("a");
 -- Will give all anchors (or hyperlinks, them the way you prefer)
 local all_hyperlinks = get("a", true);
 ```
+
 {% endcode %}
 
 {% hint style="success" %}
@@ -63,6 +70,7 @@ When you don't pass `true`, if you select a tag or a class name that is repeated
 Now, to interact with the element, you can use `get_{prop}` **and `set_{prop}`** functions. Here's an example:
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 local myanchor = get("a")
 
@@ -73,6 +81,7 @@ print(myurl)
 -- This will SET the href property to a new value
 myanchor.set_href("buss://dingle.it")
 ```
+
 {% endcode %}
 
 It's that easy! _Scroll to the bottom for a list of available SET and GET directives._
@@ -82,6 +91,7 @@ It's that easy! _Scroll to the bottom for a list of available SET and GET direct
 The Luau API has also support for detecting **events**. Similar to JS's `onclick`. To use them, create a function that's called on an event, just like you would do in JS. Example:
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 get("button").on_click(function()
     print("The button got clicked!!!")
@@ -91,6 +101,7 @@ get("input").on_input(function(content)
     print(content)
 end)
 ```
+
 {% endcode %}
 
 {% hint style="success" %}
@@ -106,6 +117,7 @@ Output from the `print()` function will be logged by Napture Logs. As we told yo
 If you need to make an HTTP request to interact with an API, you can use the `fetch` function. It should look like this:
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 local test = true;
 
@@ -116,6 +128,7 @@ local res = fetch({
     body = '{ "test": ' .. test .. '}'
 })
 ```
+
 {% endcode %}
 
 Variable names are self explanatory, you give the function the `URL` you want to fetch, the HTTP method you want to use, which can be "GET", "POST", "DELETE", etc..., the headers of the HTTP request, and the body, which would be the content itself of your request.
@@ -126,6 +139,7 @@ Variable names are self explanatory, you give the function the `URL` you want to
 Remember, unlike the JS you're used to on the standard webs, arrays don't start at 0: **they start at 1**.
 
 {% code title="javascript.js" overflow="wrap" lineNumbers="true" %}
+
 ```js
 // World Wide Web JS.
 const firstp = document.getElemenyById("first-parragraph");
@@ -137,9 +151,11 @@ firstp.textContent = fruits[0]; // 'apple'
 secondp.textContent = fruits[1]; // 'banana'
 thirdp.textContent = fruits[2]; // 'cherry'
 ```
+
 {% endcode %}
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 -- Bussin WebX Lua.
 local firstp = get("first-parragraph")
@@ -153,6 +169,7 @@ firstp.set_content(fruits[1]) -- 'apple'
 thirdp.set_content(fruits[2]) -- 'banana'
 thirdp.set_content(fruits[3]) -- 'cherry'
 ```
+
 {% endcode %}
 {% endhint %}
 
@@ -180,6 +197,7 @@ On every function, whenever `x` is expected to be a string or a number, it can a
 Example usage of GET and GETTING FUNCTIONS
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 -- GET
 local test = get("myclass")
@@ -192,13 +210,14 @@ local content = get("h1").get_contents()
 -- GET every p tag
 local all_paragraphs = get("p", true)
 ```
+
 {% endcode %}
 
 #### SET
 
 | Function          | x                                                                                                                 | Explanation                                                                                                                                                                                                        |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `set_contents(x)` | `x` should be a string.                                                                                           | Gets the text content of any item.                                                                                                                                                                                 |
+| `set_contents(x)` | `x` should be a string.                                                                                           | Sets the text content of any item.                                                                                                                                                                                 |
 | `set_href(x)`     | `x` must be the URL you want to set the `href` property to. It should be a string.                                | Sets the `href` value of an anchor.                                                                                                                                                                                |
 | `set_source(x)`   | `x` must be the URL or base64 that you want to set the `src` property to. It should be a string.                  | Sets the `src` value of an image.                                                                                                                                                                                  |
 | `set_opacity(x)`  | `x` must be the value you want to set the `opacity` property to. It should be a float between 0 and 1.            | Sets the `opacity` value of any item.                                                                                                                                                                              |
@@ -207,6 +226,7 @@ local all_paragraphs = get("p", true)
 Example usage of SET
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 -- first, we get
 local test = get("myclass")
@@ -219,6 +239,7 @@ test.set_contents("This text will be set as the content of the element")
 get("a").set_href("buss://dingle.it")
 get("a").set_contents("Search with Dingle")
 ```
+
 {% endcode %}
 
 #### EVENTS
@@ -234,6 +255,7 @@ get("a").set_contents("Search with Dingle")
 Example usage of EVENTS
 
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 local test = get("mybutton")
 
@@ -251,6 +273,7 @@ input.on_submit(function()
     h1.set_contents("your input was: " + input.get_contents())
 )
 ```
+
 {% endcode %}
 
 #### OTHER FUNCTIONS
@@ -261,11 +284,13 @@ input.on_submit(function()
 | `fetch(x)` | `x` must be an array with the contents of the HTTP request. | Returns the response of the HTTP request as a string. | Allows to make HTTP requests to fetch APIs. |
 
 {% hint style="info" %}
+
 #### About fetch
 
 This is what `x` (the content of your request) should look like:
 
 {% code title="fetch.lua" overflow="wrap" lineNumbers="true" %}
+
 ```lua
 local response = fetch({
     url = "https://api.buss.lol/",
@@ -274,6 +299,7 @@ local response = fetch({
     body = '{ "test": ' .. test .. '}' -- REQUEST BODY
 })
 ```
+
 {% endcode %}
 
 Basically `url`, `method`, `headers`, and `body`. Remember that `fetch` will return whatever the HTTP request itself returns (the HTTP response, basically).
