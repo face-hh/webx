@@ -595,8 +595,10 @@ fn fetch_dns(url: String) -> String {
     let mut url = url.replace("buss://", "");
     url = url.split("?").nth(0).unwrap_or(&url).to_owned();
 
-    if url.starts_with("file://") {
-        return url;
+    if let Ok(url) = url::Url::parse(&url) {
+        if url.scheme().starts_with("http") || url.scheme() == "file" {
+            return url.into();
+        }
     }
 
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
