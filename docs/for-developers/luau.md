@@ -122,7 +122,8 @@ Variable names are self explanatory, you give the function the `URL` you want to
 
 ## Other things you might want to note
 
-* Remember, unlike the JS you're used to on the standard webs, arrays don't start at 0: **they start at 1**.
+{% hint style="info" %}
+Remember, unlike the JS you're used to on the standard webs, arrays don't start at 0: **they start at 1**.
 
 {% code title="javascript.js" overflow="wrap" lineNumbers="true" %}
 ```js
@@ -153,6 +154,7 @@ thirdp.set_content(fruits[2]) -- 'banana'
 thirdp.set_content(fruits[3]) -- 'cherry'
 ```
 {% endcode %}
+{% endhint %}
 
 ## Full lists
 
