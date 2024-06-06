@@ -77,7 +77,7 @@ myanchor.set_href("buss://dingle.it")
 
 It's that easy! _Scroll to the bottom for a list of available SET and GET directives._
 
-### Events
+## Events
 
 The Luau API has also support for detecting **events**. Similar to JS's `onclick`. To use them, create a function that's called on an event, just like you would do in JS. Example:
 
@@ -101,7 +101,7 @@ end)
 Output from the `print()` function will be logged by Napture Logs. As we told you before, you can open them with `CONTROL` + `SHIFT` + `P`
 {% endhint %}
 
-### HTTP Fetching
+## HTTP Fetching
 
 If you need to make an HTTP request to interact with an API, you can use the `fetch` function. It should look like this:
 
@@ -158,7 +158,7 @@ thirdp.set_content(fruits[3]) -- 'cherry'
 
 {% encode %}
 
-### Full lists
+## Full lists
 
 All the `get_{x}`, `set_{x}` and `on_{x}` available functions.
 
