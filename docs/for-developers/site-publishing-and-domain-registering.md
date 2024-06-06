@@ -29,6 +29,7 @@ Now that you have your IP / GitHub URL, you just need to register a domain, prov
 Domains can be registered via our API (see [next page](api-reference.md#post-domain)). There are different providers, like these ones:
 
 {% hint style="danger" %}
+
 #### Outdated section
 
 This section contains content from contributors and 3rd parties. It has been marked as outdated. This alert will stay until the content below gets updated.
@@ -47,6 +48,7 @@ What we care about is the Publish form. Every other registrer should use the sam
 Your domain needs three simple things.
 
 {% hint style="info" %}
+
 #### Website name
 
 The name of your website for the URL. It will be here:
@@ -57,6 +59,7 @@ Note that there is a max of 24 characters for your domain, and it can't contain 
 {% endhint %}
 
 {% hint style="info" %}
+
 #### TLD
 
 The Top-Level Domain you'd like your website to have. It will be here:
@@ -92,6 +95,7 @@ In a nutshell, choose from "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root
 {% endhint %}
 
 {% hint style="info" %}
+
 #### IP
 
 The IP / GitHub URL I told you about before. Give it to the system so it can access it and serve your website.
@@ -114,12 +118,14 @@ Web X is supervised by the team at Bussin, who administrates the Web X API. Any 
 11. If your website's domain contains words or content that are considered against any of the rules listed before, it will be removed.
 
 {% hint style="danger" %}
+
 ### BUSSIN WEB X COMMUNITY RULES AGREEMENT
 
 By publishing content to this platform ("Bussin Napture"/"Bussin WebX"), _**you agree to comply with all rules and regulations set forth by the administrators**_. **The administrators reserve the right to interpret and enforce these rules at their discretion.**
 {% endhint %}
 
 {% hint style="warning" %}
+
 #### Reporting websites that don't follow the rules
 
 To report websites that are not following the listed rules, please use [the Discord server](https://discord.gg/cNwWvdWj42) or contact `FaceDev` on [Twitter](https://twitter.com/facedevstuff) or Discord.
@@ -130,7 +136,7 @@ If you submit a website that is not against the rules, you should start seeing i
 {% hint style="danger" %}
 VERY IMPORTANT THING ABOUT YOUR SECRET KEY
 
-#### DO NOT LOSE IT AND DO NOT SHARE IT WITH ANYONE.
+#### DO NOT LOSE IT AND DO NOT SHARE IT WITH ANYONE
 
 Do not lose it because it is required if you want to edit your IP or shut down your domain, and do not share it with anyone because it can compromise your website.
 {% endhint %}
@@ -138,15 +144,15 @@ Do not lose it because it is required if you want to edit your IP or shut down y
 {% hint style="info" %}
 It doesn't work!
 
-#### 1. Code not matching the Web X standard.
+#### 1. Code not matching the Web X standard
 
 If your site doesn't work, check if your code is correct. Maybe it's that.
 
-#### 2. The rate limit.
+#### 2. The rate limit
 
 There is a global cooldown on how many domains can be registered. Current rate is of _**100 domains per hour**_, globally.
 
-#### 3. The API being down.
+#### 3. The API being down
 
 Web X is a recently setup project and it's uptime is not of a 100%. It could be down for repairing.
 

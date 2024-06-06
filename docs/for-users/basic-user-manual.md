@@ -1,6 +1,6 @@
 # User manual
 
-## First thing first: Install Napture.
+## First thing first: Install Napture
 
 <figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>Bussin Napture v1.2.2</p></figcaption></figure>
 
@@ -26,7 +26,7 @@ Run **`yay -S napture`**. It's available on AUR.
 
 **Flakes**: The repository provides a flake which exposes an overlay providing the webx package, so you could just add the input in your flake.nix file
 
-```nix{3}
+```nix
 {
     inputs = {
         webx.url = "github:face-hh/webx";
@@ -36,7 +36,7 @@ Run **`yay -S napture`**. It's available on AUR.
 
 Then add it to your overlays and install it
 
-```nix{3}
+```nix
 { inputs, ... }: {
     nixpkgs.overlays = [
         inputs.webx.overlays.x86_64-linux.default
@@ -48,7 +48,7 @@ Then add it to your overlays and install it
 
 Add it to either home.packages (home manager) or environment.systemPackages (global packages).
 
-```nix{2}
+```nix
 home.packages = with pkgs; [
     webx
 ];

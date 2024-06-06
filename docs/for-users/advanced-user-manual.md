@@ -11,6 +11,7 @@ This short page includes some additional things you might want to know about how
 ## Using other browsers
 
 {% hint style="danger" %}
+
 #### Outdated section
 
 This section contains content from contributors and 3rd parties. It has been marked as outdated. This alert will stay until the content below gets updated.

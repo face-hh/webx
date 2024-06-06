@@ -1,6 +1,6 @@
 # Getting started
 
-## Welcome to Web X development!
+## Welcome to Web X development
 
 {% hint style="info" %}
 Note this is guide is up to date for **B9 ENGINE - v1.2.2** (Napture and B9's version number are synchronized). If the browser gets a new release, wait for someone to commit / PR an update to the docs ([or make a commit yourself, if you feel like helping](https://github.com/face-hh/webx/tree/master/docs/)).
@@ -38,6 +38,7 @@ As of version 1.2.2, Web X does **not** support routing, so no multiple pages (`
 And hey, now that we talk about versioning, you might want to know this:
 
 {% hint style="success" %}
+
 #### Don't get confused with naming
 
 Napture and B9 are connected, but they are not the same!

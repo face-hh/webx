@@ -2,11 +2,12 @@
 
 HTML++ looks similar to regular HTML5, but with some differences. Note that B9 is a new engine, not all classic HTML5 features are supported.
 
-## Basic structure.
+## Basic structure
 
 Same as regular HTML5, the `html` tag, with the `head` for metadata and `body` for your page's content.
 
 {% code title="index.html" overflow="wrap" lineNumbers="true" %}
+
 ```html
 <html>
   <head>
@@ -17,6 +18,7 @@ Same as regular HTML5, the `html` tag, with the `head` for metadata and `body` f
   </body>
 </html>
 ```
+
 {% endcode %}
 
 ## `<head>`: Metadata in HTML++
@@ -24,6 +26,7 @@ Same as regular HTML5, the `html` tag, with the `head` for metadata and `body` f
 A complete WebX head looks like this:
 
 {% code title="index.html" overflow="wrap" lineNumbers="true" %}
+
 ```html
 <head>
     <title>My cool web</title>
@@ -36,9 +39,10 @@ A complete WebX head looks like this:
     <script src="script.lua" />
 </head>
 ```
+
 {% endcode %}
 
-Let's explain everything. `<title>` and `<meta name="*">` are tags you know from classic HTML5. `<title>` will give a Title to your page, which will be displayed on both the browser's tab and the search results. `<meta name="description" content="*">` will give Dingle a description to show on the search results, and other meta tags may be used by websites that wish to embed Web X sites.
+Let's explain everything. `<title>` and `<meta name="*">` are tags you know from classic HTML5. `<title>` will give a Title to your page, which will be displayed on both the browser's tab and the search results, and `<meta name="description" content="*">` will give Dingle a description to show on the search results. Those are the HTML++ meta tags supported by Napture. **Note that other meta tags may be used by other websites that wish to embed Web X sites.**
 
 Now, let's go beyond the standard. You might wonder, why do links have no `rel` attribute? And why is the `script` tag self-closing? (which might even be rendered as an error by your IDE).
 
@@ -57,6 +61,7 @@ This isn't the standard web, **HTTPS is supported only by the \<script> tag**. B
 {% endhint %}
 
 {% code title="index.html" overflow="wrap" lineNumbers="true" %}
+
 ```html
 <head>
     <title>My cool web</title>
@@ -79,6 +84,7 @@ This isn't the standard web, **HTTPS is supported only by the \<script> tag**. B
   <script src="script2.lua" />
 </body>
 ```
+
 {% endcode %}
 
 {% hint style="info" %}
