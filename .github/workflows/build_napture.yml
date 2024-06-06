@@ -144,10 +144,14 @@ jobs:
         
     - name: Copy and Move DLLs
       run: |
-        echo "Copying and moving DLLs to executable directory..."
-        C:\msys64\usr\bin\bash.exe -lc "find /mingw64/lib -name '*.dll' -exec cp --parents {} /c/projects/napture/target/release \;"
-        cd napture/target/release
-        Get-ChildItem -Path C:\projects\napture\target\release -Recurse -Include *.dll | ForEach-Object { Move-Item -Path $_.FullName -Destination C:\projects\napture\target\release -Force }
+        echo "Copying DLLs..."
+        mkdir -p napture/target/release/libs
+        cp C:/msys64/mingw64/bin/*.dll napture/target/release/libs
+        cp C:/msys64/mingw64/lib/*.dll napture/target/release/libs
+        echo "DLLs copied."
+        echo "Moving DLLs to exe directory..."
+        mv napture/target/release/libs/*.dll napture/target/release/
+        echo "DLLs moved."
   
     - name: Zip Napture files
       run: |
