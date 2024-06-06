@@ -38,7 +38,8 @@ async fn parse_html(mut url: String) -> Result<(Node, Node)> {
                 .to_string()
         };
         if let Ok(mut segments) = uri.path_segments_mut() {
-            if !last_seg.contains(".") {
+            println!("{}", last_seg);
+            if last_seg.is_empty() || !last_seg.contains(".") {
                 segments.pop_if_empty();
                 segments.push("index.html");
             } else {
