@@ -550,6 +550,11 @@ fn render_html(
                 _ => "text".to_string(),
             };
 
+            let value = match element.attributes.get("value") {
+                Some(Some(t)) => t.to_string(),
+                _ => "".to_string()
+            };
+
             if input_type == "text" {
                 let entry = gtk::Entry::builder()
                     .placeholder_text(
@@ -560,6 +565,7 @@ fn render_html(
                             .clone()
                             .unwrap_or("".to_string()),
                     )
+                    .text(value)
                     .css_name("input")
                     .css_classes(element.classes.clone())
                     .halign(gtk::Align::Start)

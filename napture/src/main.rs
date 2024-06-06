@@ -593,8 +593,11 @@ struct DomainInfo {
 
 fn fetch_dns(url: String) -> String {
     let mut url = url.replace("buss://", "");
-
     url = url.split("?").nth(0).unwrap_or(&url).to_owned();
+
+    if url.starts_with("file://") {
+        return url;
+    }
 
     let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
 
