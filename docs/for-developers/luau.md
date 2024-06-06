@@ -120,6 +120,44 @@ local res = fetch({
 
 Variable names are self explanatory, you give the function the `URL` you want to fetch, the HTTP method you want to use, which can be "GET", "POST", "DELETE", etc..., the headers of the HTTP request, and the body, which would be the content itself of your request.
 
+## Other things you might want to note
+
+* Remember, unlike the JS you're used to on the standard webs, arrays don't start at 0: **they start at 1**.
+
+{% code title="javascript.js" overflow="wrap" lineNumbers="true" %}
+
+```js
+// World Wide Web JS.
+const firstp = document.getElemenyById("first-parragraph");
+const secondp = document.getElemenyById("second-parragraph");
+const thirdp = document.getElemenyById("third-parragraph");
+let fruits = ['apple', 'banana', 'cherry'];
+
+firstp.textContent = fruits[0]; // 'apple'
+secondp.textContent = fruits[1]; // 'banana'
+thirdp.textContent = fruits[2]; // 'cherry'
+```
+
+{% encode %}
+
+{% code title="script.lua" overflow="wrap" lineNumbers="true" %}
+
+```lua
+-- Bussin WebX Lua.
+local firstp = get("first-parragraph")
+local secondp = get("second-parragraph")
+local thirdp = get("third-parragraph")
+local fruits = {'apple', 'banana', 'cherry'}
+
+firstp.set_content(fruits[0]) -- 'ERROR'
+
+firstp.set_content(fruits[1]) -- 'apple'
+thirdp.set_content(fruits[2]) -- 'banana'
+thirdp.set_content(fruits[3]) -- 'cherry'
+```
+
+{% encode %}
+
 ### Full lists
 
 All the `get_{x}`, `set_{x}` and `on_{x}` available functions.
