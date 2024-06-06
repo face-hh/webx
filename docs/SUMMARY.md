@@ -12,6 +12,6 @@
 * [Getting started](for-developers/getting-started.md)
 * [HTML++](for-developers/html++.md)
 * [CSS 3.25](for-developers/css-3.25.md)
-* [Luau](for-developers/luau.md)
-* [Site publishing & Domain registering](for-developers/site-publishing-and-domain-registering.md)
+* [Lua](for-developers/luau.md)
+* [Publishing](for-developers/site-publishing-and-domain-registering.md)
 * [API Reference](for-developers/api-reference.md)

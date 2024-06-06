@@ -4,15 +4,13 @@ description: An alternative to the World Wide Web
 
 # Welcome to WebX
 
-Here you'll find usefull resources, like the User manual for using the WebX and the full developer docs.
-
-## Main manuals
+## Manuals
 
 [User manual](for-users/basic-user-manual.md#first-thing-first-install-napture)
 
-[Developer documentation](for-developers/getting-started.md#webx-developer-guide)
+[Developer manual ](for-developers/getting-started.md#webx-developer-guide)
 
-## Useful links
+## Quick jump
 
 [Keybinds](for-users/advanced-user-manual.md#keybinds)
 
