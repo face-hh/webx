@@ -1,4 +1,6 @@
-# ![CSS 3.25 logo](../css_3_25.png) CSS 3.25
+# CSS 3.25
+
+![CSS 3.25 logo](../css_3_25.png)
 
 CSS 3.25 looks similar to regular CSS 3, but with some differences. Note that B9 is a new engine, not all classic CSS 3 features are supported.
 
