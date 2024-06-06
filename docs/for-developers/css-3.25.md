@@ -1,4 +1,4 @@
-# CSS 3.25
+# ![CSS 3.25 logo](../css_3_25.png) CSS 3.25
 
 CSS 3.25 looks similar to regular CSS 3, but with some differences. Note that B9 is a new engine, not all classic CSS 3 features are supported.
 
@@ -7,6 +7,7 @@ CSS 3.25 looks similar to regular CSS 3, but with some differences. Note that B9
 This is an example of a CSS 3.25 file.
 
 {% code title="styles.css" overflow="wrap" lineNumbers="true" %}
+
 ```css
 div {
     border-color: #616161;
@@ -78,6 +79,7 @@ hr {
     border-style: solid;
 }
 ```
+
 {% endcode %}
 
 Looks like a lot? It's not that complicated. It's just about taking a few things into account and then just checking a list of properties.
@@ -109,6 +111,7 @@ Noted that? Now let's get to the styling features.
 | `background-color`   | Any `HEX` value                                                                                                                                  | Gives the item a background color. If not set, will use the default one depending on the user's theme (or not at all).                                                                                                                                                                |
 
 {% hint style="warning" %}
+
 #### About margin
 
 `margin` by itself is not supported by B9 as of 1.2.2. You need to give a direction. If you want to set the padding of the top of the box, use `margin-top`, for example.
@@ -120,8 +123,6 @@ Noted that? Now let's get to the styling features.
 | `margin-bottom`    | Bottom of the box (DOWN) |
 | `margin-left`      | Left of the box          |
 | `margin-right`     | Right of the box         |
-
-
 
 {% hint style="info" %}
 <img src="../borderstyles.png" alt="Border preview" data-size="original">
@@ -210,7 +211,5 @@ Noted that? Now let's get to the styling features.
 | `font_size`           |
 | `gap`                 |
 | `opacity`             |
-
-
 
 That would be it for styling! Now it's time for the fun part: scripting!
