@@ -201,7 +201,7 @@ pub async fn build_ui(
     if previous_css_provider.is_some() {
         gtk::style_context_remove_provider_for_display(
             &Display::default().unwrap(),
-            &previous_css_provider.unwrap(),
+            &previous_css_provider.clone().unwrap(),
         );
     }
     let provider = css::load_css_into_app(&css);
@@ -227,7 +227,14 @@ pub async fn build_ui(
             fetch_file(format!("{}/{}", furl, src)).await
         };
 
-        if let Err(e) = super::lua::run(luacode, tags, tab.url.clone()).await {
+        if let Err(e) = super::lua::run(
+            luacode, 
+            tags,
+            scroll.clone(),
+            previous_css_provider.clone(),
+            searchbar.clone(),
+            Rc::new(RefCell::new(tab.clone())),
+        ).await {
             println!("ERROR: Failed to run lua: {}", e);
         }
     }
@@ -304,7 +311,7 @@ async fn render_head(
     }
 }
 
-fn render_html(
+pub(crate) fn render_html(
     element: &Element,
     contents: Option<&Node>,
     og_html_view: gtk::Box,
