@@ -18,6 +18,7 @@ use crate::{globals::LUA_TIMEOUTS, lualog, Tab};
 use glib::translate::FromGlib;
 use glib::SourceId;
 
+// from https://crates.io/crates/clone-macro
 macro_rules! clone {
     () => {};
     ([$($tt:tt)*], $expr:expr) => {{
