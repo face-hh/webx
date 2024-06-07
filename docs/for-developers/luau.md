@@ -3,7 +3,7 @@
 Luau is a typed scripting language derived from Lua. Instead of JavaScript, we use Luau to power Web X.
 
 {% hint style="info" %}
-Note: We say "Luau" as it is what we use in our backend, but you do not need to install it. **You can write regular Lua and your code will work fine.**
+Note: Sometimes we say "Luau" as it is what we use in our backend, but you do not need to install it. **You can write regular Lua and your code will work fine.**
 {% endhint %}
 
 ## SET and GET
@@ -293,6 +293,8 @@ input.on_submit(function()
 | ---------- | ----------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------- |
 | `print(x)` | `x` can be any type.                                        | No return.                                            | Will print `x` to Napture Logs.             |
 | `fetch(x)` | `x` must be an array with the contents of the HTTP request. | Returns the response of the HTTP request as a string. | Allows to make HTTP requests to fetch APIs. |
+| `require(x)` | `x` must be an URL that links to a `.lua` file. | Returns the content of the required Lua file | Allows to load external Lua code. It will be loaded, executed, and do whatever you need it to do as if it was on your own script. |
+| `time()` | _No parameters passed_ | Returns the current time. | Allows to get the current time. Uses seconds instead of milliseconds like Lua's standard `os.time()` function. |
 
 {% hint style="info" %}
 
@@ -315,6 +317,10 @@ local response = fetch({
 
 Basically `url`, `method`, `headers`, and `body`. Remember that `fetch` will return whatever the HTTP request itself returns (the HTTP response, basically).
 {% endhint %}
+
+### GLOBAL OBJECTS
+
+- `json` - Includes `json.stringify(x)` (being `x` a Lua array) and `json.parse(x)` (being `x` a string). As the names tell, json. `stringify` turns a Lua array into a JSON string, and `parse` does the opposite.
 
 ### GLOBAL VARIABLES
 

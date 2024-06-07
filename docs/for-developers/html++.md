@@ -56,7 +56,7 @@ Audio and video support are being worked on, but as of B9 1.3.0 they are not sup
 
 The thing is, B9 does not use `rel` to define what to do with each thing. It uses the **order** of your tags, being the first tag of each kind the one that will be used for it's specific purpose. In other words: your first `<link>` has to href an image and will be your site's icon, your second `<link>` has to href a stylesheet and will be the source for the page's CSS, and your `<script>` tag should be the third one, and will be the source for the page's Luau script.
 
-HTTPS is supported for `src` and `href` attributes, if you want to link external Luau scripts, images, or stylesheets. Later on you'll also see that you can import Luau scripts from the script itself.
+HTTPS is supported for `src` and `href` attributes, if you want to link external Luau scripts, images, or stylesheets. Later on you'll also see that you can import Luau scripts from the script itself. Also, images have support for `base64` in both the `src` property of the HTML++ tag and on the Luau `set_content()` function (which you'll learn to use later).
 
 {% code title="index.html" overflow="wrap" lineNumbers="true" %}
 
