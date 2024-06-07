@@ -12,9 +12,9 @@ pub use structs::Config;
 
 impl Config {
     pub fn new() -> Self {
-        let default_offensive_words = vec!["nigg", "sex", "porn", "igg"];
+        let default_offensive_words = vec!["sex", "porn", "igg"];
         let default_tld_list = vec![
-            "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu", "ohio", "cat",
+            "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu", "ohio", "cat", "game",
         ];
 
         Config {
