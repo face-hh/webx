@@ -545,10 +545,11 @@ pub(crate) async fn run(
     window_table.set("link", taburl.clone())?;
     window_table.set("query", query_table)?;
 
+    globals.set("__script_path", taburl.clone())?;
     let require = lua.create_async_function(move |lua, module: String| {
-        let taburl = taburl.clone();
         async move {
-            if let Ok(mut uri) = url::Url::parse(&taburl) {
+            let script_path: String = lua.globals().get("__script_path")?;
+            if let Ok(mut uri) = url::Url::parse(&script_path) {
                 if let Ok(mut segments) = uri.path_segments_mut() {
                     segments.pop_if_empty();
                     segments.extend(&module.split("/").collect::<Vec<&str>>());
@@ -566,7 +567,8 @@ pub(crate) async fn run(
                         lualog!("error", format!("invalid file path"));
                         return Ok(lua.null());
                     }
-                } else {
+                } else {{
+                    let uri = uri.clone();
                     let handle = thread::spawn(move || {
                         let client = reqwest::blocking::Client::new();
                         let req = client.get(if let Ok(_) = url::Url::parse(&module) {
@@ -599,14 +601,22 @@ pub(crate) async fn run(
                             "null".to_string()
                         }
                     }
-                };
+                }};
 
                 if let Err(e) = lua.sandbox(true) {
                     lualog!("error", format!("failed to enable sandbox: {}", e));
                     return Err(LuaError::runtime("failed to enable sandbox"));
                 } else {
-                    let load = lua.load(result);
-                    return load.eval::<LuaValue>();
+                    let file = uri.to_string();
+                    if let Ok(mut segments) = uri.path_segments_mut() {
+                        segments.pop();
+                    }
+                    lua.globals().set("__script_path", uri.to_string())?;
+                    let result = lua.load(result)
+                        .set_name(file)
+                        .eval::<LuaValue>();
+                    lua.globals().set("__script_path", script_path)?;
+                    return result;
                 }
             }
 
