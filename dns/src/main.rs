@@ -83,7 +83,7 @@ enum Sync {
 
 fn main() {
     let rt = Runtime::new().expect("failed to create Tokio runtime");
-    rt.block_on(sync::sync());
+    // rt.block_on(sync::sync());
     let cli = Cli::parse();
     let mut env = pretty_env_logger::formatted_builder();
     let level = cli.verbose.log_level_filter();
