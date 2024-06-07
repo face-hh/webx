@@ -5,7 +5,7 @@ How to work around with WebX's API, hosted at <https://api.buss.lol>.
 This is the URI of the WebX API, which holds all the DNS of the network. You got different endpoints to do your stuff. <https://api.buss.lol/>.
 
 {% hint style="warning" %}
-APIs have rate limits. They are provided in the headers.
+APIs have rate limits. They are provided in the headers and on the `GET /`'s response (plain text).
 {% endhint %}
 
 ## `GET` /
@@ -27,14 +27,20 @@ _Provides a basic message explaining the API._
 #### RETURNS
 
 ```txt
-Hello, world! The available endpoints are:
-GET /domains,
-GET /domain/:name/:tld,
-POST /domain,
-PUT /domain/:key,
-DELETE /domain/:key,
-GET /tlds.
-Ratelimits provided in headers.
+webxDNS v0.3.0!
+
+The available endpoints are:
+
+ - [GET] /domains
+ - [GET] /domain/{name}/{tld}
+ - [POST] /domain
+ - [PUT] /domain/{key}
+ - [DELETE] /domain/{key}
+ - [GET] /tlds
+
+Ratelimits are as follows: 5 requests per 10 minutes on `[POST] /domain`.
+
+Code link: https://github.com/face-hh/webx/tree/master/dns
 ```
 
 {% endhint %}

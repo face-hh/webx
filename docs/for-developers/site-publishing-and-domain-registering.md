@@ -30,7 +30,7 @@ Domains can be registered via our API (see [next page](api-reference.md#post-dom
 
 {% hint style="danger" %}
 
-#### Outdated section
+### Outdated section
 
 This section contains content from contributors and 3rd parties. It has been marked as outdated. This alert will stay until the content below gets updated.
 {% endhint %}
