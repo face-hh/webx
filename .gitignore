@@ -5,6 +5,7 @@
 # rust
 target
 storage
+Cargo.lock
 
 # maid
 .maid/cache
