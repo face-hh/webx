@@ -87,9 +87,9 @@ Looks like a lot? It's not that complicated. It's just about taking a few things
 ## Take into account
 
 1. **No selectors are required:** You don't need to use a dot to select a class (e.g. `.myClass {}`). Since there's no ID's to differentiate with, just put the class name without anything (e.g. `myClass{}`).
-2. **Use specific units:** Only **px** (which is translated to **pt**) for measures and **HEX** (#123456) for colors are supported. No RGBa, no HSL, no em, no viewport units...
+2. **Use specific units:** Only **px** (which sometimes is translated to **pt**) for measures and **HEX** (#123456) for colors are supported. No RGBa, no HSL, no em, no viewport units...
 3. **Remember how the CSS box model works:** We use CSS 3's standard box model, where a box has a SIZE, then a PADDING, then a BORDER and a MARGIN.
-4. **Events are not supported:** As of B9 v1.2.2, events (like `:focused`, `:hover`, and so on) are not supported.
+4. **Events are not supported:** As of B9 v1.3.0, events (like `:focused`, `:hover`, and so on) are not supported.
 
 Noted that? Now let's get to the styling features.
 
@@ -114,7 +114,7 @@ Noted that? Now let's get to the styling features.
 
 #### About margin
 
-`margin` by itself is not supported by B9 as of 1.2.2. You need to give a direction. If you want to set the padding of the top of the box, use `margin-top`, for example.
+`margin` by itself is not supported by B9 as of 1.3.0. You need to give a direction. If you want to set the padding of the top of the box, use `margin-top`, for example.
 {% endhint %}
 
 | CSS 3.25 directive | Direction                |
@@ -149,7 +149,7 @@ Noted that? Now let's get to the styling features.
 | ------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `font-size`   | Any `px` value                                                                      | Gives the text a custom size. There is a default for each text tag (`h1`, `h2`, `p`...)                                                                                        |
 | `line-height` | Any `px` value                                                                      | Gives the text a custom line-height. There is a default for each text tag.                                                                                                     |
-| `font-family` | String value                                                                        | Gives the text a custom font. `<link>` does not support font files, so the end user must have that font installed. As of B9 v1.2.2, fallback fonts don't seem to be supported. |
+| `font-family` | String value                                                                        | Gives the text a custom font. `<link>` does not support font files, so the end user must have that font installed. As of B9 v1.3.0, fallback fonts don't seem to be supported. |
 | `font-weight` | Any of the following: `ultralight`, `light`, `normal`, `bold`, `ultrabold`, `heavy` | Gives the text a custom font weight.                                                                                                                                           |
 | `color`       | Any `HEX` value                                                                     | Gives the text a custom color.                                                                                                                                                 |
 
@@ -172,7 +172,7 @@ Noted that? Now let's get to the styling features.
 
 ### Input and textarea
 
-> Width and height are considered "Layout" directives, but since they are only supported by `<input>` and `<textarea>` (as of B9 1.2.2), they have their own category for now.
+> Width and height are considered "Layout" directives, but since they are only supported by `<input>` and `<textarea>` (as of B9 1.3.0), they have their own category for now.
 
 | Property | Possible value | Explanation                                   |
 | -------- | -------------- | --------------------------------------------- |

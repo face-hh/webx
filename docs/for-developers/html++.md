@@ -51,14 +51,12 @@ Now, let's go beyond the standard. You might wonder, why do links have no `rel` 
 You can link images (as much as you like), stylesheets and scripts (only 1 of each type).
 
 {% hint style="info" %}
-Audio and video support are being worked on, but as of B9 1.2.2 they are not supported. [See PR](https://github.com/face-hh/webx/pull/150).
+Audio and video support are being worked on, but as of B9 1.3.0 they are not supported. [See PR](https://github.com/face-hh/webx/pull/150).
 {% endhint %}
 
 The thing is, B9 does not use `rel` to define what to do with each thing. It uses the **order** of your tags, being the first tag of each kind the one that will be used for it's specific purpose. In other words: your first `<link>` has to href an image and will be your site's icon, your second `<link>` has to href a stylesheet and will be the source for the page's CSS, and your `<script>` tag should be the third one, and will be the source for the page's Luau script.
 
-{% hint style="warning" %}
-This isn't the standard web, **HTTPS is supported only by the \<script> tag**. Both (CSS & Lua) files must be available locally, in the same path as the `index.html`. As we told you before, the three files must be in the root. HTTP(S) is supported for the icon's link and for images. We recommend using Imgur.
-{% endhint %}
+HTTPS is supported for `src` and `href` attributes, if you want to link external Luau scripts, images, or stylesheets. Later on you'll also see that you can import Luau scripts from the script itself.
 
 {% code title="index.html" overflow="wrap" lineNumbers="true" %}
 
@@ -110,7 +108,7 @@ Currently, you can use the following HTML tags:
 * Images (`<img>`), with a `src` property for the local path / HTTP URI of the image. They are unresizeable, so your image must already be of the desired size (use any image editing tool for that, e.g. [GIMP](https://www.gimp.org/)).
 
 {% hint style="warning" %}
-Additionally, **as of B9 v1.2.2** images are currently broken on _Windows_; and will only work if you follow the [Guide of Compilation for Napture - Windows.](https://github.com/face-hh/webx?tab=readme-ov-file#windows-1)
+Additionally, **as of B9 v1.3.0** images are currently broken on _Windows_; and will only work if you follow the [Guide of Compilation for Napture - Windows.](https://github.com/face-hh/webx?tab=readme-ov-file#windows-1)
 {% endhint %}
 
 * Inputs (`<input>`) are one-line text fields. You can interact with them with Web X's Lua API.
@@ -118,7 +116,7 @@ Additionally, **as of B9 v1.2.2** images are currently broken on _Windows_; and 
 * Dropdowns (`<select>`), which can have options in them (`<option>`).
 
 {% hint style="warning" %}
-As of B9 1.2.2, dropdowns are purely decorative at the moment as they don't have a Lua API.
+As of B9 1.3.0, dropdowns are purely decorative at the moment as they don't have a Lua API.
 {% endhint %}
 
 We're done with the HTML++, **but you must note one more thing**.
