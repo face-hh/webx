@@ -139,7 +139,9 @@ async fn handle_search_update(
     current_tab: Rc<RefCell<Tab>>,
     searchbar: Rc<RefCell<gtk::SearchEntry>>,
 ) {
-    let mut tab_in_closure = current_tab.borrow_mut();
+    let current_tab_clone = Rc::clone(&current_tab);
+
+    let mut tab_in_closure = current_tab_clone.borrow_mut();
     let searchbar_clone = searchbar.clone();
     let searchbar_mut = searchbar_clone.borrow_mut();
 
