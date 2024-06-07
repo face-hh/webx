@@ -6,6 +6,7 @@ pub struct Config {
     pub config_path: String,
     pub(crate) server: Server,
     pub(crate) settings: Settings,
+    pub(crate) dns: Dns,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -27,4 +28,9 @@ pub struct Mongo {
 pub struct Settings {
     pub(crate) tld_list: Vec<String>,
     pub(crate) offensive_words: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Dns {
+    pub(crate) sync_from_list: Vec<String>,
 }

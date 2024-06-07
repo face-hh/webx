@@ -6,7 +6,7 @@ use colored::Colorize;
 use macros_rs::fmt::{crashln, string};
 use mongodb::{error::Error, options::ClientOptions, Client, Collection};
 use std::fs::write;
-use structs::{Mongo, Server, Settings};
+use structs::{Dns, Mongo, Server, Settings};
 
 pub use structs::Config;
 
@@ -14,7 +14,8 @@ impl Config {
     pub fn new() -> Self {
         let default_offensive_words = vec!["nigg", "sex", "porn", "igg"];
         let default_tld_list = vec![
-            "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi", "sigma", "now", "it", "soy", "lol", "uwu", "ohio", "cat",
+            "mf", "btw", "fr", "yap", "dev", "scam", "zip", "root", "web", "rizz", "habibi",
+            "sigma", "now", "it", "soy", "lol", "uwu", "ohio", "cat",
         ];
 
         Config {
@@ -31,15 +32,37 @@ impl Config {
             },
             settings: Settings {
                 tld_list: default_tld_list.iter().map(|s| s.to_string()).collect(),
-                offensive_words: default_offensive_words.iter().map(|s| s.to_string()).collect(),
+                offensive_words: default_offensive_words
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+            },
+            dns: Dns {
+                sync_from_list: vec![],
             },
         }
     }
 
-    pub fn read(&self) -> Self { file::read(&self.config_path) }
-    pub fn get_address(&self) -> String { format!("{}:{}", self.server.address.clone(), self.server.port) }
-    pub fn tld_list(&self) -> Vec<&str> { self.settings.tld_list.iter().map(AsRef::as_ref).collect::<Vec<&str>>() }
-    pub fn offen_words(&self) -> Vec<&str> { self.settings.offensive_words.iter().map(AsRef::as_ref).collect::<Vec<&str>>() }
+    pub fn read(&self) -> Self {
+        file::read(&self.config_path)
+    }
+    pub fn get_address(&self) -> String {
+        format!("{}:{}", self.server.address.clone(), self.server.port)
+    }
+    pub fn tld_list(&self) -> Vec<&str> {
+        self.settings
+            .tld_list
+            .iter()
+            .map(AsRef::as_ref)
+            .collect::<Vec<&str>>()
+    }
+    pub fn offen_words(&self) -> Vec<&str> {
+        self.settings
+            .offensive_words
+            .iter()
+            .map(AsRef::as_ref)
+            .collect::<Vec<&str>>()
+    }
 
     pub fn set_path(&mut self, config_path: &String) -> &mut Self {
         self.config_path = config_path.clone();
@@ -53,7 +76,11 @@ impl Config {
         };
 
         if let Err(err) = write(&self.config_path, contents) {
-            crashln!("Error writing config to {}.\n{}", self.config_path, string!(err).white())
+            crashln!(
+                "Error writing config to {}.\n{}",
+                self.config_path,
+                string!(err).white()
+            )
         }
 
         log::info!("Created config: {}", &self.config_path,);
