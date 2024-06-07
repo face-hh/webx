@@ -550,9 +550,13 @@ pub(crate) async fn run(
         async move {
             let script_path: String = lua.globals().get("__script_path")?;
             if let Ok(mut uri) = url::Url::parse(&script_path) {
-                if let Ok(mut segments) = uri.path_segments_mut() {
-                    segments.pop_if_empty();
-                    segments.extend(&module.split("/").collect::<Vec<&str>>());
+                if let Ok(url) = url::Url::parse(&module) {
+                    uri = url;
+                } else {
+                    if let Ok(mut segments) = uri.path_segments_mut() {
+                        segments.pop_if_empty();
+                        segments.extend(&module.split("/").collect::<Vec<&str>>());
+                    }
                 }
 
                 let result = if uri.scheme() == "file" {
