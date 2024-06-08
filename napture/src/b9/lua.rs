@@ -547,6 +547,7 @@ pub(crate) async fn run(
 
     globals.set("__script_path", taburl.clone())?;
     let require = lua.create_async_function(move |lua, module: String| {
+        let taburl = taburl.clone();
         async move {
             let script_path: String = lua.globals().get("__script_path")?;
             if let Ok(mut uri) = url::Url::parse(&script_path) {
@@ -555,11 +556,15 @@ pub(crate) async fn run(
                 } else {
                     if let Ok(mut segments) = uri.path_segments_mut() {
                         segments.pop_if_empty();
-                        segments.extend(&module.split("/").collect::<Vec<&str>>());
+                        segments.push("");
+                    }
+                    if let Ok(url) = uri.join(&module) {
+                        uri = url;
                     }
                 }
+                println!("{}", uri.to_string());
 
-                let result = if uri.scheme() == "file" {
+                let result = if uri.scheme() == "file" && taburl.starts_with("file") {
                     if let Ok(path) = uri.to_file_path() {
                         if let Ok(contents) = std::fs::read_to_string(path) {
                             contents
