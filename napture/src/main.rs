@@ -633,7 +633,7 @@ fn fetch_dns(url: String) -> String {
 
         if let Ok(json) = response.json::<DomainInfo>() {
             let path = url.split_once('/').unwrap_or(("", "")).1;
-            json.ip + &format!("/{}/", path.strip_prefix("/").unwrap_or(&path))
+            json.ip + &format!("/{}", path.strip_prefix("/").unwrap_or(&path))
         } else {
             lualog!(
                 "debug",
