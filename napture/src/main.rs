@@ -611,7 +611,16 @@ fn fetch_dns(url: String) -> String {
         if let Ok(json) = response.json::<DomainInfo>() {
             let path = url.split_once('/')
                 .unwrap_or(("", "")).1;
-            json.ip + &format!("/{}", path)
+            
+            //check if json.ip is a standalone IP address,
+            //if so, prepend "http://" to make it parsable
+            //as a url.
+            let ip = match json.ip.parse::<std::net::IpAddr>() {
+                Ok(_ip) => format!("http://{}", json.ip),
+                Err(_) => json.ip.clone(),
+            };
+
+            ip + &format!("/{}", path)
         } else {
             lualog!(
                 "debug",
