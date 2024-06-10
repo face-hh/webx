@@ -420,6 +420,8 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
 
     let rc_scroll_forward = rc_scroll.clone();
     let rc_css_provider_forward = rc_css_provider.clone();
+    let rc_tab_forward = rc_tab.clone();
+    let rc_search_forward = rc_search.clone();
     go_forward.connect_clicked({
         let history = history.clone();
         let go_forward = go_forward.clone();
@@ -428,15 +430,81 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
             history.borrow_mut().go_forward();
             update_buttons(&go_back, &go_forward, &history);
             let current_url = history.borrow().current().unwrap().url.clone();
-            rc_search.borrow_mut().set_text(&current_url);
+            rc_search_forward.borrow_mut().set_text(&current_url);
             handle_search_update(
                 rc_scroll_forward.clone(),
                 rc_css_provider_forward.clone(),
-                rc_tab.clone(),
-                rc_search.clone(),
+                rc_tab_forward.clone(),
+                rc_search_forward.clone(),
             );
         }
     });
+
+    //mouse button listeners for forward/back page navigation
+    //mouse back - button "8"
+    let gesture_back = gtk::GestureClick::new();
+    gesture_back.set_button(8);
+
+    let rc_scroll_back = rc_scroll.clone();
+    let rc_css_provider_back = rc_css_provider.clone();
+    let rc_tab_back = rc_tab.clone();
+    let rc_search_back = rc_search.clone();
+
+    gesture_back.connect_pressed({
+        let history = history.clone();
+        let go_forward = go_forward.clone();
+        let go_back = go_back.clone();
+        move |gesture_back, n, _x, _y| {
+        gesture_back.set_state(gtk::EventSequenceState::Claimed);
+        
+        if n < 2 {
+            history.borrow_mut().go_back();
+            update_buttons(&go_back, &go_forward, &history);
+            let current_url = history.borrow().current().unwrap().url.clone();
+            rc_search_back.borrow_mut().set_text(&current_url);
+            handle_search_update(
+                rc_scroll_back.clone(),
+                rc_css_provider_back.clone(),
+                rc_tab_back.clone(),
+                rc_search_back.clone(),
+            );
+        }
+    }});
+
+    window.add_controller(gesture_back);
+
+    //mouse forward - button "9"
+    let gesture_forward = gtk::GestureClick::new();
+    gesture_forward.set_button(9);
+
+    let rc_scroll_forward = rc_scroll.clone();
+    let rc_css_provider_forward = rc_css_provider.clone();
+    let rc_tab_forward = rc_tab.clone();
+    let rc_search_forward = rc_search.clone();
+
+    gesture_forward.connect_pressed({
+        let history = history.clone();
+        let go_forward = go_forward.clone();
+        let go_back = go_back.clone();
+        move |gesture_forward, n, _x, _y|{
+
+        gesture_forward.set_state(gtk::EventSequenceState::Claimed);
+
+        if n < 2 {
+            history.borrow_mut().go_forward();
+            update_buttons(&go_back, &go_forward, &history);
+            let current_url = history.borrow().current().unwrap().url.clone();
+            rc_search_forward.borrow_mut().set_text(&current_url);
+            handle_search_update(
+                rc_scroll_forward.clone(),
+                rc_css_provider_forward.clone(),
+                rc_tab_forward.clone(),
+                rc_search_forward.clone()
+            );
+        }
+    }});
+
+    window.add_controller(gesture_forward);
 
     glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || { // every 5 seconds remove "stale" timeouts
         let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
@@ -446,6 +514,10 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         glib::ControlFlow::Continue
     });
 }
+
+// fn navigate_history (rc_scrolled_window: Rc<RefCell<ScrolledWindow>>, css_provider: Rc<RefCell<CssProvider>>){
+
+// }
 
 // commented code here was an attempt at implementing multiple tabs.
 // it will be kept here in case I decide to implement multiple tabs again
