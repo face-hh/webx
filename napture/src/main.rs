@@ -4,6 +4,7 @@ mod globals;
 mod historymod;
 mod imp;
 mod parser;
+mod page_source_mod;
 
 #[macro_export]
 macro_rules! lualog {
@@ -54,6 +55,7 @@ use glib::Object;
 use gtk::SignalListItemFactory;
 use historymod::History;
 use historymod::HistoryObject;
+use page_source_mod::PageSource;
 
 use globals::APPDATA_PATH;
 use globals::DNS_SERVER;
@@ -78,6 +80,7 @@ struct Tab {
     widget: gtk::Box,
     label_widget: gtk::Label,
     icon_widget: gtk::Image,
+    page_source: Rc<RefCell<PageSource>>,
     // id: String,
 }
 
@@ -149,6 +152,11 @@ fn handle_search_update(
         tab_in_closure.url = dns_url;
     }
 
+    //clear page_source info for tab before fetching new page files
+    //enclosed to let borrowed mut go out of scope
+    let mut page_source_in_closure = tab_in_closure.page_source.borrow_mut();
+    page_source_in_closure.clear();
+
     searchbar_mut.set_text(&url.replace("buss://", ""));
     searchbar_mut.set_position(-1);
 
@@ -186,6 +194,7 @@ fn get_time() -> String {
 
 fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<RefCell<serde_json::Value>>) {
     let history = Rc::new(RefCell::new(History::new()));
+    let page_source = Rc::new(RefCell::new(PageSource::new()));
 
     let default_url = if let Some(dev_build) = args.borrow().get(1) { // cli
         dev_build.to_string()
@@ -221,7 +230,8 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         "file.png",
         // cursor_pointer.as_ref(),
         tabs.clone(),
-        default_tab_url.clone()
+        default_tab_url.clone(),
+        page_source.clone()
     );
 
     history
@@ -257,14 +267,29 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
     let rc_tab = Rc::new(RefCell::new(current_tab.clone()));
     let rc_search = Rc::new(RefCell::new(search.clone()));
 
-    let app_ = Rc::new(RefCell::new(app.clone()));
+    let app_: Rc<RefCell<adw::Application>> = Rc::new(RefCell::new(app.clone()));
 
     let event_controller = gtk::EventControllerKey::new();
     let history_ = Rc::clone(&history);
+    let page_source_ = Rc::clone(&page_source);
+
+    // let lua_logs_showing = Rc::new(RefCell::new(false));
+    // let settings_showing = Rc::new(RefCell::new(false));
+    // let history_showing = Rc::new(RefCell::new(false));
+
+    let source_viewer_showing = Rc::new(RefCell::new(false));
+    let source_viewer_window: Rc<RefCell<Option<Window>>> = Rc::new(RefCell::new(None));
+
+    let source_viewer_showing_ = source_viewer_showing.clone();
+    let source_viewer_window_ = source_viewer_window.clone();
 
     event_controller.connect_key_pressed(move |_, key, _a, b| {
         let app_clone = Rc::clone(&app_);
         let history_clone = Rc::clone(&history_);
+        let page_source_clone = Rc::clone(&page_source_);
+
+        let source_viewer_showing_clone = source_viewer_showing_.clone();
+        let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
 
         if b == (gdk::ModifierType::SHIFT_MASK | gdk::ModifierType::CONTROL_MASK)
             && key == gdk::Key::P
@@ -282,6 +307,17 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
             && key == gdk::Key::H
         {
             display_history_page(&app_clone, history_clone);
+        }
+
+        if key == gdk::Key::F12 {
+            if !*source_viewer_showing_clone.borrow_mut() {
+                *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_clone));
+            } else {
+                if let Some(ref window) = *source_viewer_window_ref{
+                    window.close();
+                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_clone));
+                }
+            }
         }
 
         glib::Propagation::Proceed
@@ -332,14 +368,22 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         println!("ERROR: HTML engine failed.");
     }
 
+    //main UI listeners
+
     // search bar
-    let rc_scroll_search = rc_scroll.clone();
-    let rc_css_provider_search = rc_css_provider.clone();
-    let rc_tab_search = rc_tab.clone();
+    
+    let app_: Rc<RefCell<adw::Application>> = Rc::new(RefCell::new(app.clone()));
     search.connect_activate({
+        let rc_scroll_search = rc_scroll.clone();
+        let rc_css_provider_search = rc_css_provider.clone();
+        let rc_tab_search = rc_tab.clone();
         let history = history.clone();
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
+        let source_viewer_window_ = source_viewer_window.clone();
+        let source_viewer_showing_= source_viewer_showing.clone();
+        let page_source_ = page_source.clone();
+
         move |query| {
             update_buttons(&go_back, &go_forward, &history);
             handle_search_update(
@@ -348,18 +392,33 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
                 rc_tab_search.clone(),
                 Rc::new(RefCell::new(query.clone())),
             );
+            //If open, refresh source viewer on new page
+            if *source_viewer_showing_.clone().borrow_mut() {
+                let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
+                let page_source_clone = Rc::clone(&page_source_);
+                let app_clone = app_.clone();
+
+                if let Some(ref window) = *source_viewer_window_ref{
+                    window.close();
+                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                }
+            }
             history
                 .borrow_mut()
                 .add_to_history(query.text().to_string(), get_time(), true);
         }
     });
 
-    let rc_scroll_refresh = rc_scroll.clone();
-    let rc_css_provider_refresh = rc_css_provider.clone();
-    let rc_tab_refresh = rc_tab.clone();
-    let rc_search_refresh = rc_search.clone();
+    let app_: Rc<RefCell<adw::Application>> = Rc::new(RefCell::new(app.clone()));
     refresh_button.connect_clicked({
+        let rc_scroll_refresh = rc_scroll.clone();
+        let rc_css_provider_refresh = rc_css_provider.clone();
+        let rc_tab_refresh = rc_tab.clone();
+        let rc_search_refresh = rc_search.clone();
         let history = history.clone();
+        let source_viewer_window_ = source_viewer_window.clone();
+        let source_viewer_showing_= source_viewer_showing.clone();
+        let page_source_ = page_source.clone();
         history
             .borrow_mut()
             .add_to_history(rc_search_refresh.borrow().text().to_string(), get_time(), true);
@@ -370,17 +429,32 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
                 rc_tab_refresh.clone(),
                 rc_search_refresh.clone(),
             );
+            //If open, refresh source viewer on new page
+            if *source_viewer_showing_.clone().borrow_mut() {
+                let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
+                let page_source_clone = Rc::clone(&page_source_);
+                let app_clone = app_.clone();
+
+                if let Some(ref window) = *source_viewer_window_ref{
+                    window.close();
+                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                }
+            }
         }
     });
 
-    let rc_scroll_home = rc_scroll.clone();
-    let rc_css_provider_home = rc_css_provider.clone();
-    let rc_tab_home = rc_tab.clone();
-    let rc_search_home = rc_search.clone();
+    let app_: Rc<RefCell<adw::Application>> = Rc::new(RefCell::new(app.clone()));
     home_button.connect_clicked({
-        let history = history.clone();
+        let rc_scroll_home = rc_scroll.clone();
+        let rc_css_provider_home = rc_css_provider.clone();
+        let rc_tab_home = rc_tab.clone();
+        let rc_search_home = rc_search.clone();
+        let history = history.clone(); 
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
+        let source_viewer_window_ = source_viewer_window.clone();
+        let source_viewer_showing_= source_viewer_showing.clone();
+        let page_source_ = page_source.clone();
         move |_button| {
             rc_search_home.borrow_mut().set_text(DEFAULT_URL);
             history
@@ -393,17 +467,32 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
                 rc_tab_home.clone(),
                 rc_search_home.clone(),
             );
+            //If open, refresh source viewer on new page
+            if *source_viewer_showing_.clone().borrow_mut() {
+                let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
+                let page_source_clone = Rc::clone(&page_source_);
+                let app_clone = app_.clone();
+
+                if let Some(ref window) = *source_viewer_window_ref{
+                    window.close();
+                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                }
+            }
         }
     });
 
-    let rc_scroll_back = rc_scroll.clone();
-    let rc_css_provider_back = rc_css_provider.clone();
-    let rc_tab_back = rc_tab.clone();
-    let rc_search_back = rc_search.clone();
+    let app_: Rc<RefCell<adw::Application>> = Rc::new(RefCell::new(app.clone()));
     go_back.connect_clicked({
+        let rc_scroll_back = rc_scroll.clone();
+        let rc_css_provider_back = rc_css_provider.clone();
+        let rc_tab_back = rc_tab.clone();
+        let rc_search_back = rc_search.clone();
         let history = history.clone();
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
+        let source_viewer_window_ = source_viewer_window.clone();
+        let source_viewer_showing_= source_viewer_showing.clone();
+        let page_source_ = page_source.clone();
         move |_| {
             history.borrow_mut().go_back();
             update_buttons(&go_back, &go_forward, &history);
@@ -415,17 +504,32 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
                 rc_tab_back.clone(),
                 rc_search_back.clone(),
             );
+            //If open, refresh source viewer on new page
+            if *source_viewer_showing_.clone().borrow_mut() {
+                let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
+                let page_source_clone = Rc::clone(&page_source_);
+                let app_clone = app_.clone();
+
+                if let Some(ref window) = *source_viewer_window_ref{
+                    window.close();
+                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                }
+            }
         }
     });
 
-    let rc_scroll_forward = rc_scroll.clone();
-    let rc_css_provider_forward = rc_css_provider.clone();
-    let rc_tab_forward = rc_tab.clone();
-    let rc_search_forward = rc_search.clone();
+    let app_: Rc<RefCell<adw::Application>> = Rc::new(RefCell::new(app.clone()));
     go_forward.connect_clicked({
+        let rc_scroll_forward = rc_scroll.clone();
+        let rc_css_provider_forward = rc_css_provider.clone();
+        let rc_tab_forward = rc_tab.clone();
+        let rc_search_forward = rc_search.clone();
         let history = history.clone();
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
+        let source_viewer_window_ = source_viewer_window.clone();
+        let source_viewer_showing_= source_viewer_showing.clone();
+        let page_source_ = page_source.clone();
         move |_| {
             history.borrow_mut().go_forward();
             update_buttons(&go_back, &go_forward, &history);
@@ -437,6 +541,17 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
                 rc_tab_forward.clone(),
                 rc_search_forward.clone(),
             );
+            //If open, refresh source viewer on new page
+            if *source_viewer_showing_.clone().borrow_mut() {
+                let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
+                let page_source_clone = Rc::clone(&page_source_);
+                let app_clone = app_.clone();
+
+                if let Some(ref window) = *source_viewer_window_ref{
+                    window.close();
+                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                }
+            }
         }
     });
 
@@ -445,15 +560,18 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
     let gesture_back = gtk::GestureClick::new();
     gesture_back.set_button(8);
 
-    let rc_scroll_back = rc_scroll.clone();
-    let rc_css_provider_back = rc_css_provider.clone();
-    let rc_tab_back = rc_tab.clone();
-    let rc_search_back = rc_search.clone();
-
+    let app_: Rc<RefCell<adw::Application>> = Rc::new(RefCell::new(app.clone()));
     gesture_back.connect_pressed({
+        let rc_scroll_back = rc_scroll.clone();
+        let rc_css_provider_back = rc_css_provider.clone();
+        let rc_tab_back = rc_tab.clone();
+        let rc_search_back = rc_search.clone();
         let history = history.clone();
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
+        let source_viewer_window_ = source_viewer_window.clone();
+        let source_viewer_showing_= source_viewer_showing.clone();
+        let page_source_ = page_source.clone();
         move |gesture_back, n, _x, _y| {
         gesture_back.set_state(gtk::EventSequenceState::Claimed);
         
@@ -468,6 +586,17 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
                 rc_tab_back.clone(),
                 rc_search_back.clone(),
             );
+            //If open, refresh source viewer on new page
+            if *source_viewer_showing_.clone().borrow_mut() {
+                let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
+                let page_source_clone = Rc::clone(&page_source_);
+                let app_clone = app_.clone();
+
+                if let Some(ref window) = *source_viewer_window_ref{
+                    window.close();
+                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                }
+            }
         }
     }});
 
@@ -477,15 +606,18 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
     let gesture_forward = gtk::GestureClick::new();
     gesture_forward.set_button(9);
 
-    let rc_scroll_forward = rc_scroll.clone();
-    let rc_css_provider_forward = rc_css_provider.clone();
-    let rc_tab_forward = rc_tab.clone();
-    let rc_search_forward = rc_search.clone();
-
+    let app_: Rc<RefCell<adw::Application>> = Rc::new(RefCell::new(app.clone()));
     gesture_forward.connect_pressed({
+        let rc_scroll_forward = rc_scroll.clone();
+        let rc_css_provider_forward = rc_css_provider.clone();
+        let rc_tab_forward = rc_tab.clone();
+        let rc_search_forward = rc_search.clone();
         let history = history.clone();
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
+        let source_viewer_window_ = source_viewer_window.clone();
+        let source_viewer_showing_= source_viewer_showing.clone();
+        let page_source_ = page_source.clone();
         move |gesture_forward, n, _x, _y|{
 
         gesture_forward.set_state(gtk::EventSequenceState::Claimed);
@@ -501,12 +633,24 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
                 rc_tab_forward.clone(),
                 rc_search_forward.clone()
             );
+            //If open, refresh source viewer on new page
+            if *source_viewer_showing_.clone().borrow_mut() {
+                let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
+                let page_source_clone = Rc::clone(&page_source_);
+                let app_clone = app_.clone();
+
+                if let Some(ref window) = *source_viewer_window_ref{
+                    window.close();
+                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                }
+            }
         }
     }});
 
     window.add_controller(gesture_forward);
 
-    glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || { // every 5 seconds remove "stale" timeouts
+    // every 5 seconds remove "stale" timeouts
+    glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || {
         let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
         timeouts.retain(|source| {
             !source.is_destroyed()
@@ -528,6 +672,7 @@ fn make_tab(
     // cursor_pointer: Option<&Cursor>,
     mut tabs: Vec<Tab>,
     default_url: String,
+    page_source: Rc<RefCell<PageSource>>,
 ) -> Tab {
     // let tabid = gen_tab_id();
 
@@ -589,6 +734,7 @@ fn make_tab(
         // id: tabid,
         label_widget: tabname,
         icon_widget: tabicon,
+        page_source: page_source
     };
 
     tabs.push(res.clone());
@@ -707,6 +853,94 @@ fn fetch_dns(url: String) -> String {
         lualog!("debug", "Failed to send HTTP request to DNS API.");
         String::new()
     }
+}
+
+fn display_source_viewer(app: &Rc<RefCell<adw::Application>>, page_source: Rc<RefCell<PageSource>>, showing: Rc<RefCell<bool>>) -> Window{
+    
+    let window: Window = Object::builder()
+        .property("application", glib::Value::from(&*app.borrow_mut()))
+        .build();
+
+    window.set_default_size(700, 1000);
+
+    // Create the main container box with horizontal orientation
+    let main_box = gtk::Box::builder()
+        .orientation(gtk::Orientation::Horizontal)
+        .spacing(6)
+        .margin_top(6)
+        .margin_bottom(6)
+        .margin_start(6)
+        .margin_end(6)
+        .build();
+
+    // Create the menu box for the left side
+    let menu_box = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(6)
+        .width_request(140)
+        .build();
+
+    // scroller for text area
+    let content_scroll = gtk::ScrolledWindow::builder().build();
+
+    let content_text_view = gtk::TextView::builder()
+        .wrap_mode(gtk::WrapMode::Word)
+        .editable(false)
+        .hexpand(true)
+        .build();
+
+    content_scroll.set_child(Some(&content_text_view));
+
+    // let files = page_source.get_files();
+
+    // create buffers and listeners to update the text area buffer
+    let content_buffer = content_text_view.buffer();
+
+    for file in page_source.borrow().get_files() {
+
+        let button = gtk::Button::with_label(file.get(0).expect(""));
+
+        let file_clone = file.clone();
+
+        button.connect_clicked({
+            let content_buffer = content_buffer.clone();
+
+            move |_| {
+                content_buffer.set_text(file_clone.get(1).expect(""));
+            }
+        });
+
+        menu_box.append(&button);
+    }
+
+    // Add menu box and content area to the main box
+    main_box.append(&menu_box);
+    main_box.append(&content_scroll);
+
+    window.set_child(Some(&main_box));
+
+    let label = gtk::Label::new(Some("Source"));
+    let empty_label = gtk::Label::new(Some(""));
+    let headerbar = gtk::HeaderBar::builder().build();
+
+    headerbar.pack_start(&label);
+    headerbar.set_title_widget(Some(&empty_label));
+
+    window.set_titlebar(Some(&headerbar));
+
+    let showing_clone = showing.clone();
+    window.connect_close_request(move |_|{
+        
+        *showing_clone.borrow_mut() = false;
+
+        gtk::glib::Propagation::Proceed
+    });
+
+    window.present();
+
+    *showing.borrow_mut() = true;
+
+    window
 }
 
 fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
