@@ -291,8 +291,10 @@ async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell
                         // todo: a mutex would be better here, since this has to go through async
                         let css = fetch_file(format!("{}/{}", furl, href)).await;
 
-                        let mut page_source = tab.borrow_mut().page_source.borrow_mut();
-                        page_source.add_file(href.to_string(), css.to_string());
+                        {
+                            let mut page_source = tab.borrow_mut().page_source.borrow_mut();
+                            page_source.add_file(href.to_string(), css.to_string());
+                        }
 
                         css::load_css(css);
                     }

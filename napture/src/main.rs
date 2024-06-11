@@ -152,10 +152,12 @@ fn handle_search_update(
         tab_in_closure.url = dns_url;
     }
 
-    //clear page_source info for tab before fetching new page files
-    //enclosed to let borrowed mut go out of scope
-    let mut page_source_in_closure = tab_in_closure.page_source.borrow_mut();
-    page_source_in_closure.clear();
+    {
+        //clear page_source info for tab before fetching new page files
+        //enclosed to let borrowed mut go out of scope
+        let mut page_source_in_closure = tab_in_closure.page_source.borrow_mut();
+        page_source_in_closure.clear();
+    }
 
     searchbar_mut.set_text(&url.replace("buss://", ""));
     searchbar_mut.set_position(-1);
