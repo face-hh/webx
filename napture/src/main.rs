@@ -342,7 +342,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
 
     window.set_child(Some(&nav));
 
-    window.set_default_size(500, 500);
+    window.set_default_size(1000, 700);
     window.present();
 
     if let Some(past_history) = &config.borrow()["history"].as_array() {
@@ -575,30 +575,30 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         let source_viewer_showing_= source_viewer_showing.clone();
         let page_source_ = page_source.clone();
         move |gesture_back, n, _x, _y| {
-        gesture_back.set_state(gtk::EventSequenceState::Claimed);
-        
-        if n < 2 {
-            history.borrow_mut().go_back();
-            update_buttons(&go_back, &go_forward, &history);
-            let current_url = history.borrow().current().unwrap().url.clone();
-            rc_search_back.borrow_mut().set_text(&current_url);
-            handle_search_update(
-                rc_scroll_back.clone(),
-                rc_css_provider_back.clone(),
-                rc_tab_back.clone(),
-                rc_search_back.clone(),
-            );
-            //If open, refresh source viewer on new page
-            if *source_viewer_showing_.clone().borrow_mut() {
-                let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
-                let page_source_clone = Rc::clone(&page_source_);
-                let app_clone = app_.clone();
+            gesture_back.set_state(gtk::EventSequenceState::Claimed);
+            
+            if n < 2 {
+                history.borrow_mut().go_back();
+                update_buttons(&go_back, &go_forward, &history);
+                let current_url = history.borrow().current().unwrap().url.clone();
+                rc_search_back.borrow_mut().set_text(&current_url);
+                handle_search_update(
+                    rc_scroll_back.clone(),
+                    rc_css_provider_back.clone(),
+                    rc_tab_back.clone(),
+                    rc_search_back.clone(),
+                );
+                //If open, refresh source viewer on new page
+                if *source_viewer_showing_.clone().borrow_mut() {
+                    let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
+                    let page_source_clone = Rc::clone(&page_source_);
+                    let app_clone = app_.clone();
 
-                if let Some(ref window) = *source_viewer_window_ref{
-                    window.close();
-                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                    if let Some(ref window) = *source_viewer_window_ref{
+                        window.close();
+                        *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                    }
                 }
-            }
         }
     }});
 
@@ -622,30 +622,30 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         let page_source_ = page_source.clone();
         move |gesture_forward, n, _x, _y|{
 
-        gesture_forward.set_state(gtk::EventSequenceState::Claimed);
+            gesture_forward.set_state(gtk::EventSequenceState::Claimed);
 
-        if n < 2 {
-            history.borrow_mut().go_forward();
-            update_buttons(&go_back, &go_forward, &history);
-            let current_url = history.borrow().current().unwrap().url.clone();
-            rc_search_forward.borrow_mut().set_text(&current_url);
-            handle_search_update(
-                rc_scroll_forward.clone(),
-                rc_css_provider_forward.clone(),
-                rc_tab_forward.clone(),
-                rc_search_forward.clone()
-            );
-            //If open, refresh source viewer on new page
-            if *source_viewer_showing_.clone().borrow_mut() {
-                let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
-                let page_source_clone = Rc::clone(&page_source_);
-                let app_clone = app_.clone();
+            if n < 2 {
+                history.borrow_mut().go_forward();
+                update_buttons(&go_back, &go_forward, &history);
+                let current_url = history.borrow().current().unwrap().url.clone();
+                rc_search_forward.borrow_mut().set_text(&current_url);
+                handle_search_update(
+                    rc_scroll_forward.clone(),
+                    rc_css_provider_forward.clone(),
+                    rc_tab_forward.clone(),
+                    rc_search_forward.clone()
+                );
+                //If open, refresh source viewer on new page
+                if *source_viewer_showing_.clone().borrow_mut() {
+                    let mut source_viewer_window_ref = source_viewer_window_.borrow_mut();
+                    let page_source_clone = Rc::clone(&page_source_);
+                    let app_clone = app_.clone();
 
-                if let Some(ref window) = *source_viewer_window_ref{
-                    window.close();
-                    *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                    if let Some(ref window) = *source_viewer_window_ref{
+                        window.close();
+                        *source_viewer_window_ref = Some(display_source_viewer(&app_clone, page_source_clone, source_viewer_showing_.clone()));
+                    }
                 }
-            }
         }
     }});
 
@@ -863,7 +863,9 @@ fn display_source_viewer(app: &Rc<RefCell<adw::Application>>, page_source: Rc<Re
         .property("application", glib::Value::from(&*app.borrow_mut()))
         .build();
 
-    window.set_default_size(700, 1000);
+    window.set_default_size(800, 900);
+    window.set_height_request(500);
+    window.set_width_request(800);
 
     // Create the main container box with horizontal orientation
     let main_box = gtk::Box::builder()
