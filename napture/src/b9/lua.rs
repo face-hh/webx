@@ -391,8 +391,6 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
                 }
             };
 
-            let errcode = Rc::new(RefCell::new(res.status().as_u16()));
-
             let text = res.text().unwrap_or_default();
 
             text
@@ -970,7 +968,9 @@ impl Luable for gtk::Picture {
         self.alternative_text().unwrap_or(GString::new()).to_string()
     }
     fn set_source_(&self, source: String) {
-        let stream = match crate::b9::html::fetch_image_to_pixbuf(source.clone()) {
+        let result = crate::b9::html::fetch_image_to_pixbuf(source.clone());
+
+        let stream = match result {
             Ok(s) => s,
             Err(e) => {
                 println!("ERROR: Failed to load image: {}", e);

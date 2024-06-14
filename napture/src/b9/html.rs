@@ -9,6 +9,7 @@ use super::{
 
 use std::{cell::RefCell, fs, rc::Rc, thread};
 
+use glib::clone;
 use gtk::{gdk::Display, gdk_pixbuf, gio, glib::Bytes, prelude::*, CssProvider};
 use html_parser::{Dom, Element, Node, Result};
 
@@ -96,7 +97,6 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
     None
 }
 
-#[tokio::main]
 pub async fn build_ui(
     tab: Tab,
     previous_css_provider: Option<CssProvider>,
@@ -670,27 +670,28 @@ fn render_a(
         previous_css_provider.unwrap_or(CssProvider::new()),
     ));
 
-    link_button.connect_activate_link(move |btn| {
-        let scroll = Rc::clone(&scroll);
-        let css_prov = Rc::clone(&rc_css_prov);
-
-        let current_tab = Rc::clone(&current_tab);
-        let searchbar = Rc::clone(&searchbar);
-
+    link_button.connect_activate_link(clone!(@strong scroll, @strong rc_css_prov, @strong current_tab, @strong searchbar => move |btn| {
         let uri = btn.uri();
-
+    
         if !uri.starts_with("buss://") {
             return glib::Propagation::Proceed;
         }
-
+    
         let uri = uri.replace("buss://", "");
-
         searchbar.borrow_mut().set_text(&uri);
-
-        crate::handle_search_update(scroll, css_prov, current_tab, searchbar);
-
+    
+        let scroll = Rc::clone(&scroll);
+        let css_prov = Rc::clone(&rc_css_prov);
+        let current_tab = Rc::clone(&current_tab);
+        let searchbar = Rc::clone(&searchbar);
+    
+        // Spawn an async task
+        glib::MainContext::default().spawn_local(async move {
+            crate::handle_search_update(scroll, css_prov, current_tab, searchbar).await;
+        });
+    
         glib::Propagation::Stop
-    });
+    }));
 
     css.push_str(&link_button.style());
 

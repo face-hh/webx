@@ -50,6 +50,7 @@ static LOGO_PNG: &[u8] = include_bytes!("../file.png");
 
 use b9::css;
 use b9::css::Styleable;
+use glib::clone;
 use glib::Object;
 use gtk::SignalListItemFactory;
 use historymod::History;
@@ -60,7 +61,6 @@ use globals::DNS_SERVER;
 use globals::LUA_TIMEOUTS;
 use globals::LUA_LOGS;
 use gtk::gdk;
-use gtk::gdk::Display;
 use gtk::gio;
 use gtk::CssProvider;
 use serde::Deserialize;
@@ -71,6 +71,7 @@ use directories::ProjectDirs;
 
 const APP_ID: &str = "io.github.face_hh.Napture";
 const DEFAULT_URL: &str = "dingle.it";
+const DEFAULT_URL_NOMASK: &str = "https://github.com/face-hh/dingle-frontend";
 
 #[derive(Clone, Debug)]
 struct Tab {
@@ -81,10 +82,10 @@ struct Tab {
     // id: String,
 }
 
-fn main() -> glib::ExitCode {
+#[tokio::main()]
+async fn main() -> glib::ExitCode {
     init_config();
 
-    let args = Rc::new(RefCell::new(std::env::args().collect::<Vec<String>>()));
     let config = Rc::new(RefCell::new(get_config()));
     let app = adw::Application::builder().application_id(APP_ID).build();
 
@@ -110,7 +111,7 @@ fn main() -> glib::ExitCode {
         "
         .to_string();
 
-        if !gtk::Settings::for_display(&Display::default().unwrap())
+        if !gtk::Settings::for_display(&gdk::Display::default().unwrap())
             .is_gtk_application_prefer_dark_theme()
         {
             content = content
@@ -122,26 +123,30 @@ fn main() -> glib::ExitCode {
     });
 
     app.connect_activate(move |app| {
-        let args_clone = Rc::clone(&args);
+        let app = app.clone();
+    
         let config_clone = Rc::clone(&config);
-        build_ui(app, args_clone, config_clone);
+    
+        build_ui(&app, config_clone)
     });
 
     app.run_with_args(&[""])
 }
 
-fn handle_search_update(
+async fn handle_search_update(
     scroll: Rc<RefCell<gtk::ScrolledWindow>>,
     css_provider: Rc<RefCell<CssProvider>>,
     current_tab: Rc<RefCell<Tab>>,
     searchbar: Rc<RefCell<gtk::SearchEntry>>,
 ) {
-    let mut tab_in_closure = current_tab.borrow_mut();
+    let current_tab_clone = Rc::clone(&current_tab);
+
+    let mut tab_in_closure = current_tab_clone.borrow_mut();
     let searchbar_clone = searchbar.clone();
     let searchbar_mut = searchbar_clone.borrow_mut();
 
     let url = searchbar_mut.text().to_string();
-    let dns_url = fetch_dns(url.clone());
+    let dns_url = fetch_dns(url.clone()).await;
 
     if dns_url.is_empty() {
         tab_in_closure.url = url.clone();
@@ -163,7 +168,7 @@ fn handle_search_update(
         Some(css_provider.take()),
         scroll.clone(),
         searchbar,
-    ) {
+    ).await {
         Ok((htmlview, next_css_provider)) => {
             scroll.borrow_mut().set_child(Some(&htmlview));
             *css_provider.borrow_mut() = next_css_provider;
@@ -184,20 +189,8 @@ fn get_time() -> String {
     chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
-fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<RefCell<serde_json::Value>>) {
+fn build_ui(app: &adw::Application, config: Rc<RefCell<serde_json::Value>>) {
     let history = Rc::new(RefCell::new(History::new()));
-
-    let default_url = if let Some(dev_build) = args.borrow().get(1) { // cli
-        dev_build.to_string()
-    } else { DEFAULT_URL.to_string() };
-
-    let default_dns_url = fetch_dns(default_url.clone());
-
-    let default_tab_url = if default_dns_url.is_empty() {
-        default_url.clone()
-    } else {
-        default_dns_url
-    };
 
     let tabs: Vec<Tab> = vec![];
 
@@ -208,7 +201,7 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
     let search = gtk::SearchEntry::builder()
         .css_name("search")
         .width_request(500)
-        .text(default_url.clone())
+        .text(DEFAULT_URL.to_string())
         .build();
     let empty_label = gtk::Label::new(Some(""));
     let headerbar = gtk::HeaderBar::builder().build();
@@ -221,12 +214,12 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         "file.png",
         // cursor_pointer.as_ref(),
         tabs.clone(),
-        default_tab_url.clone()
+        DEFAULT_URL_NOMASK.to_string()
     );
 
     history
         .borrow_mut()
-        .add_to_history(default_tab_url.clone(), get_time(), true);
+        .add_to_history(DEFAULT_URL.to_string(), get_time(), true);
 
     let current_tab = tab1.clone();
 
@@ -323,120 +316,162 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         *DNS_SERVER.lock().unwrap() = dns.to_string();
     }
 
+    let scroll2 = Rc::clone(&rc_scroll.clone());
+    let search2 = Rc::clone(&rc_search.clone());
+    let css_prov2 = Rc::clone(&rc_css_provider.clone());
+    glib::MainContext::default().spawn_local(async move {
+
+        
     if let Ok((htmlview, provider)) =
-        b9::html::build_ui(tab1.clone(), None, rc_scroll.clone(), rc_search.clone())
+        b9::html::build_ui(tab1.clone(), None, scroll2.clone(), search2.clone()).await
     {
-        rc_scroll.clone().borrow_mut().set_child(Some(&htmlview));
-        *rc_css_provider.borrow_mut() = provider;
+        scroll2.clone().borrow_mut().set_child(Some(&htmlview));
+        *css_prov2.borrow_mut() = provider;
     } else {
         println!("ERROR: HTML engine failed.");
     }
+});
 
     // search bar
     let rc_scroll_search = rc_scroll.clone();
     let rc_css_provider_search = rc_css_provider.clone();
     let rc_tab_search = rc_tab.clone();
-    search.connect_activate({
+    search.connect_activate(clone!(@strong history, @strong go_forward, @strong go_back, @strong rc_scroll_search, @strong rc_css_provider_search, @strong rc_tab_search => move |query| {
         let history = history.clone();
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
-        move |query| {
-            update_buttons(&go_back, &go_forward, &history);
+        let query_text = query.text().to_string();
+        let query_clone = Rc::new(RefCell::new(query.clone()));
+    
+        update_buttons(&go_back, &go_forward, &history);
+    
+        let scroll_clone = rc_scroll_search.clone();
+        let css_provider_clone = rc_css_provider_search.clone();
+        let tab_clone = rc_tab_search.clone();
+    
+        glib::MainContext::default().spawn_local(async move {
             handle_search_update(
-                rc_scroll_search.clone(),
-                rc_css_provider_search.clone(),
-                rc_tab_search.clone(),
-                Rc::new(RefCell::new(query.clone())),
-            );
-            history
-                .borrow_mut()
-                .add_to_history(query.text().to_string(), get_time(), true);
-        }
-    });
+                scroll_clone,
+                css_provider_clone,
+                tab_clone,
+                query_clone
+            ).await;
+    
+            history.borrow_mut().add_to_history(query_text, get_time(), true);
+        });
+    }));
 
     let rc_scroll_refresh = rc_scroll.clone();
     let rc_css_provider_refresh = rc_css_provider.clone();
     let rc_tab_refresh = rc_tab.clone();
     let rc_search_refresh = rc_search.clone();
-    refresh_button.connect_clicked({
+    refresh_button.connect_clicked(clone!(@strong history, @strong rc_search_refresh, @strong rc_scroll_refresh, @strong rc_css_provider_refresh, @strong rc_tab_refresh => move |_button| {
         let history = history.clone();
-        history
-            .borrow_mut()
-            .add_to_history(rc_search_refresh.borrow().text().to_string(), get_time(), true);
-        move |_button| {
+        let search_text = rc_search_refresh.borrow().text().to_string();
+    
+        history.borrow_mut().add_to_history(search_text, get_time(), true);
+    
+        let scroll_clone = rc_scroll_refresh.clone();
+        let css_provider_clone = rc_css_provider_refresh.clone();
+        let tab_clone = rc_tab_refresh.clone();
+        let search_clone = rc_search_refresh.clone();
+    
+        glib::MainContext::default().spawn_local(async move {
             handle_search_update(
-                rc_scroll_refresh.clone(),
-                rc_css_provider_refresh.clone(),
-                rc_tab_refresh.clone(),
-                rc_search_refresh.clone(),
-            );
-        }
-    });
+                scroll_clone,
+                css_provider_clone,
+                tab_clone,
+                search_clone
+            ).await;
+        });
+    }));
 
     let rc_scroll_home = rc_scroll.clone();
     let rc_css_provider_home = rc_css_provider.clone();
     let rc_tab_home = rc_tab.clone();
     let rc_search_home = rc_search.clone();
-    home_button.connect_clicked({
+    home_button.connect_clicked(clone!(@strong history, @strong go_forward, @strong go_back, @strong rc_search_home, @strong rc_scroll_home, @strong rc_css_provider_home, @strong rc_tab_home => move |_button| {
         let history = history.clone();
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
-        move |_button| {
-            rc_search_home.borrow_mut().set_text(DEFAULT_URL);
-            history
-                .borrow_mut()
-                .add_to_history(DEFAULT_URL.to_string(), get_time(), true);
-            update_buttons(&go_back, &go_forward, &history);
+        let search_home = rc_search_home.clone();
+    
+        search_home.borrow_mut().set_text(DEFAULT_URL);
+        history.borrow_mut().add_to_history(DEFAULT_URL.to_string(), get_time(), true);
+        update_buttons(&go_back, &go_forward, &history);
+    
+        let scroll_clone = rc_scroll_home.clone();
+        let css_provider_clone = rc_css_provider_home.clone();
+        let tab_clone = rc_tab_home.clone();
+        let search_clone = rc_search_home.clone();
+    
+        glib::MainContext::default().spawn_local(async move {
             handle_search_update(
-                rc_scroll_home.clone(),
-                rc_css_provider_home.clone(),
-                rc_tab_home.clone(),
-                rc_search_home.clone(),
-            );
-        }
-    });
+                scroll_clone,
+                css_provider_clone,
+                tab_clone,
+                search_clone
+            ).await;
+        });
+    }));
 
     let rc_scroll_back = rc_scroll.clone();
     let rc_css_provider_back = rc_css_provider.clone();
     let rc_tab_back = rc_tab.clone();
     let rc_search_back = rc_search.clone();
-    go_back.connect_clicked({
+    go_back.connect_clicked(clone!(@strong history, @strong go_forward, @strong go_back, @strong rc_scroll_back, @strong rc_css_provider_back, @strong rc_tab_back, @strong rc_search_back => move |_| {
         let history = history.clone();
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
-        move |_| {
-            history.borrow_mut().go_back();
-            update_buttons(&go_back, &go_forward, &history);
-            let current_url = history.borrow().current().unwrap().url.clone();
-            rc_search_back.borrow_mut().set_text(&current_url);
+        let search_back = rc_search_back.clone();
+    
+        history.borrow_mut().go_back();
+        update_buttons(&go_back, &go_forward, &history);
+        let current_url = history.borrow().current().unwrap().url.clone();
+        search_back.borrow_mut().set_text(&current_url);
+    
+        let scroll_clone = rc_scroll_back.clone();
+        let css_provider_clone = rc_css_provider_back.clone();
+        let tab_clone = rc_tab_back.clone();
+        let search_clone = rc_search_back.clone();
+    
+        glib::MainContext::default().spawn_local(async move {
             handle_search_update(
-                rc_scroll_back.clone(),
-                rc_css_provider_back.clone(),
-                rc_tab_back.clone(),
-                rc_search_back.clone(),
-            );
-        }
-    });
+                scroll_clone,
+                css_provider_clone,
+                tab_clone,
+                search_clone
+            ).await;
+        });
+    }));
 
     let rc_scroll_forward = rc_scroll.clone();
     let rc_css_provider_forward = rc_css_provider.clone();
-    go_forward.connect_clicked({
+    go_forward.connect_clicked(clone!(@strong history, @strong go_forward, @strong go_back, @strong rc_scroll_forward, @strong rc_css_provider_forward, @strong rc_tab, @strong rc_search => move |_| {
         let history = history.clone();
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
-        move |_| {
-            history.borrow_mut().go_forward();
-            update_buttons(&go_back, &go_forward, &history);
-            let current_url = history.borrow().current().unwrap().url.clone();
-            rc_search.borrow_mut().set_text(&current_url);
+        let search = rc_search.clone();
+    
+        history.borrow_mut().go_forward();
+        update_buttons(&go_back, &go_forward, &history);
+        let current_url = history.borrow().current().unwrap().url.clone();
+        search.borrow_mut().set_text(&current_url);
+    
+        let scroll_clone = rc_scroll_forward.clone();
+        let css_provider_clone = rc_css_provider_forward.clone();
+        let tab_clone = rc_tab.clone();
+        let search_clone = rc_search.clone();
+    
+        glib::MainContext::default().spawn_local(async move {
             handle_search_update(
-                rc_scroll_forward.clone(),
-                rc_css_provider_forward.clone(),
-                rc_tab.clone(),
-                rc_search.clone(),
-            );
-        }
-    });
+                scroll_clone,
+                css_provider_clone,
+                tab_clone,
+                search_clone
+            ).await;
+        });
+    }));
 
     glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || { // every 5 seconds remove "stale" timeouts
         let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
@@ -581,12 +616,12 @@ struct DomainInfo {
     ip: String,
 }
 
-fn fetch_dns(url: String) -> String {
+async fn fetch_dns(url: String) -> String {
     let mut url = url.replace("buss://", "");
 
     url = url.split("?").nth(0).unwrap_or(&url).to_owned();
 
-    let client: reqwest::blocking::ClientBuilder = reqwest::blocking::Client::builder();
+    let client = reqwest::Client::builder();
 
     let clienturl = format!(
         "{}/domain/{}/{}",
@@ -596,7 +631,8 @@ fn fetch_dns(url: String) -> String {
             .split('/').next().unwrap_or(""),
     );
 
-    
+    println!("{clienturl}");
+
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
@@ -605,10 +641,10 @@ fn fetch_dns(url: String) -> String {
         }
     };
 
-    if let Ok(response) = client.get(clienturl).send() {
+    if let Ok(response) = client.get(clienturl).send().await {
         let status = response.status();
 
-        if let Ok(json) = response.json::<DomainInfo>() {
+        if let Ok(json) = response.json::<DomainInfo>().await {
             let path = url.split_once('/')
                 .unwrap_or(("", "")).1;
             json.ip + &format!("/{}", path)
