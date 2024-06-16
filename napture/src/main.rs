@@ -530,7 +530,7 @@ fn make_tab(
         let dialog = gtk::AboutDialog::builder()
             .modal(true)
             .program_name("Bussin Napture")
-            .version("v1.2.2")
+            .version("v1.3.0")
             .website("https://github.com/face-hh/webx")
             .website_label("GitHub")
             .license_type(gtk::License::Apache20)
