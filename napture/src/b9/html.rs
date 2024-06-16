@@ -9,8 +9,9 @@ use super::{
 
 use std::{cell::RefCell, fs, rc::Rc, thread};
 
-use glib::clone;
 use gtk::{gdk::Display, gdk_pixbuf, gio, glib::Bytes, prelude::*, CssProvider};
+use adw::Avatar;
+
 use html_parser::{Dom, Element, Node, Result};
 
 use lua::Luable;
@@ -66,7 +67,7 @@ async fn parse_html(mut url: String) -> Result<(Node, Node)> {
         Some(head) => head,
         None => {
             return Err(html_parser::Error::Parsing(
-                "Couldn't find head. Invalid HTML?".to_owned(),
+                "Couetch_imageldn't find head. Invalid HTML?".to_owned(),
             ))
         }
     };
@@ -97,6 +98,7 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
     None
 }
 
+#[tokio::main]
 pub async fn build_ui(
     tab: Tab,
     previous_css_provider: Option<CssProvider>,
@@ -525,7 +527,6 @@ fn render_html(
                 Some(Some(t)) => t.to_string(),
                 _ => "text".to_string(),
             };
-
             if input_type == "text" {
                 let entry = gtk::Entry::builder()
                     .placeholder_text(
@@ -599,7 +600,6 @@ fn render_html(
             textview
                 .buffer()
                 .set_text(&decode_html_entities(element.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")));
-
             html_view.append(&textview);
 
             tags.borrow_mut().push(Tag {
@@ -630,9 +630,74 @@ fn render_html(
 
             tags.borrow_mut().push(Tag {
                 classes: element.classes.clone(),
-                widget: Box::new(button),
-                tied_variables: Vec::new(),
+               widget: Box::new(button),
+            tied_variables: Vec::new(),
             });
+        }
+        "avatar" => {
+            let size_atr = element.attributes.get("size");
+            let mut av_size = 48;
+            if size_atr != None {
+                match size_atr.unwrap().as_ref().unwrap().as_str() {
+                    "xs" => {
+                        av_size = 16;
+                    }
+                    "s" => {
+                        av_size = 32;
+                    }
+                    "m" => {
+                        av_size = 48;
+                    } 
+                    "l" => {
+                        av_size = 64;
+                    }
+                    "xl" => {
+                        av_size = 96;
+                    }
+                    "caseoh" => {
+                        av_size = 1024;
+                    }
+                    _ => {
+                        let size: i32 = size_atr.unwrap().as_ref().unwrap().as_str().parse().unwrap_or(48);
+                        av_size = size.clone();
+                    }
+                }
+            };
+
+            let avatar = Avatar::builder()
+                .size(av_size)
+                .show_initials(true)
+                .icon_name("avatar-default-symbolic")
+                .css_name("avatar")
+                .css_classes(element.classes.clone())
+                .build();
+
+            let text = element.attributes.get("text");
+            if text != None {
+                avatar.set_text(Some(text.unwrap().as_ref().unwrap().as_str()));
+            }
+
+            let image = element.attributes.get("src");
+            if image != None {
+                let stream = match fetch_image_to_pixbuf(image.clone().unwrap().as_ref().unwrap().to_string()) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        println!("ERROR: Failed to load image: {}", e);
+                        return;
+                    }
+                };
+                avatar.set_custom_image(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
+            };
+
+            //css.push_str(&avatar.style());
+
+            html_view.append(&avatar);
+
+            //tags.borrow_mut().push(Tag {
+            //    classes: element.classes.clone(),
+            //    widget: Box::new(Avatar),
+            //    tied_variables: Vec::new(),
+            //});
         }
         _ => {
             println!("INFO: Unknown element: {}", element.name);
@@ -670,28 +735,27 @@ fn render_a(
         previous_css_provider.unwrap_or(CssProvider::new()),
     ));
 
-    link_button.connect_activate_link(clone!(@strong scroll, @strong rc_css_prov, @strong current_tab, @strong searchbar => move |btn| {
+    link_button.connect_activate_link(move |btn| {
+        let scroll = Rc::clone(&scroll);
+        let css_prov = Rc::clone(&rc_css_prov);
+
+        let current_tab = Rc::clone(&current_tab);
+        let searchbar = Rc::clone(&searchbar);
+
         let uri = btn.uri();
-    
+
         if !uri.starts_with("buss://") {
             return glib::Propagation::Proceed;
         }
-    
+
         let uri = uri.replace("buss://", "");
+
         searchbar.borrow_mut().set_text(&uri);
-    
-        let scroll = Rc::clone(&scroll);
-        let css_prov = Rc::clone(&rc_css_prov);
-        let current_tab = Rc::clone(&current_tab);
-        let searchbar = Rc::clone(&searchbar);
-    
-        // Spawn an async task
-        glib::MainContext::default().spawn_local(async move {
-            crate::handle_search_update(scroll, css_prov, current_tab, searchbar).await;
-        });
-    
+
+        crate::handle_search_update(scroll, css_prov, current_tab, searchbar);
+
         glib::Propagation::Stop
-    }));
+    });
 
     css.push_str(&link_button.style());
 
