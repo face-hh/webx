@@ -67,7 +67,7 @@ async fn parse_html(mut url: String) -> Result<(Node, Node)> {
         Some(head) => head,
         None => {
             return Err(html_parser::Error::Parsing(
-                "Couetch_imageldn't find head. Invalid HTML?".to_owned(),
+                "Couldn't find head. Invalid HTML?".to_owned(),
             ))
         }
     };
