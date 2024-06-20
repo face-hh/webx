@@ -57,12 +57,7 @@ impl History {
         self.items.is_empty()
     }
 
-    pub(crate) fn add_to_history(
-        &mut self,
-        url: String,
-        date: String,
-        save_to_disk: bool,
-    ) {
+    pub(crate) fn add_to_history(&mut self, url: String, date: String, save_to_disk: bool) {
         while self.items.len() > self.current_position + 1 {
             self.items.pop_back();
         }

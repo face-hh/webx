@@ -6,6 +6,7 @@ use super::css::Styleable;
 use super::html::Tag;
 use glib::GString;
 use gtk::prelude::*;
+use gtk::CssProvider;
 use mlua::{prelude::*, StdLib};
 
 use mlua::{OwnedFunction, Value};
@@ -13,53 +14,130 @@ use mlua::{OwnedFunction, Value};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Map;
 
-use crate::{lualog, globals::LUA_TIMEOUTS};
+use crate::{globals::LUA_TIMEOUTS, lualog, Tab};
 use glib::translate::FromGlib;
 use glib::SourceId;
+
+// from https://crates.io/crates/clone-macro
+macro_rules! clone {
+    () => {};
+    ([$($tt:tt)*], $expr:expr) => {{
+        clone!($($tt)*);
+        $expr
+    }};
+    ($(,)? mut { $expr:expr } as $ident:ident $($tt:tt)*) => {
+        let mut $ident = ::core::clone::Clone::clone(&$expr);
+        clone!($($tt)*)
+    };
+    ($(,)? mut $ident:ident $($tt:tt)*) => {
+        let mut $ident = ::core::clone::Clone::clone(&$ident);
+        clone!($($tt)*)
+    };
+    ($(,)? { $expr:expr } as $ident:ident $($tt:tt)*) => {
+        let $ident = ::core::clone::Clone::clone(&$expr);
+        clone!($($tt)*)
+    };
+    ($(,)? $ident:ident $($tt:tt)*) => {
+        let $ident = ::core::clone::Clone::clone(&$ident);
+        clone!($($tt)*)
+    };
+    ($(,)?) => {};
+}
 
 pub trait Luable: Styleable {
     fn get_css_name(&self) -> String;
 
-    fn get_contents_(&self) -> String;
-    fn get_href_(&self) -> String;
-    fn get_opacity_(&self) -> f64;
-    fn get_source_(&self) -> String;
+    fn get_contents_(&self) -> String {
+        lualog!("warning", format!("get_content is not supported for {}", self.get_css_name()));
+        String::new()
+    }
+    fn get_href_(&self) -> String {
+        lualog!("warning", format!("get_href is not supported for {}", self.get_css_name()));
+        String::new()
+    }
+    fn get_opacity_(&self) -> f64 {
+        lualog!("warning", format!("get_opacity is not supported for {}", self.get_css_name()));
+        1.0
+    }
+    fn get_source_(&self) -> String {
+        lualog!("warning", format!("get_source is not supported for {}", self.get_css_name()));
+        String::new()
+    }
+    fn set_contents_(&self, _contents: String) {
+        lualog!("warning", format!("set_content is not supported for {}", self.get_css_name()));
+    }
+    fn set_href_(&self, _href: String) {
+        lualog!("warning", format!("set_href is not supported for {}", self.get_css_name()));
+    }
+    fn set_opacity_(&self, _amount: f64) {
+        lualog!("warning", format!("set_opacity is not supported for {}", self.get_css_name()));
+    }
+    fn set_source_(&self, _source: String) {
+        lualog!("warning", format!("set_source is not supported for {}", self.get_css_name()));
+    }
+    fn set_visible_(&self, _visible: bool) {
+        lualog!("warning", format!("set_visible is not supported for {}", self.get_css_name()));
+    }
+    fn set_inner_html(
+        &self,
+        _html: String,
+        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+        _previous_css_provider: Option<CssProvider>,
+        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
+        _current_tab: Rc<RefCell<Tab>>,
+    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
+        lualog!("warning", format!("set_inner_html is not supported for {}", self.get_css_name()));
+        Err(LuaError::runtime("not supported"))
+    }
+    fn append_html(
+        &self,
+        _html: String,
+        _scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+        _previous_css_provider: Option<CssProvider>,
+        _searchbar: Rc<RefCell<gtk::SearchEntry>>,
+        _current_tab: Rc<RefCell<Tab>>,
+    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
+        lualog!("warning", format!("append_html is not supported for {}", self.get_css_name()));
+        Err(LuaError::runtime("not supported"))
+    }
 
-    fn set_contents_(&self, contents: String);
-    fn set_href_(&self, href: String);
-    fn set_opacity_(&self, amount: f64);
-    fn set_source_(&self, source: String);
-    fn set_visible_(&self, visible: bool);
-
-    fn _on_click(&self, func: &LuaOwnedFunction);
-    fn _on_submit(&self, func: &LuaOwnedFunction);
-    fn _on_input(&self, func: &LuaOwnedFunction);
+    fn _on_click(&self, _func: &LuaOwnedFunction) {
+        lualog!("warning", format!("on_click is not supported for {}", self.get_css_name()));
+    }
+    fn _on_submit(&self, _func: &LuaOwnedFunction) {
+        lualog!("warning", format!("on_submit is not supported for {}", self.get_css_name()));
+    }
+    fn _on_input(&self, _func: &LuaOwnedFunction) {
+        lualog!("warning", format!("on_input is not supported for {}", self.get_css_name()));
+    }
 }
-// use tokio::time::{sleep, Duration};
-
-// async fn sleep_ms(_lua: &Lua, ms: u64) -> LuaResult<()> {
-//     sleep(Duration::from_millis(ms)).await;
-//     Ok(())
-// }
 
 fn set_timeout(_lua: &Lua, func: LuaOwnedFunction, ms: u64) -> LuaResult<i32> {
     if let Ok(mut timeouts) = LUA_TIMEOUTS.lock() {
         if ms == 0 {
             if let Err(e) = func.call::<_, ()>(()) {
-                lualog!("error", format!("error calling function in set_timeout: {}", e));
+                lualog!(
+                    "error",
+                    format!("error calling function in set_timeout: {}", e)
+                );
             }
             return Ok(-1);
         } else {
             let handle = glib::spawn_future_local(async move {
                 glib::timeout_future(std::time::Duration::from_millis(ms)).await;
                 if let Err(e) = func.call::<_, ()>(()) {
-                    lualog!("error", format!("error calling function in set_timeout: {}", e));
+                    lualog!(
+                        "error",
+                        format!("error calling function in set_timeout: {}", e)
+                    );
                 }
             });
             timeouts.push(handle.source().clone());
             if let Some(id) = handle.as_raw_source_id() {
                 return Ok(id as i32);
-            } else { return Ok(-1); }
+            } else {
+                return Ok(-1);
+            }
         }
     }
     Err(LuaError::runtime("couldn't create timeout"))
@@ -67,139 +145,228 @@ fn set_timeout(_lua: &Lua, func: LuaOwnedFunction, ms: u64) -> LuaResult<i32> {
 
 pub(crate) fn clear_timeout(id: i32) -> LuaResult<()> {
     if id > 0 {
-        let id = unsafe {SourceId::from_glib(id.try_into().unwrap())};
-        if let Some(source) = glib::MainContext::default()
-             .find_source_by_id(&id) {
+        let id = unsafe { SourceId::from_glib(id.try_into().unwrap()) };
+        if let Some(source) = glib::MainContext::default().find_source_by_id(&id) {
             source.destroy();
         }
     }
     Ok(())
 }
 
+fn modify_inner_html(
+    html: String,
+    widget: &gtk::Box,
+    scroll: &Rc<RefCell<gtk::ScrolledWindow>>,
+    previous_css_provider: &Option<CssProvider>,
+    searchbar: &Rc<RefCell<gtk::SearchEntry>>,
+    current_tab: &Rc<RefCell<Tab>>,
+    append: bool
+) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
+    if !append {
+        while let Some(el) = widget.last_child() {
+            widget.remove(&el);
+        }
+    }
+
+    let tags: Rc<RefCell<Vec<Tag>>> = Rc::new(RefCell::new(Vec::new()));
+    let mut css = String::new();
+
+    let dom = match html_parser::Dom::parse(&html) {
+        Ok(dom) => dom,
+        Err(_) => {
+            lualog!(
+                "error",
+                "Invalid HTML"
+            );
+            return Err(LuaError::runtime("invalid html"));
+        }
+    };
+
+    for element in dom.children.iter() {
+        if let Some(element) = element.element() {
+             println!("{:#?}", element);
+
+             crate::b9::html::render_html(
+                 &element,
+                 element.children.first(),
+                 widget.clone(),
+                 true,
+                 Rc::clone(&tags),
+                 &mut css,
+                 Rc::clone(&scroll),
+                 previous_css_provider.clone(),
+                 Rc::clone(&searchbar),
+                 Rc::clone(&current_tab)
+             );
+         }
+    }
+
+    css.push_str(&widget.style());
+    let _ = crate::css::load_css_into_app(&css);
+
+    Ok(tags)
+}
+
 fn get(
-    lua: &Lua,
-    class: String,
-    tags: Rc<RefCell<Vec<Tag>>>,
+    lua: &Lua, 
+    class: String, 
+    tags: Rc<RefCell<Vec<Tag>>>, 
+    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    previous_css_provider: Option<CssProvider>,
+    searchbar: Rc<RefCell<gtk::SearchEntry>>,
+    current_tab: Rc<RefCell<Tab>>,
     multi: bool
-) -> LuaResult<LuaTable<>> {
+) -> LuaResult<LuaTable> {
     let global_table = lua.create_table()?;
-
     let tags_ref = tags.borrow();
-
-    let mut i2 = 1;
 
     for (i, tag) in tags_ref.iter().enumerate() {
         if tag.classes.contains(&class) {
-            let tags1 = Rc::clone(&tags);
-            let tags2 = Rc::clone(&tags);
-            let tags3 = Rc::clone(&tags);
-            let tags4 = Rc::clone(&tags);
-            let tags5 = Rc::clone(&tags);
-            let tags6 = Rc::clone(&tags);
-            let tags7 = Rc::clone(&tags);
-            let tags8 = Rc::clone(&tags);
-            let tags9 = Rc::clone(&tags);
-            let tags10 = Rc::clone(&tags);
-            let tags11 = Rc::clone(&tags);
-            let tags12 = Rc::clone(&tags);
-
             let table = lua.create_table()?;
-
             let css_name = tag.widget.get_css_name().clone();
 
             table.set("name", css_name)?;
 
             table.set(
-                "get_content",
-                lua.create_function(move |_, ()| {
-                    let ok = tags1.borrow()[i].widget.get_contents_();
+                "get_content", 
+                lua.create_function(clone!([tags], move |_, ()| {
+                    let ok = tags.borrow()[i].widget.get_contents_();
                     Ok(ok)
-                })?,
+                }))?
             )?;
             table.set(
                 "set_content",
-                lua.create_function(move |_, label: Option<String>| {
+                lua.create_function(clone!([tags], move |_, label: Option<String>| {
                     let label = if let Some(label) = label {
                         label
-                    } else { "".to_string()};
-                    tags2.borrow()[i].widget.set_contents_(label);
+                    } else {
+                        "".to_string()
+                    };
+                    tags.borrow()[i].widget.set_contents_(label);
                     Ok(())
-                })?,
+                }))?
             )?;
             table.set(
                 "on_click",
-                lua.create_function(move |_lua, func: OwnedFunction| {
-                    tags3.borrow()[i].widget._on_click(&func);
+                lua.create_function(clone!([tags], move |_lua, func: OwnedFunction| {
+                    tags.borrow()[i].widget._on_click(&func);
                     Ok(())
-                })?,
+                }))?
             )?;
             table.set(
                 "on_submit",
-                lua.create_function(move |_lua, func: OwnedFunction| {
-                    tags4.borrow()[i].widget._on_submit(&func);
+                lua.create_function(clone!([tags], move |_lua, func: OwnedFunction| {
+                    tags.borrow()[i].widget._on_submit(&func);
                     Ok(())
-                })?,
+                }))?
             )?;
             table.set(
                 "on_input",
-                lua.create_function(move |_lua, func: OwnedFunction| {
-                    tags5.borrow()[i].widget._on_input(&func);
+                lua.create_function(clone!([tags], move |_lua, func: OwnedFunction| {
+                    tags.borrow()[i].widget._on_input(&func);
                     Ok(())
-                })?,
+                }))?
             )?;
             table.set(
                 "get_href",
-                lua.create_function(move |_, ()| {
-                    let ok = tags6.borrow()[i].widget.get_href_();
+                lua.create_function(clone!([tags], move |_, ()| {
+                    let ok = tags.borrow()[i].widget.get_href_();
                     Ok(ok)
-                })?,
+                }))?
             )?;
             table.set(
                 "set_href",
-                lua.create_function(move |_, label: String| {
-                    tags7.borrow()[i].widget.set_href_(label);
+                lua.create_function(clone!([tags], move |_, label: String| {
+                    tags.borrow()[i].widget.set_href_(label);
                     Ok(())
-                })?,
+                }))?
             )?;
             table.set(
                 "get_opacity",
-                lua.create_function(move |_, ()| {
-                    let ok = tags8.borrow()[i].widget.get_opacity_();
+                lua.create_function(clone!([tags], move |_, ()| {
+                    let ok = tags.borrow()[i].widget.get_opacity_();
                     Ok(ok)
-                })?,
+                }))?
             )?;
             table.set(
                 "set_opacity",
-                lua.create_function(move |_, amount: f64| {
-                    tags9.borrow()[i].widget.set_opacity_(amount);
+                lua.create_function(clone!([tags], move |_, amount: f64| {
+                    tags.borrow()[i].widget.set_opacity_(amount);
                     Ok(())
-                })?,
+                }))?
             )?;
             table.set(
                 "get_source",
-                lua.create_function(move |_, ()| {
-                    tags10.borrow()[i].widget.get_source_();
+                lua.create_function(clone!([tags], move |_, ()| {
+                    tags.borrow()[i].widget.get_source_();
                     Ok(())
-                })?,
+                }))?
             )?;
             table.set(
                 "set_source",
-                lua.create_function(move |_, src: String| {
-                    let ok = tags11.borrow()[i].widget.set_source_(src);
+                lua.create_function(clone!([tags], move |_, src: String| {
+                    let ok = tags.borrow()[i].widget.set_source_(src);
                     Ok(ok)
-                })?,
+                }))?
             )?;
             table.set(
                 "set_visible",
-                lua.create_function(move |_, visible: bool| {
-                    let ok = tags12.borrow()[i].widget.set_visible_(visible);
+                lua.create_function(clone!([tags], move |_, visible: bool| {
+                    let ok = tags.borrow()[i].widget.set_visible_(visible);
                     Ok(ok)
-                })?,
+                }))?
+            )?;
+            table.set(
+                "set_inner_html",
+                lua.create_function(clone!([tags, scroll, previous_css_provider, searchbar, current_tab], move |_, html: String| {
+                    let new_tags = {
+                        tags.borrow()[i].widget.set_inner_html(
+                            html,
+                            scroll.clone(),
+                            previous_css_provider.clone(),
+                            searchbar.clone(),
+                            current_tab.clone()
+                        )
+                    };
+
+                    match new_tags {
+                        Ok(new_tags) => {
+                            for tag in new_tags.borrow_mut().drain(..) {
+                                tags.borrow_mut().push(tag);
+                            }
+                            Ok(())
+                        },
+                        Err(e) => Err(e)
+                    }
+                }))?
+            )?;
+            table.set(
+                "append_html",
+                lua.create_function(clone!([tags, scroll, previous_css_provider, searchbar, current_tab], move |_, html: String| {
+                    let new_tags = {
+                        tags.borrow()[i].widget.append_html(
+                            html,
+                            scroll.clone(),
+                            previous_css_provider.clone(),
+                            searchbar.clone(),
+                            current_tab.clone()
+                        )
+                    };
+
+                    match new_tags {
+                        Ok(new_tags) => {
+                            for tag in new_tags.borrow_mut().drain(..) {
+                                tags.borrow_mut().push(tag);
+                            }
+                            Ok(())
+                        },
+                        Err(e) => Err(e)
+                    }
+                }))?
             )?;
 
             if multi {
-                global_table.set(i2, table)?;
-                i2 += 1;
+                global_table.push(table)?;
             } else {
                 return Ok(table);
             }
@@ -231,12 +398,18 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
 }
 
 // todo: make this async if shit breaks
-pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: String) -> LuaResult<()> {
+pub(crate) async fn run(
+    luacode: String,
+    tags: Rc<RefCell<Vec<Tag>>>,
+    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    previous_css_provider: Option<CssProvider>,
+    searchbar: Rc<RefCell<gtk::SearchEntry>>,
+    current_tab: Rc<RefCell<Tab>>,
+) -> LuaResult<()> {
+    let taburl = { current_tab.borrow().url.clone() };
     let lua = Lua::new_with(
-        /*StdLib::COROUTINE | StdLib::STRING |
-        StdLib::TABLE | StdLib::MATH,*/
         StdLib::ALL_SAFE,
-        LuaOptions::new().catch_rust_panics(true)
+        LuaOptions::new().catch_rust_panics(true),
     )?;
     let globals = lua.globals();
 
@@ -347,8 +520,8 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
         lua.to_value(&json)
     })?;
 
-    let json_stringify = lua.create_function(|lua, table: LuaTable| {
-        match serde_json::to_string(&table) {
+    let json_stringify =
+        lua.create_function(|lua, table: LuaTable| match serde_json::to_string(&table) {
             Ok(value) => Ok(lua.to_value(&value)?),
             Err(_) => {
                 lualog!(
@@ -357,69 +530,109 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
                 );
                 Ok(lua.null())
             }
-        }
-    })?;
+        })?;
 
     let json_parse = lua.create_function(|lua, json: String| {
         match serde_json::from_str::<serde_json::Value>(&json) {
             Ok(value) => Ok(lua.to_value(&value)?),
             Err(_) => {
-                lualog!(
-                    "error",
-                    format!("Failed to parse JSON. Returning null.")
-                );
+                lualog!("error", format!("Failed to parse JSON. Returning null."));
                 Ok(lua.null())
             }
         }
     })?;
 
-    let require = lua.create_async_function(|lua, module: String| async move {
-        if !module.starts_with("http://") && !module.starts_with("https://") {
-            lualog!("error", "Module argument must be a URL.");
-            return Ok(lua.null());
-        }
+    window_table.set("link", taburl.clone())?;
+    window_table.set("query", query_table)?;
 
-        let handle = thread::spawn(move || {
-            let client = reqwest::blocking::Client::new();
-
-            let req = client.get(module);
-
-            let res = match req.send() {
-                Ok(res) => res,
-                Err(e) => {
-                    return format!("Failed to send request: {}", e).into();
+    globals.set("__script_path", taburl.clone())?;
+    let require = lua.create_async_function(move |lua, module: String| {
+        let taburl = taburl.clone();
+        async move {
+            let script_path: String = lua.globals().get("__script_path")?;
+            if let Ok(mut uri) = url::Url::parse(&script_path) {
+                if let Ok(url) = url::Url::parse(&module) {
+                    uri = url;
+                } else {
+                    if let Ok(mut segments) = uri.path_segments_mut() {
+                        segments.pop_if_empty();
+                        segments.push("");
+                    }
+                    if let Ok(url) = uri.join(&module) {
+                        uri = url;
+                    }
                 }
-            };
+                println!("{}", uri.to_string());
 
-            let errcode = Rc::new(RefCell::new(res.status().as_u16()));
+                let result = if uri.scheme() == "file" && taburl.starts_with("file") {
+                    if let Ok(path) = uri.to_file_path() {
+                        if let Ok(contents) = std::fs::read_to_string(path) {
+                            contents
+                        } else {
+                            lualog!("error", format!("file does not exist"));
+                            return Ok(lua.null());
+                        }
+                    } else {
+                        lualog!("error", format!("invalid file path"));
+                        return Ok(lua.null());
+                    }
+                } else {{
+                    let uri = uri.clone();
+                    let handle = thread::spawn(move || {
+                        let client = reqwest::blocking::Client::new();
+                        let req = client.get(if let Ok(_) = url::Url::parse(&module) {
+                            module
+                        } else {
+                            if uri.domain().unwrap_or("").to_lowercase() == "github.com" {
+                                crate::b9::html::get_github_url(uri.to_string())
+                            } else { 
+                                uri.to_string()
+                            }
+                        });
+                        let res = match req.send() {
+                            Ok(res) => res,
+                            Err(e) => {
+                                return format!("Failed to send request: {}", e).into();
+                            }
+                        };
 
-            let text = res.text().unwrap_or_default();
+                        let text = res.text().unwrap_or_default();
+                        text
+                    });
 
-            text
-        });
+                    match handle.join() {
+                        Ok(result) => result,
+                        Err(_) => {
+                            lualog!(
+                                "error",
+                                format!("Failed to join request thread at fetch request. Originates from the Lua runtime. Returning null.")
+                            );
+                            "null".to_string()
+                        }
+                    }
+                }};
 
-        let result = match handle.join() {
-            Ok(result) => result,
-            Err(_) => {
-                lualog!(
-                    "error",
-                    format!("Failed to join request thread at fetch request. Originates from the Lua runtime. Returning null.")
-                );
-                "null".to_string()
+                if let Err(e) = lua.sandbox(true) {
+                    lualog!("error", format!("failed to enable sandbox: {}", e));
+                    return Err(LuaError::runtime("failed to enable sandbox"));
+                } else {
+                    let file = uri.to_string();
+                    if let Ok(mut segments) = uri.path_segments_mut() {
+                        segments.pop();
+                    }
+                    lua.globals().set("__script_path", uri.to_string())?;
+                    let result = lua.load(result)
+                        .set_name(file)
+                        .eval::<LuaValue>();
+                    lua.globals().set("__script_path", script_path)?;
+                    return result;
+                }
             }
-        };
 
-        if let Err(e) = lua.sandbox(true) {
-            lualog!("error", format!("failed to enable sandbox: {}", e));
-            Err(LuaError::runtime("failed to enable sandbox"))
-        } else {
-            let load = lua.load(result);
-            load.eval::<LuaValue>()
+            lualog!("error", "invalid url");
+            Ok(lua.null())
         }
     })?;
-
-    window_table.set("link", taburl)?;
-    window_table.set("query", query_table)?;
 
     json_table.set("stringify", json_stringify)?;
     json_table.set("parse", json_parse)?;
@@ -427,21 +640,24 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
     globals.set("print", lua.create_function(print)?)?;
     globals.set(
         "get",
-        lua.create_function(move |lua, (class, multiple): (String, Option<bool>) | {
-            get(lua, class, tags.clone(), multiple.unwrap_or(false))
-        })?
+        lua.create_function(move |lua, (class, multiple): (String, Option<bool>)| {
+            get(lua, class, tags.clone(), 
+                scroll.clone(),
+                previous_css_provider.clone(),
+                searchbar.clone(),
+                current_tab.clone(),
+                multiple.unwrap_or(false))
+        })?,
     )?;
     globals.set(
         "set_timeout",
-        lua.create_function(move |lua, (func, ms): (LuaOwnedFunction, u64) | {
-           set_timeout(lua, func, ms)
-        })?
+        lua.create_function(move |lua, (func, ms): (LuaOwnedFunction, u64)| {
+            set_timeout(lua, func, ms)
+        })?,
     )?;
     globals.set(
         "clear_timeout",
-        lua.create_function(move |_lua, id: i32| {
-           clear_timeout(id)
-        })?
+        lua.create_function(move |_lua, id: i32| clear_timeout(id))?,
     )?;
     globals.set("fetch", fetchtest)?;
     globals.set("json", json_table)?;
@@ -463,7 +679,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
                 );
                 Err(LuaError::runtime("Failed to run script!"))
             }
-       }
+        }
     }
 }
 
@@ -484,26 +700,6 @@ impl Luable for gtk::Label {
     fn get_contents_(&self) -> String {
         self.text().to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "Most text-based components do not support the \"get_href\" method. Are you perhaps looking for the \"p\" tag?"
-        );
-        "".to_string()
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
@@ -518,13 +714,6 @@ impl Luable for gtk::Label {
         self.set_text(&contents);
         self.style();
     }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "Most text-based components do not support the \"set_href\" method. Are you perhaps looking for the \"p\" tag?"
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -537,18 +726,6 @@ impl Luable for gtk::Label {
         });
 
         self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "Text-based components do not support the \"submit\" event. Are you perhaps looking for the \"click\" event?"
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "Text-based components do not support the \"input\" event."
-        );
     }
 }
 
@@ -561,26 +738,6 @@ impl Luable for gtk::DropDown {
     fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
@@ -590,19 +747,6 @@ impl Luable for gtk::DropDown {
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
     }
-    fn set_contents_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"set_content\" method."
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -615,18 +759,6 @@ impl Luable for gtk::DropDown {
         });
 
         self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"select\" component does not support the \"input\" event."
-        );
     }
 }
 
@@ -647,19 +779,6 @@ impl Luable for gtk::LinkButton {
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
     }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
@@ -686,18 +805,6 @@ impl Luable for gtk::LinkButton {
 
         self.add_controller(gesture)
     }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"a\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"a\" component does not support the \"input\" event."
-        );
-    }
 }
 
 // div
@@ -709,48 +816,35 @@ impl Luable for gtk::Box {
     fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
+    fn set_inner_html(
+        &self,
+        html: String,
+        scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+        previous_css_provider: Option<CssProvider>,
+        searchbar: Rc<RefCell<gtk::SearchEntry>>,
+        current_tab: Rc<RefCell<Tab>>,
+    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
+        modify_inner_html(html, self, &scroll, &previous_css_provider, &searchbar, &current_tab, false)
+    }
+    fn append_html(
+        &self,
+        html: String,
+        scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+        previous_css_provider: Option<CssProvider>,
+        searchbar: Rc<RefCell<gtk::SearchEntry>>,
+        current_tab: Rc<RefCell<Tab>>,
+    ) -> LuaResult<Rc<RefCell<Vec<Tag>>>> {
+        modify_inner_html(html, self, &scroll, &previous_css_provider, &searchbar, &current_tab, true)
     }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
     }
-    fn set_contents_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"set_content\" method."
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -763,18 +857,6 @@ impl Luable for gtk::Box {
         });
 
         self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"div\" component does not support the \"input\" event."
-        );
     }
 }
 
@@ -788,13 +870,6 @@ impl Luable for gtk::TextView {
         let buffer = self.buffer();
         gtk_buffer_to_text(&buffer)
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"textarea\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
@@ -807,26 +882,6 @@ impl Luable for gtk::TextView {
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"textarea\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -839,12 +894,6 @@ impl Luable for gtk::TextView {
         });
 
         self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"textarea\" component does not support the \"submit\" event. Are you perhaps looking for the \"input\" event?"
-        )
     }
     fn _on_input(&self, func: &LuaOwnedFunction) {
         let a = Rc::new(func.clone());
@@ -866,48 +915,15 @@ impl Luable for gtk::Separator {
     fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
     }
-    fn set_contents_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"set_content\" method."
-        );
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -921,18 +937,6 @@ impl Luable for gtk::Separator {
 
         self.add_controller(gesture)
     }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"hr\" component does not support the \"input\" event."
-        );
-    }
 }
 
 // img
@@ -944,30 +948,19 @@ impl Luable for gtk::Picture {
     fn get_contents_(&self) -> String {
         "".to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
     }
-    fn set_contents_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"set_content\" method."
-        );
-    }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
     fn get_source_(&self) -> String {
-        self.alternative_text().unwrap_or(GString::new()).to_string()
+        self.alternative_text()
+            .unwrap_or(GString::new())
+            .to_string()
     }
     fn set_source_(&self, source: String) {
         let stream = match crate::b9::html::fetch_image_to_pixbuf(source.clone()) {
@@ -981,13 +974,6 @@ impl Luable for gtk::Picture {
         self.set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&stream)));
         self.set_alternative_text(Some(&source))
     }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -998,20 +984,6 @@ impl Luable for gtk::Picture {
                 lualog!("error", e.to_string());
             }
         });
-
-        self.add_controller(gesture)
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"img\" component does not support the \"input\" event."
-        );
     }
 }
 
@@ -1024,31 +996,11 @@ impl Luable for gtk::Entry {
     fn get_contents_(&self) -> String {
         self.text().to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"input\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
     fn set_opacity_(&self, amount: f64) {
         self.set_opacity(amount);
-    }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
     }
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
@@ -1056,13 +1008,6 @@ impl Luable for gtk::Entry {
     fn set_contents_(&self, contents: String) {
         self.buffer().set_text(contents);
     }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"input\" component does not support the \"set_href\" method."
-        );
-    }
-
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let gesture = gtk::GestureClick::new();
 
@@ -1109,13 +1054,6 @@ impl Luable for gtk::Button {
     fn get_contents_(&self) -> String {
         self.label().unwrap_or("".into()).to_string()
     }
-    fn get_href_(&self) -> String {
-        lualog!(
-            "warning",
-            "\"button\" component does not support the \"get_href\" method."
-        );
-        "".to_string()
-    }
     fn get_opacity_(&self) -> f64 {
         self.opacity()
     }
@@ -1128,25 +1066,6 @@ impl Luable for gtk::Button {
     fn set_visible_(&self, visible: bool) {
         self.set_visible(visible);
     }
-    fn get_source_(&self) -> String {
-        lualog!(
-            "warning",
-            "This component do not support the \"get_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-        "".to_string()
-    }
-    fn set_source_(&self, _: String) {
-        lualog!(
-            "warning",
-            "This component do not support the \"set_source\" method. Are you perhaps looking for the \"img\" tag?"
-        );
-    }
-    fn set_href_(&self, _: String) {
-        lualog!(
-            "warning",
-            "\"button\" component does not support the \"set_href\" method."
-        );
-    }
 
     fn _on_click(&self, func: &LuaOwnedFunction) {
         let a = Rc::new(func.clone());
@@ -1156,17 +1075,5 @@ impl Luable for gtk::Button {
                 lualog!("error", e.to_string());
             }
         });
-    }
-    fn _on_submit(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"button\" component does not support the \"submit\" event."
-        );
-    }
-    fn _on_input(&self, _: &LuaOwnedFunction) {
-        lualog!(
-            "warning",
-            "\"button\" component does not support the \"input\" event."
-        );
     }
 }

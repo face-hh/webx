@@ -6,12 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-adw = { version = "0.6.0", package = "libadwaita", features = ["v1_5"] }
+adw = { version = "0.6.0", package = "libadwaita", features = ["v1_4"] }
 base64 = "0.22.1"
 chrono = "0.4.38"
+const_format = "0.2.32"
 directories = "5.0.1"
 glib = "0.19.4"
-gtk = { version = "0.8.1", package = "gtk4", features = ["v4_14"] }
+gtk = { version = "0.8.1", package = "gtk4", features = ["v4_12"] }
 html-escape = "0.2.13"
 html_parser = "0.7.0"
 lazy_static = "1.4.0"

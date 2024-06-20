@@ -507,7 +507,7 @@ impl Styleable for gtk::Entry {
 
                     let width = properties.width;
                     let height = properties.height;
-                    
+
                     if width > 0 || height > 0 {
                         let normalized_width = if width > 0 { width } else { -1 };
                         let normalized_height = if height > 0 { height } else { -1 };
@@ -558,7 +558,7 @@ impl Styleable for gtk::Button {
                     self.set_margin_bottom(properties.margin_bottom.parse::<i32>().unwrap_or(0));
                     self.set_margin_start(properties.margin_left.parse::<i32>().unwrap_or(0));
                     self.set_margin_end(properties.margin_right.parse::<i32>().unwrap_or(0));
-                    
+
                     self.set_opacity(properties.opacity);
 
                     final_css += &compute_styling(class, &properties);
@@ -658,7 +658,7 @@ fn compute_styling(class: GString, properties: &Properties) -> String {
     if properties.border_style != "none" {
         borders.push_str(&format!("border-style: {};", properties.border_style));
     }
-    
+
     format!(
         "
 .{} {{
@@ -726,8 +726,8 @@ fn get_properties(rules: &[(String, String)]) -> Properties {
         .parse::<i32>()
         .unwrap_or(0);
     let opacity = get_rule(rules, "opacity", "1.0")
-    .parse::<f64>()
-    .unwrap_or(1.0);
+        .parse::<f64>()
+        .unwrap_or(1.0);
 
     Properties {
         direction,
@@ -757,6 +757,6 @@ fn get_properties(rules: &[(String, String)]) -> Properties {
         padding,
         gap,
         font_size,
-        opacity
+        opacity,
     }
 }

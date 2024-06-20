@@ -1,11 +1,12 @@
 extern crate html_parser;
 
-use crate::{lualog, Tab, globals::LUA_TIMEOUTS};
+use crate::{globals::LUA_TIMEOUTS, lualog, Tab};
 
 use super::{
     css::{self, Styleable},
     lua,
 };
+use crate::USER_AGENT;
 
 use std::{cell::RefCell, fs, rc::Rc, thread};
 
@@ -31,29 +32,35 @@ async fn parse_html(mut url: String) -> Result<(Node, Node)> {
     let mut file_name = String::new();
 
     if let Ok(mut uri) = Url::parse(&url) {
-       let last_seg = {
-           uri.path_segments()
-               .map(|seg| seg.last().unwrap_or(""))
-               .unwrap_or("").to_string()
-       };
-       if let Ok(mut segments) = uri.path_segments_mut() {
-           if !last_seg.contains(".") {
-               segments.pop_if_empty();
-               segments.push("index.html");
-           } else {
-               if !last_seg.ends_with(".html") {
-                   is_html = false;
-               }
-           }
-           file_name += &last_seg;
-       }
-       url = uri.into();
+        let last_seg = {
+            uri.path_segments()
+                .map(|seg| seg.last().unwrap_or(""))
+                .unwrap_or("")
+                .to_string()
+        };
+        if let Ok(mut segments) = uri.path_segments_mut() {
+            println!("{}", last_seg);
+            if last_seg.is_empty() || !last_seg.contains(".") {
+                segments.pop_if_empty();
+                segments.push("index.html");
+            } else {
+                if !last_seg.ends_with(".html") {
+                    is_html = false;
+                }
+            }
+            file_name += &last_seg;
+        }
+        url = uri.into();
     }
 
     let mut html = fetch_file(url).await;
 
     if !is_html {
-        html = format!("<html><head>{}</head><body><p>{}</p></body></html>", file_name, html_escape::encode_double_quoted_attribute(&html));
+        html = format!(
+            "<html><head>{}</head><body><p>{}</p></body></html>",
+            file_name,
+            html_escape::encode_double_quoted_attribute(&html)
+        );
     }
 
     let dom = match !html.is_empty() {
@@ -103,13 +110,19 @@ pub async fn build_ui(
     scroll: Rc<RefCell<gtk::ScrolledWindow>>,
     searchbar: Rc<RefCell<gtk::SearchEntry>>,
 ) -> Result<(gtk::Box, CssProvider)> {
-    let furl = tab.url.split("?").nth(0).unwrap_or(&tab.url).strip_suffix("/").unwrap_or(&tab.url);
+    let furl = tab
+        .url
+        .split("?")
+        .nth(0)
+        .unwrap_or(&tab.url)
+        .strip_suffix("/")
+        .unwrap_or(&tab.url);
 
     css::reset_css();
 
     {
         let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
-        for timeout in timeouts.drain(..) { 
+        for timeout in timeouts.drain(..) {
             timeout.destroy();
         }
     }
@@ -127,7 +140,7 @@ pub async fn build_ui(
         .build();
 
     let mut css: String = css::reset_css();
-    
+
     let (head, body) = match parse_html(furl.to_string()).await {
         Ok(ok) => ok,
         Err(e) => {
@@ -190,7 +203,7 @@ pub async fn build_ui(
     if previous_css_provider.is_some() {
         gtk::style_context_remove_provider_for_display(
             &Display::default().unwrap(),
-            &previous_css_provider.unwrap(),
+            &previous_css_provider.clone().unwrap(),
         );
     }
     let provider = css::load_css_into_app(&css);
@@ -216,7 +229,14 @@ pub async fn build_ui(
             fetch_file(format!("{}/{}", furl, src)).await
         };
 
-        if let Err(e) = super::lua::run(luacode, tags, tab.url.clone()).await {
+        if let Err(e) = super::lua::run(
+            luacode, 
+            tags,
+            scroll.clone(),
+            previous_css_provider.clone(),
+            searchbar.clone(),
+            Rc::new(RefCell::new(tab.clone())),
+        ).await {
             println!("ERROR: Failed to run lua: {}", e);
         }
     }
@@ -248,7 +268,12 @@ pub async fn build_ui(
     Ok((html_view, provider))
 }
 
-async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell<&Tab>>, furl: &String) {
+async fn render_head(
+    element: &Element,
+    contents: Option<&Node>,
+    tab: Rc<RefCell<&Tab>>,
+    furl: &String,
+) {
     match element.name.as_str() {
         "title" => {
             if let Some(contents) = contents {
@@ -288,7 +313,7 @@ async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell
     }
 }
 
-fn render_html(
+pub(crate) fn render_html(
     element: &Element,
     contents: Option<&Node>,
     og_html_view: gtk::Box,
@@ -457,7 +482,15 @@ fn render_html(
             css.push_str(&list_box.style());
 
             html_view.append(&list_box);
-            render_list(element, &list_box, &tags, css);
+            render_list(element, 
+                &list_box, 
+                &tags, 
+                css,
+                scroll.clone(),
+                previous_css_provider.clone(),
+                searchbar.clone(),
+                current_tab.clone()
+            );
 
             tags.borrow_mut().push(Tag {
                 classes: element.classes.clone(),
@@ -526,6 +559,11 @@ fn render_html(
                 _ => "text".to_string(),
             };
 
+            let value = match element.attributes.get("value") {
+                Some(Some(t)) => t.to_string(),
+                _ => "".to_string()
+            };
+
             if input_type == "text" {
                 let entry = gtk::Entry::builder()
                     .placeholder_text(
@@ -536,6 +574,7 @@ fn render_html(
                             .clone()
                             .unwrap_or("".to_string()),
                     )
+                    .text(value)
                     .css_name("input")
                     .css_classes(element.classes.clone())
                     .halign(gtk::Align::Start)
@@ -569,7 +608,9 @@ fn render_html(
             }
 
             let dropdown = gtk::DropDown::builder()
-                .model(&gtk::StringList::new(&strings.iter().map(|s| &**s).collect::<Vec<&str>>()))
+                .model(&gtk::StringList::new(
+                    &strings.iter().map(|s| &**s).collect::<Vec<&str>>(),
+                ))
                 .css_name("select")
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
@@ -596,9 +637,14 @@ fn render_html(
 
             css.push_str(&textview.style());
 
-            textview
-                .buffer()
-                .set_text(&decode_html_entities(element.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")));
+            textview.buffer().set_text(&decode_html_entities(
+                element
+                    .children
+                    .first()
+                    .unwrap_or(&Node::Text(String::new()))
+                    .text()
+                    .unwrap_or(""),
+            ));
 
             html_view.append(&textview);
 
@@ -610,14 +656,14 @@ fn render_html(
         }
         "button" => {
             let button = gtk::Button::builder()
-                .label(
-                    &decode_html_entities(element
+                .label(&decode_html_entities(
+                    element
                         .children
                         .first()
                         .unwrap_or(&Node::Text("".to_owned()))
                         .text()
-                        .unwrap_or("")),
-                )
+                        .unwrap_or(""),
+                ))
                 .css_name("button")
                 .css_classes(element.classes.clone())
                 .halign(gtk::Align::Start)
@@ -659,7 +705,13 @@ fn render_a(
     };
 
     let link_button = gtk::LinkButton::builder()
-        .label(&decode_html_entities(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")))
+        .label(&decode_html_entities(
+            el.children
+                .first()
+                .unwrap_or(&Node::Text(String::new()))
+                .text()
+                .unwrap_or(""),
+        ))
         .uri(uri)
         .css_name("a")
         .css_classes(el.classes.clone())
@@ -708,6 +760,10 @@ fn render_list(
     list_box: &gtk::Box,
     tags: &Rc<RefCell<Vec<Tag>>>,
     css: &mut String,
+    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    previous_css_provider: Option<CssProvider>,
+    searchbar: Rc<RefCell<gtk::SearchEntry>>,
+    current_tab: Rc<RefCell<Tab>>,
 ) {
     for (i, child) in element.children.iter().enumerate() {
         match child {
@@ -726,24 +782,59 @@ fn render_list(
                         .halign(gtk::Align::Start)
                         .build();
 
-                    let label = gtk::Label::builder()
-                        .label(&decode_html_entities(el.children.first().unwrap_or(&Node::Text(String::new())).text().unwrap_or("")))
+                    let li_box = gtk::Box::builder()
                         .css_name("li")
                         .css_classes(el.classes.clone())
+                        .valign(gtk::Align::Center)
                         .halign(gtk::Align::Start)
-                        .selectable(true)
                         .build();
 
-                    css.push_str(&label.style());
+                    for child in el.children.iter() {
+                        match child {
+                            Node::Text(_) => {
+                                render_p(child, el, &li_box, css, &tags);
+                            }
+                            Node::Element(el) => {
+                                if el.name.as_str() == "a" {
+                                    render_a(
+                                        el,
+                                        li_box.clone(),
+                                        tags.clone(),
+                                        css,
+                                        scroll.clone(),
+                                        previous_css_provider.clone(),
+                                        searchbar.clone(),
+                                        current_tab.clone(),
+                                    );
+                                } else {
+                                    render_html(
+                                        el,
+                                        el.children.first(),
+                                        li_box.clone(),
+                                        true,
+                                        tags.clone(),
+                                        css,
+                                        scroll.clone(),
+                                        previous_css_provider.clone(),
+                                        searchbar.clone(),
+                                        current_tab.clone(),
+                                    );
+                                }
+                            }
+                            Node::Comment(_) => {}
+                        }
+                    }
+
+                    css.push_str(&li_box.style());
 
                     li.append(&lead);
-                    li.append(&label);
+                    li.append(&li_box);
 
                     list_box.append(&li);
 
                     tags.borrow_mut().push(Tag {
                         classes: el.classes.clone(),
-                        widget: Box::new(label),
+                        widget: Box::new(li_box),
                         tied_variables: Vec::new(),
                     });
                 } else {
@@ -777,7 +868,11 @@ pub(crate) fn fetch_image_to_pixbuf(url: String) -> Result<gdk_pixbuf::Pixbuf> {
         }
     } else {
         let handle = thread::spawn(move || {
-            reqwest::blocking::get(url)
+            reqwest::blocking::Client::builder()
+                .user_agent(USER_AGENT)
+                .build().unwrap()
+                .get(url)
+                .send()
                 .map_err(|e| e.to_string())
                 .and_then(|res| res.bytes().map_err(|e| e.to_string()))
                 .unwrap_or_else(|e| {
@@ -810,9 +905,11 @@ async fn fetch_file(url: String) -> String {
 
     if url.starts_with("file://") {
         let path = url
-            .replace("file:///", "")
-            .replace("file://", "");
-        
+            .replace("file://", "")
+            .replace("/", std::path::MAIN_SEPARATOR_STR)
+            .trim_start_matches("\\")
+            .to_string();
+
         println!("{path}");
 
         match fs::read_to_string(&format!("{}", path)) {
@@ -824,7 +921,11 @@ async fn fetch_file(url: String) -> String {
         }
     } else if url.starts_with("https://github.com") {
         fetch_from_github(url).await
-    } else if let Ok(response) = reqwest::get(url.clone()).await {
+    } else if let Ok(response) = reqwest::Client::builder()
+        .user_agent(USER_AGENT)
+        .build().unwrap()
+        .get(url.clone())
+        .send().await {
         let status = response.status();
 
         if let Ok(text) = response.text().await {
@@ -851,26 +952,32 @@ async fn fetch_file(url: String) -> String {
     }
 }
 
-async fn fetch_from_github(url: String) -> String {
-    let client: reqwest::ClientBuilder = reqwest::Client::builder();
-
+pub(crate) fn get_github_url(url: String) -> String {
     let branch = if url.contains("tree") {
         url.split('/').nth(6).unwrap_or("main")
-    } else { "main" };
+    } else {
+        "main"
+    };
 
     let path = (if url.contains("tree") {
         url.split('/').skip(7).collect::<Vec<&str>>()
     } else {
         url.split('/').skip(5).collect::<Vec<&str>>()
-    }).join("/");
+    })
+    .join("/");
 
-    let url = format!(
+    format!(
         "https://raw.githubusercontent.com/{}/{}/{}/{}",
         url.split('/').nth(3).unwrap_or(""),
         url.split('/').nth(4).unwrap_or(""),
-        branch, path,
-    );
+        branch,
+        path,
+    )
+}
 
+async fn fetch_from_github(url: String) -> String {
+    let client: reqwest::ClientBuilder = reqwest::Client::builder().user_agent(USER_AGENT);
+    let url = get_github_url(url);
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
@@ -913,7 +1020,13 @@ async fn fetch_from_github(url: String) -> String {
     }
 }
 
-fn render_p(child: &Node, element: &Element, label_box: &gtk::Box, css: &mut String, tags: &Rc<RefCell<Vec<Tag>>>){
+fn render_p(
+    child: &Node,
+    element: &Element,
+    label_box: &gtk::Box,
+    css: &mut String,
+    tags: &Rc<RefCell<Vec<Tag>>>,
+) {
     let label = gtk::Label::builder()
         .label(&decode_html_entities(child.text().unwrap_or("")))
         .css_name(element.name.as_str())

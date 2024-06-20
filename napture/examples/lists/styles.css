@@ -1,0 +1,9 @@
+text-big {
+  font-size: 20px;
+}
+
+li {
+  gap: 5px;
+  direction: row;
+}
+
