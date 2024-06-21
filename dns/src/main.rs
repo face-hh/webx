@@ -3,16 +3,21 @@ mod config;
 mod http;
 mod kv;
 mod secret;
+mod sync;
 
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::{LogLevel, Verbosity};
 use config::Config;
+use futures::executor::block_on;
 use macros_rs::fs::file_exists;
+use tokio::runtime::Runtime;
 
 #[derive(Copy, Clone, Debug, Default)]
 struct Info;
 impl LogLevel for Info {
-    fn default() -> Option<log::Level> { Some(log::Level::Info) }
+    fn default() -> Option<log::Level> {
+        Some(log::Level::Info)
+    }
 }
 
 #[derive(Parser)]
@@ -34,6 +39,8 @@ enum Commands {
         #[command(subcommand)]
         command: Key,
     },
+    /// Sync all domains
+    Sync,
 }
 
 #[derive(Subcommand)]
@@ -67,7 +74,16 @@ enum Key {
     },
 }
 
+#[derive(Subcommand)]
+enum Sync {
+    /// Sync all keys
+    // #[command(visible_alias = "s")]
+    Sync,
+}
+
 fn main() {
+    let rt = Runtime::new().expect("failed to create Tokio runtime");
+    // rt.block_on(sync::sync());
     let cli = Cli::parse();
     let mut env = pretty_env_logger::formatted_builder();
     let level = cli.verbose.log_level_filter();
@@ -93,5 +109,10 @@ fn main() {
             Key::Delete { name } => cli::remove(&cli, name),
             Key::Export { filename } => cli::export(&cli, filename),
         },
+        Commands::Sync => {
+            if let Err(err) = rt.block_on(sync::sync()) {
+                log::error!("Failed to sync data: {err}");
+            }
+        }
     };
 }

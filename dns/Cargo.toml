@@ -18,8 +18,11 @@ prettytable = "0.10.0"
 actix-governor = "0.5.0"
 pretty_env_logger = "0.5.0"
 clap-verbosity-flag = "2.2.0"
+serde_json = "1.0.96"
 
 tokio = { version = "1.38.0", features = ["full"] }
 clap = { version = "4.5.4", features = ["derive"] }
 rand = { version = "0.8.5", features = ["small_rng"] }
 serde = { version = "1.0.203", features = ["derive"] }
+reqwest = { version = "0.11", features = ["json"]}
+
