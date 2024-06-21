@@ -34,10 +34,16 @@ macro_rules! lualog {
     }};
 }
 
-use std::cell::RefCell;
-use std::fs;
-use std::path::PathBuf;
-use std::rc::Rc;
+use std::{
+    borrow::Borrow,
+    borrow::BorrowMut,
+    cell::RefCell,
+    fs,
+    path::PathBuf,
+    rc::Rc,
+    sync::{Arc, RwLock},
+    thread,
+};
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
@@ -57,8 +63,8 @@ use historymod::HistoryObject;
 
 use globals::APPDATA_PATH;
 use globals::DNS_SERVER;
-use globals::LUA_TIMEOUTS;
 use globals::LUA_LOGS;
+use globals::LUA_TIMEOUTS;
 use gtk::gdk;
 use gtk::gdk::Display;
 use gtk::gio;
@@ -130,16 +136,15 @@ fn main() -> glib::ExitCode {
     app.run_with_args(&[""])
 }
 
-// TODO: usages of handle_search_update should spawn a new thread
 fn handle_search_update(
-    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-    css_provider: Rc<RefCell<CssProvider>>,
-    current_tab: Rc<RefCell<Tab>>,
-    searchbar: Rc<RefCell<gtk::SearchEntry>>,
+    scroll: Arc<RefCell<gtk::ScrolledWindow>>,
+    css_provider: Arc<RefCell<CssProvider>>,
+    current_tab: Arc<RefCell<Tab>>,
+    searchbar: Arc<RefCell<gtk::SearchEntry>>,
 ) {
-    let mut tab_in_closure = current_tab.borrow_mut();
+    let mut tab_in_closure = current_tab.borrow_mut().into_inner();
     let searchbar_clone = searchbar.clone();
-    let searchbar_mut = searchbar_clone.borrow_mut();
+    let searchbar_mut = searchbar_clone.borrow_mut().into_inner();
 
     let url = searchbar_mut.text().to_string();
     let dns_url = fetch_dns(url.clone());
@@ -158,25 +163,36 @@ fn handle_search_update(
     } else {
         println!("ERROR: Failed to set focus on search bar. Root is None.");
     }
-
-    match b9::html::build_ui(
-        tab_in_closure.clone(),
-        Some(css_provider.take()),
-        scroll.clone(),
-        searchbar,
-    ) {
-        Ok((htmlview, next_css_provider)) => {
-            scroll.borrow_mut().set_child(Some(&htmlview));
-            *css_provider.borrow_mut() = next_css_provider;
-        }
-        Err(e) => {
-            tab_in_closure.label_widget.set_label(&e.to_string());
-        }
-    };
+    let tab_lock = Arc::new(RwLock::new(tab_in_closure.clone()));
+    let scroll_lock = Arc::new(RwLock::new(scroll.get_mut().clone()));
+    let searchbar_lock = Arc::new(RwLock::new(searchbar.get_mut().clone()));
+    let css_provider_lock = Arc::new(RwLock::new(css_provider.take().borrow_mut().clone()));
+    thread::spawn(move || {
+        let tab = tab_lock.get_mut().unwrap().borrow_mut().to_owned();
+        let scroll = scroll_lock.get_mut().unwrap().borrow_mut().to_owned();
+        let searchbar = searchbar_lock.get_mut().unwrap().borrow_mut().to_owned();
+        let inner_provider = css_provider_lock.get_mut().unwrap().borrow_mut().to_owned();
+        match b9::html::build_ui(
+            tab,
+            Some(inner_provider.to_owned()),
+            Arc::new(RefCell::new(scroll)),
+            Arc::new(RefCell::new(searchbar)),
+        ) {
+            Ok((htmlview, next_css_provider)) => {
+                scroll.set_child(Some(&htmlview));
+                *std::cell::RefCell::<_>::borrow_mut(&RefCell::new(
+                    css_provider_lock.into_inner().unwrap(),
+                )) = next_css_provider;
+            }
+            Err(e) => {
+                tab.label_widget.set_label(&e.to_string());
+            }
+        };
+    });
 }
 
 fn update_buttons(go_back: &gtk::Button, go_forward: &gtk::Button, history: &Rc<RefCell<History>>) {
-    let history = history.borrow();
+    let history = history.into_inner().borrow();
     go_back.set_sensitive(!history.is_empty() && !history.on_history_start());
     go_forward.set_sensitive(!history.is_empty() && !history.on_history_end());
 }
@@ -185,12 +201,19 @@ fn get_time() -> String {
     chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
-fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<RefCell<serde_json::Value>>) {
+fn build_ui(
+    app: &adw::Application,
+    args: Rc<RefCell<Vec<String>>>,
+    config: Rc<RefCell<serde_json::Value>>,
+) {
     let history = Rc::new(RefCell::new(History::new()));
 
-    let default_url = if let Some(dev_build) = args.borrow().get(1) { // cli
+    let default_url = if let Some(dev_build) = args.try_borrow().unwrap().get(1) {
+        // cli
         dev_build.to_string()
-    } else { DEFAULT_URL.to_string() };
+    } else {
+        DEFAULT_URL.to_string()
+    };
 
     let default_dns_url = fetch_dns(default_url.clone());
 
@@ -222,11 +245,12 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         "file.png",
         // cursor_pointer.as_ref(),
         tabs.clone(),
-        default_tab_url.clone()
+        default_tab_url.clone(),
     );
 
     history
-        .borrow_mut()
+        .try_borrow()
+        .unwrap()
         .add_to_history(default_tab_url.clone(), get_time(), true);
 
     let current_tab = tab1.clone();
@@ -253,10 +277,10 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         .build();
     scroll.style();
 
-    let rc_css_provider = Rc::new(RefCell::new(CssProvider::new()));
-    let rc_scroll = Rc::new(RefCell::new(scroll.clone()));
-    let rc_tab = Rc::new(RefCell::new(current_tab.clone()));
-    let rc_search = Rc::new(RefCell::new(search.clone()));
+    let rc_css_provider = Arc::new(RefCell::new(CssProvider::new()));
+    let rc_scroll = Arc::new(RefCell::new(scroll.clone()));
+    let rc_tab = Arc::new(RefCell::new(current_tab.clone()));
+    let rc_search = Arc::new(RefCell::new(search.clone()));
 
     let app_ = Rc::new(RefCell::new(app.clone()));
 
@@ -308,27 +332,35 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
     window.set_default_size(500, 500);
     window.present();
 
-    if let Some(past_history) = &config.borrow()["history"].as_array() {
+    if let Some(past_history) = &config.into_inner().borrow_mut()["history"].as_array() {
         for entry in past_history.iter() {
             if let Some(res) = entry.as_object() {
                 if let (Some(raw_url), Some(raw_date)) = (res.get("url"), res.get("date")) {
                     if let (Some(url), Some(date)) = (raw_url.as_str(), raw_date.as_str()) {
-                        history.borrow_mut().add_to_history(url.to_owned(), date.to_owned(), false);
+                        history.try_borrow().unwrap().add_to_history(
+                            url.to_owned(),
+                            date.to_owned(),
+                            false,
+                        );
                     }
                 }
             }
         }
     }
 
-    if let Some(dns) = &config.borrow()["dns"].as_str() {
+    if let Some(dns) = &config.into_inner().borrow()["dns"].as_str() {
         *DNS_SERVER.lock().unwrap() = dns.to_string();
     }
 
     if let Ok((htmlview, provider)) =
         b9::html::build_ui(tab1.clone(), None, rc_scroll.clone(), rc_search.clone())
     {
-        rc_scroll.clone().borrow_mut().set_child(Some(&htmlview));
-        *rc_css_provider.borrow_mut() = provider;
+        rc_scroll
+            .clone()
+            .into_inner()
+            .borrow_mut()
+            .set_child(Some(&htmlview));
+        *rc_css_provider.into_inner().borrow_mut() = provider;
     } else {
         println!("ERROR: HTML engine failed.");
     }
@@ -347,11 +379,13 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
                 rc_scroll_search.clone(),
                 rc_css_provider_search.clone(),
                 rc_tab_search.clone(),
-                Rc::new(RefCell::new(query.clone())),
+                Arc::new(RefCell::new(query.clone())),
             );
-            history
-                .borrow_mut()
-                .add_to_history(query.text().to_string(), get_time(), true);
+            history.into_inner().borrow_mut().add_to_history(
+                query.text().to_string(),
+                get_time(),
+                true,
+            );
         }
     });
 
@@ -361,9 +395,15 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
     let rc_search_refresh = rc_search.clone();
     refresh_button.connect_clicked({
         let history = history.clone();
-        history
-            .borrow_mut()
-            .add_to_history(rc_search_refresh.borrow().text().to_string(), get_time(), true);
+        history.into_inner().borrow_mut().add_to_history(
+            rc_search_refresh
+                .into_inner()
+                .borrow_mut()
+                .text()
+                .to_string(),
+            get_time(),
+            true,
+        );
         move |_button| {
             handle_search_update(
                 rc_scroll_refresh.clone(),
@@ -383,10 +423,15 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
         move |_button| {
-            rc_search_home.borrow_mut().set_text(DEFAULT_URL);
-            history
+            rc_search_home
+                .into_inner()
                 .borrow_mut()
-                .add_to_history(DEFAULT_URL.to_string(), get_time(), true);
+                .set_text(DEFAULT_URL);
+            history.into_inner().borrow_mut().add_to_history(
+                DEFAULT_URL.to_string(),
+                get_time(),
+                true,
+            );
             update_buttons(&go_back, &go_forward, &history);
             handle_search_update(
                 rc_scroll_home.clone(),
@@ -406,10 +451,13 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
         move |_| {
-            history.borrow_mut().go_back();
+            history.into_inner().borrow_mut().go_back();
             update_buttons(&go_back, &go_forward, &history);
-            let current_url = history.borrow().current().unwrap().url.clone();
-            rc_search_back.borrow_mut().set_text(&current_url);
+            let current_url = history.try_borrow().unwrap().current().unwrap().url.clone();
+            rc_search_back
+                .into_inner()
+                .borrow_mut()
+                .set_text(&current_url);
             handle_search_update(
                 rc_scroll_back.clone(),
                 rc_css_provider_back.clone(),
@@ -426,10 +474,10 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         let go_forward = go_forward.clone();
         let go_back = go_back.clone();
         move |_| {
-            history.borrow_mut().go_forward();
+            history.borrow_mut().into_inner().go_forward();
             update_buttons(&go_back, &go_forward, &history);
-            let current_url = history.borrow().current().unwrap().url.clone();
-            rc_search.borrow_mut().set_text(&current_url);
+            let current_url = history.try_borrow().unwrap().current().unwrap().url.clone();
+            rc_search.borrow_mut().into_inner().set_text(&current_url);
             handle_search_update(
                 rc_scroll_forward.clone(),
                 rc_css_provider_forward.clone(),
@@ -439,11 +487,10 @@ fn build_ui(app: &adw::Application, args: Rc<RefCell<Vec<String>>>, config: Rc<R
         }
     });
 
-    glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || { // every 5 seconds remove "stale" timeouts
+    glib::source::timeout_add_local(std::time::Duration::from_millis(5000), move || {
+        // every 5 seconds remove "stale" timeouts
         let mut timeouts = LUA_TIMEOUTS.lock().unwrap();
-        timeouts.retain(|source| {
-            !source.is_destroyed()
-        });
+        timeouts.retain(|source| !source.is_destroyed());
         glib::ControlFlow::Continue
     });
 }
@@ -525,7 +572,7 @@ fn make_tab(
     res
 }
 
-// fn remove_tab(tab: Rc<RefCell<gtk::Box>>, tabs_widget: Rc<RefCell<gtk::Box>>, tabs: &mut Vec<Tab>) {
+// fn remove_tab(tab: Arc<RefCell<gtk::Box>>, tabs_widget: Arc<RefCell<gtk::Box>>, tabs: &mut Vec<Tab>) {
 //     tabs_widget.borrow_mut().remove(&tab.borrow().clone());
 
 //     tabs.retain(|potential_tab| tab.borrow().css_classes()[0] != potential_tab.id);
@@ -557,7 +604,9 @@ fn make_go_back_button() -> gtk::Button {
 
     //if history.is_empty or already at the beginning of the history, disable the
     let history = Rc::new(RefCell::new(History::new()));
-    if history.borrow_mut().is_empty() || history.borrow_mut().on_history_end() {
+    if history.into_inner().borrow_mut().is_empty()
+        || history.into_inner().borrow_mut().on_history_end()
+    {
         button.set_sensitive(false);
     }
 
@@ -570,7 +619,9 @@ fn make_go_forward_button() -> gtk::Button {
 
     //if history.is_empty or already at the beginning of the history, disable the
     let history = Rc::new(RefCell::new(History::new()));
-    if history.borrow_mut().is_empty() || history.borrow_mut().on_history_start() {
+    if history.into_inner().borrow_mut().is_empty()
+        || history.into_inner().borrow_mut().on_history_start()
+    {
         button.set_sensitive(false);
     }
 
@@ -593,11 +644,14 @@ fn fetch_dns(url: String) -> String {
         "{}/domain/{}/{}",
         DNS_SERVER.lock().unwrap().as_str(),
         url.split('.').next().unwrap_or(""),
-        url.split('.').nth(1).unwrap_or("")
-            .split('/').next().unwrap_or(""),
+        url.split('.')
+            .nth(1)
+            .unwrap_or("")
+            .split('/')
+            .next()
+            .unwrap_or(""),
     );
 
-    
     let client = match client.build() {
         Ok(client) => client,
         Err(e) => {
@@ -610,8 +664,7 @@ fn fetch_dns(url: String) -> String {
         let status = response.status();
 
         if let Ok(json) = response.json::<DomainInfo>() {
-            let path = url.split_once('/')
-                .unwrap_or(("", "")).1;
+            let path = url.split_once('/').unwrap_or(("", "")).1;
             json.ip + &format!("/{}", path)
         } else {
             lualog!(
@@ -629,9 +682,12 @@ fn fetch_dns(url: String) -> String {
     }
 }
 
-fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
+fn display_lua_logs(mut app: &Rc<RefCell<adw::Application>>) {
     let window: Window = Object::builder()
-        .property("application", glib::Value::from(&*app.borrow_mut()))
+        .property(
+            "application",
+            glib::Value::from(&*app.into_inner().borrow_mut()),
+        )
         .build();
 
     let gtkbox = gtk::Box::builder()
@@ -688,7 +744,10 @@ fn display_lua_logs(app: &Rc<RefCell<adw::Application>>) {
 
 fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
     let window: Window = Object::builder()
-        .property("application", glib::Value::from(&*app.borrow_mut()))
+        .property(
+            "application",
+            glib::Value::from(&*app.into_inner().borrow_mut()),
+        )
         .build();
 
     window.set_default_size(500, 300);
@@ -742,7 +801,11 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
         // set the DNS server to the new value
         DNS_SERVER.lock().unwrap().clear();
         DNS_SERVER.lock().unwrap().push_str(&dns);
-        set_config(String::from("dns"), serde_json::Value::String(dns.to_string()), false)
+        set_config(
+            String::from("dns"),
+            serde_json::Value::String(dns.to_string()),
+            false,
+        )
     });
 
     let scroll = gtk::ScrolledWindow::builder().build();
@@ -764,12 +827,16 @@ fn display_settings_page(app: &Rc<RefCell<adw::Application>>) {
 
 fn display_history_page(app: &Rc<RefCell<adw::Application>>, history: Rc<RefCell<History>>) {
     let window: Window = Object::builder()
-        .property("application", glib::Value::from(&*app.borrow_mut()))
+        .property(
+            "application",
+            glib::Value::from(&*app.into_inner().borrow_mut()),
+        )
         .build();
 
     window.set_default_size(500, 300);
     let vector: Vec<HistoryObject> = history
-        .borrow()
+        .try_borrow()
+        .unwrap()
         .clone()
         .items
         .into_iter()
@@ -881,7 +948,8 @@ fn get_config() -> serde_json::Value {
     let contents = fs::read_to_string(&json_path).expect("Failed to read configuration for theme.");
 
     println!("{:?}", json_path);
-    let json_contents: serde_json::Value = serde_json::from_str(&contents).expect("Failed to parse JSON");
+    let json_contents: serde_json::Value =
+        serde_json::from_str(&contents).expect("Failed to parse JSON");
 
     json_contents
 }
@@ -890,7 +958,8 @@ fn set_config(property: String, value: serde_json::Value, array: bool) {
     let json_path = PathBuf::from(APPDATA_PATH.lock().unwrap().clone()).join("config.json");
     let contents = fs::read_to_string(&json_path).expect("Failed to read configuration for theme.");
 
-    let mut json_contents: serde_json::Value = serde_json::from_str(&contents).expect("Failed to parse JSON");
+    let mut json_contents: serde_json::Value =
+        serde_json::from_str(&contents).expect("Failed to parse JSON");
 
     if array {
         if json_contents[property.clone()].is_array() {
@@ -902,7 +971,7 @@ fn set_config(property: String, value: serde_json::Value, array: bool) {
 
     if let Ok(updated_json) = serde_json::to_string_pretty(&json_contents) {
         match fs::write(&json_path, &updated_json) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => {
                 eprintln!("ERROR: Failed to save config to disk. Error: {}", err);
             }
