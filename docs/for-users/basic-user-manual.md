@@ -2,12 +2,7 @@
 
 ## First thing first: Install Napture
 
-<!-- CHECK ME BEFORE MERGING 
-Napture's UI has been updated, so screenshots should be retaken to reflect those changes. Already updated caption to "1.3.0", just replace the image.
-
-(dont tell me to screenshot it myself, napture doesnt work on my machine :c)
--->
-<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>Bussin Napture v1.3.0</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>Bussin Napture v1.3.1</p></figcaption></figure>
 
 This is the guide to install **Bussin Napture**, the official Web X browser.
 
@@ -73,20 +68,10 @@ Go [here](https://github.com/face-hh/webx/releases) for the releases tab. Always
 
 It's very easy. This is your startpage:
 
-<!-- CHECK ME BEFORE MERGING 
-Napture's UI has been updated, so screenshots should be retaken to reflect those changes. Already updated caption to "1.3.0", just replace the image.
-
-(dont tell me to screenshot it myself, napture doesnt work on my machine :c)
--->
 <figure><img src="../.gitbook/assets/image (2).png" alt=""><figcaption><p>buss://dingle.it</p></figcaption></figure>
 
 This is Dingle, WebX's official search engine. Just like a normal search engine, type in a query, and then click on one of the results to visit a website.
 
-<!-- CHECK ME BEFORE MERGING 
-Napture's UI has been updated, so screenshots should be retaken to reflect those changes. Already updated caption to "1.3.0", just replace the image.
-
-(dont tell me to screenshot it myself, napture doesnt work on my machine :c)
--->
 ![Screenshot](../png2.png)
 
 Websites may not have a description. That depends if the developer added a [description](../for-developers/html++.md#head-metadata-in-html) or not.

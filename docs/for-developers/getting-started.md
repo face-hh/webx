@@ -3,7 +3,7 @@
 ## Welcome to Web X development
 
 {% hint style="info" %}
-Note this is guide is up to date for **B9 ENGINE - v1.3.0** (Napture and B9's version number are synchronized). If the browser gets a new release, wait for someone to commit / PR an update to the docs.
+Note this is guide is up to date for **B9 ENGINE - v1.3.1** (Napture and B9's version number are synchronized). If the browser gets a new release, wait for someone to commit / PR an update to the docs.
 {% endhint %}
 
 ### What we'll see
@@ -58,7 +58,7 @@ Napture and B9 are connected, but they are not the same!
 
 * **Web X** - The entire project, including the DNS and all that stuff.
 * **Napture** - The browser itself, used to render websites using the B9 engine.
-* **B9 engine** (or just "B9") - Napture's rendering engine, which renders the HTML, CSS, and Luau. Most features will need to be supported by _this_, not by the browser itself. They both have the same version number. **Currently, the Latest version is v1.3.0**.
+* **B9 engine** (or just "B9") - Napture's rendering engine, which renders the HTML, CSS, and Luau. Most features will need to be supported by _this_, not by the browser itself. They both have the same version number. **Currently, the Latest version is v1.3.1**.
 
 {% endhint %}
 
