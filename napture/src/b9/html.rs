@@ -7,7 +7,7 @@ use super::{
     lua,
 };
 
-use std::{cell::RefCell, fs, rc::Rc, thread};
+use std::{cell::RefCell, fs, sync::Arc, thread};
 
 use gtk::{gdk::Display, gdk_pixbuf, gio, glib::Bytes, prelude::*, CssProvider};
 use html_parser::{Dom, Element, Node, Result};
@@ -100,8 +100,8 @@ fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
 pub async fn build_ui(
     tab: Tab,
     previous_css_provider: Option<CssProvider>,
-    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
-    searchbar: Rc<RefCell<gtk::SearchEntry>>,
+    scroll: Arc<RefCell<gtk::ScrolledWindow>>,
+    searchbar: Arc<RefCell<gtk::SearchEntry>>,
 ) -> Result<(gtk::Box, CssProvider)> {
     let furl = tab.url.split("?").nth(0).unwrap_or(&tab.url).strip_suffix("/").unwrap_or(&tab.url);
 
@@ -114,7 +114,7 @@ pub async fn build_ui(
         }
     }
 
-    let tags = Rc::new(RefCell::new(Vec::new()));
+    let tags = Arc::new(RefCell::new(Vec::new()));
 
     let html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -159,9 +159,9 @@ pub async fn build_ui(
     for element in head_elements.children.iter() {
         if let Some(element) = element.element() {
             let contents = element.children.first();
-            let aa = &Rc::new(RefCell::new(&tab));
+            let aa = &Arc::new(RefCell::new(&tab));
 
-            let tabb = Rc::clone(aa);
+            let tabb = Arc::clone(aa);
             render_head(element, contents, tabb, &furl.to_string()).await;
         }
     }
@@ -182,7 +182,7 @@ pub async fn build_ui(
                 scroll.clone(),
                 previous_css_provider.clone(),
                 searchbar.clone(),
-                Rc::new(RefCell::new(tab.clone())),
+                Arc::new(RefCell::new(tab.clone())),
             );
         }
     }
@@ -207,7 +207,7 @@ pub async fn build_ui(
         }
     }
 
-    let tagss = Rc::clone(&tags);
+    let tagss = Arc::clone(&tags);
 
     if !src.is_empty() {
         let luacode = if src.starts_with("https://") {
@@ -248,7 +248,7 @@ pub async fn build_ui(
     Ok((html_view, provider))
 }
 
-async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell<&Tab>>, furl: &String) {
+async fn render_head(element: &Element, contents: Option<&Node>, tab: Arc<RefCell<&Tab>>, furl: &String) {
     match element.name.as_str() {
         "title" => {
             if let Some(contents) = contents {
@@ -293,12 +293,12 @@ fn render_html(
     contents: Option<&Node>,
     og_html_view: gtk::Box,
     recursive: bool,
-    tags: Rc<RefCell<Vec<Tag>>>,
+    tags: Arc<RefCell<Vec<Tag>>>,
     css: &mut String,
-    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    scroll: Arc<RefCell<gtk::ScrolledWindow>>,
     previous_css_provider: Option<CssProvider>,
-    searchbar: Rc<RefCell<gtk::SearchEntry>>,
-    current_tab: Rc<RefCell<Tab>>,
+    searchbar: Arc<RefCell<gtk::SearchEntry>>,
+    current_tab: Arc<RefCell<Tab>>,
 ) {
     let mut html_view = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
@@ -643,12 +643,12 @@ fn render_html(
 fn render_a(
     el: &Element,
     label_box: gtk::Box,
-    tags: Rc<RefCell<Vec<Tag>>>,
+    tags: Arc<RefCell<Vec<Tag>>>,
     css: &mut String,
-    scroll: Rc<RefCell<gtk::ScrolledWindow>>,
+    scroll: Arc<RefCell<gtk::ScrolledWindow>>,
     previous_css_provider: Option<CssProvider>,
-    searchbar: Rc<RefCell<gtk::SearchEntry>>,
-    current_tab: Rc<RefCell<Tab>>,
+    searchbar: Arc<RefCell<gtk::SearchEntry>>,
+    current_tab: Arc<RefCell<Tab>>,
 ) {
     let uri = match el.attributes.get("href") {
         Some(Some(uri)) => uri.clone(),
@@ -666,16 +666,16 @@ fn render_a(
         .halign(gtk::Align::Start)
         .build();
 
-    let rc_css_prov = Rc::new(RefCell::new(
+    let rc_css_prov = Arc::new(RefCell::new(
         previous_css_provider.unwrap_or(CssProvider::new()),
     ));
 
     link_button.connect_activate_link(move |btn| {
-        let scroll = Rc::clone(&scroll);
-        let css_prov = Rc::clone(&rc_css_prov);
+        let scroll = Arc::clone(&scroll);
+        let css_prov = Arc::clone(&rc_css_prov);
 
-        let current_tab = Rc::clone(&current_tab);
-        let searchbar = Rc::clone(&searchbar);
+        let current_tab = Arc::clone(&current_tab);
+        let searchbar = Arc::clone(&searchbar);
 
         let uri = btn.uri();
 
@@ -706,7 +706,7 @@ fn render_a(
 fn render_list(
     element: &Element,
     list_box: &gtk::Box,
-    tags: &Rc<RefCell<Vec<Tag>>>,
+    tags: &Arc<RefCell<Vec<Tag>>>,
     css: &mut String,
 ) {
     for (i, child) in element.children.iter().enumerate() {
@@ -913,7 +913,7 @@ async fn fetch_from_github(url: String) -> String {
     }
 }
 
-fn render_p(child: &Node, element: &Element, label_box: &gtk::Box, css: &mut String, tags: &Rc<RefCell<Vec<Tag>>>){
+fn render_p(child: &Node, element: &Element, label_box: &gtk::Box, css: &mut String, tags: &Arc<RefCell<Vec<Tag>>>){
     let label = gtk::Label::builder()
         .label(&decode_html_entities(child.text().unwrap_or("")))
         .css_name(element.name.as_str())
