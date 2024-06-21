@@ -1,4 +1,6 @@
+use std::borrow::Cow;
 use std::cell::RefCell;
+use std::marker::PhantomData;
 use std::rc::Rc;
 use std::thread;
 
@@ -6,9 +8,24 @@ use super::css::Styleable;
 use super::html::Tag;
 use glib::GString;
 use gtk::prelude::*;
-use mlua::{prelude::*, StdLib};
 
+use mlua::{prelude::*, StdLib, AsChunk, ChunkMode};
 use mlua::{OwnedFunction, Value};
+
+struct SafeStringChunk<'lua, 'a> {
+    inner: &'a str,
+    _marker: PhantomData<&'lua ()>,
+}
+
+impl<'lua, 'a> AsChunk<'lua, 'a> for SafeStringChunk<'lua, 'a> {
+    fn mode(&self) -> Option<ChunkMode> {
+        Some(ChunkMode::Text)
+    }
+
+    fn source(self) -> Result<Cow<'a, [u8]>, std::io::Error> {
+        Ok(Cow::Borrowed(self.inner.as_bytes()))
+    }
+}
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Map;
@@ -391,8 +408,6 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
                 }
             };
 
-            let errcode = Rc::new(RefCell::new(res.status().as_u16()));
-
             let text = res.text().unwrap_or_default();
 
             text
@@ -413,7 +428,12 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
             lualog!("error", format!("failed to enable sandbox: {}", e));
             Err(LuaError::runtime("failed to enable sandbox"))
         } else {
-            let load = lua.load(result);
+            let safe_chunk = SafeStringChunk {
+                inner: &result,
+                _marker: PhantomData,
+            };
+
+            let load = lua.load(safe_chunk);
             load.eval::<LuaValue>()
         }
     })?;
@@ -452,7 +472,12 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
         lualog!("error", format!("failed to enable sandbox: {}", e));
         Err(LuaError::runtime("failed to enable sandbox"))
     } else {
-        let ok = lua.load(luacode).eval::<LuaMultiValue>();
+        let safe_chunk = SafeStringChunk {
+            inner: &luacode,
+            _marker: PhantomData,
+        };
+
+        let ok = lua.load(safe_chunk).eval::<LuaMultiValue>();
 
         match ok {
             Ok(_) => Ok(()),
@@ -463,7 +488,7 @@ pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: St
                 );
                 Err(LuaError::runtime("Failed to run script!"))
             }
-       }
+        }
     }
 }
 
