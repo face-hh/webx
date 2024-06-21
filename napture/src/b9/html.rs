@@ -1,6 +1,6 @@
 extern crate html_parser;
 
-use crate::{lualog, Tab, globals::LUA_TIMEOUTS};
+use crate::{globals::LUA_TIMEOUTS, lualog, Tab};
 
 use super::{
     css::{self, Styleable},
@@ -26,7 +26,7 @@ fn decode_html_entities<T: AsRef<str>>(s: T) -> String {
     decode_html_entities(s.as_ref()).to_string()
 }
 
-async fn parse_html(mut url: String) -> Result<(Node, Node)> {
+async fn parse_html(mut url: String) -> Result<(Node, Node, String)> {
     let mut is_html = true;
     let mut file_name = String::new();
 
@@ -79,7 +79,7 @@ async fn parse_html(mut url: String) -> Result<(Node, Node)> {
         }
     };
 
-    Ok((head, body))
+    Ok((head, body, html))
 }
 
 fn find_element_by_name(elements: &Vec<Node>, name: &str) -> Option<Node> {
@@ -128,13 +128,19 @@ pub async fn build_ui(
 
     let mut css: String = css::reset_css();
     
-    let (head, body) = match parse_html(furl.to_string()).await {
+    let (head, body, source_html) = match parse_html(furl.to_string()).await {
         Ok(ok) => ok,
         Err(e) => {
             eprintln!("Couldn't parse HTML: {}", e);
             return Err(html_parser::Error::Parsing(e.to_string()));
         }
     };
+
+    // add html to source here after parse_html()
+    {
+        let mut page_source = tab.page_source.borrow_mut();
+        page_source.add_file("index.html".to_string(), source_html.to_string());
+    }
 
     let head_elements = match head.element() {
         Some(ok) => ok,
@@ -166,6 +172,7 @@ pub async fn build_ui(
         }
     }
 
+    //css is pushed to css variable inside render_head()
     css.push_str(&html_view.style());
 
     for element in body_elements.children.iter() {
@@ -210,11 +217,21 @@ pub async fn build_ui(
     let tagss = Rc::clone(&tags);
 
     if !src.is_empty() {
-        let luacode = if src.starts_with("https://") {
-            fetch_file(src).await
+
+        let src_clone = src.clone();
+
+        let luacode = if src_clone.starts_with("https://") {
+            fetch_file(src_clone).await
         } else {
-            fetch_file(format!("{}/{}", furl, src)).await
+            fetch_file(format!("{}/{}", furl, src_clone)).await
         };
+
+        //add lua code to page source
+        {
+            let src_clone = src.clone();
+            let mut page_source = tab.page_source.borrow_mut();
+            page_source.add_file(src_clone.to_string(), luacode.to_string());
+        }
 
         if let Err(e) = super::lua::run(luacode, tags, tab.url.clone()).await {
             println!("ERROR: Failed to run lua: {}", e);
@@ -273,6 +290,11 @@ async fn render_head(element: &Element, contents: Option<&Node>, tab: Rc<RefCell
                     } else {
                         // todo: a mutex would be better here, since this has to go through async
                         let css = fetch_file(format!("{}/{}", furl, href)).await;
+
+                        {
+                            let mut page_source = tab.borrow_mut().page_source.borrow_mut();
+                            page_source.add_file(href.to_string(), css.to_string());
+                        }
 
                         css::load_css(css);
                     }
