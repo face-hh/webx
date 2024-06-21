@@ -1,0 +1,205 @@
+name: Napture Nightly
+
+on:
+  push:
+    branches:
+      - master
+    paths: 
+      - napture/*
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build Napture (Ubuntu)
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Dependencies
+      run: |
+        echo "Installing dependencies..."
+        sudo apt-get update
+        sudo apt-get install -y libglib2.0-dev libcairo2-dev libgraphene-1.0-dev libgtk-4-dev libadwaita-1-dev 
+        sudo add-apt-repository universe
+        sudo apt install libfuse2
+        echo "Dependencies installed."
+
+    - name: Build Napture
+      run: |
+        echo "Building Napture..."
+        cd napture
+        export PKG_CONFIG_PATH=/usr/lib/pkgconfig
+        cargo build --release --verbose
+        echo "Napture built successfully."
+    - name: Install linuxdeploy
+      run: |
+        echo "Starting artifact upload phase..."
+        echo "Installing linuxdeploy..."
+        wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage
+        echo "linuxdeploy installed."
+    - name: Create Napture AppImage
+      run: |
+        echo "Creating Napture AppImage..."
+        cd napture
+        mv target/release/webx target/release/napture
+        ARCH=x86_64
+         ../linuxdeploy-x86_64.AppImage --appdir AppDir -e target/release/napture -d io.github.face_hh.Napture.desktop -i io.github.face_hh.Napture.svg -o appimage
+        mv Napture-x86_64.AppImage ../Bussin.Napture-x86_64.AppImage
+        echo "AppImage created successfully."
+    - name: Rename AppImage
+      run: |
+        echo "Renaming AppImage..."
+        mv Bussin.Napture-x86_64.AppImage napture-linux-nightly.AppImage
+        echo "AppImage renamed successfully."
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: napture-linux-nightly.AppImage
+        path: napture-linux-nightly.AppImage
+      env:
+        UPLOAD_URL: ${{ steps.upload.outputs.upload_url }}  
+  build_macos:
+    name: Build Napture (macOS)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          brew install gtk4 graphene glib libadwaita lua create-dmg pkg-config
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          arch -x86_64 /usr/local/bin/brew install gtk4 graphene glib libadwaita lua pkg-config || exit 0 # Brew tries to link python which will fail
+      - name: Build Napture
+        run: |
+          rustup target add x86_64-apple-darwin
+          cd napture
+          RUSTFLAGS='-L /opt/homebrew/Cellar/' cargo build --release --target aarch64-apple-darwin
+          PKG_CONFIG='/usr/local/bin/pkg-config' RUSTFLAGS='-L /usr/local/Cellar/' cargo build --release --target x86_64-apple-darwin
+          lipo -create target/aarch64-apple-darwin/release/webx target/x86_64-apple-darwin/release/webx -output target/release/webx
+      - name: Make an app bundle
+        run: |
+          cd napture
+          mkdir -p target/release/Napture.app/Contents/MacOS
+          cp target/release/webx target/release/Napture.app/Contents/MacOS
+          cp ./Info.plist target/release/Napture.app/Contents
+          mkdir -p target/release/Napture.app/Contents/Resources/AppIcon.iconset
+
+          for SIZE in 16 32 64 128 256 512; do
+              sips -z $SIZE $SIZE ./file.png --out target/release/Napture.app/Contents/Resources/AppIcon.iconset/icon_${SIZE}x${SIZE}.png
+          done
+          for SIZE in 32 64 256 512; do
+              sips -z $SIZE $SIZE ./file.png --out target/release/Napture.app/Contents/Resources/AppIcon.iconset/icon_$(expr $SIZE / 2)x$(expr $SIZE / 2)x2.png
+          done
+
+          iconutil -c icns -o target/release/Napture.app/Contents/Resources/AppIcon.icns target/release/Napture.app/Contents/Resources/AppIcon.iconset
+          rm -rf target/release/Napture.app/Contents/Resources/AppIcon.iconset
+      - name: Sign the app
+        run: codesign --force --deep --sign - napture/target/release/Napture.app
+      - name: Pack Napture into DMG
+        run: |
+          cd napture/target/release
+          create-dmg napture-macos-nightly.dmg Napture.app
+      - name: Upload DMG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: napture-macos-nightly.dmg
+          path: napture/target/release/napture-macos-nightly.dmg
+        
+  build_win:
+    name: Build Napture (Windows)
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+  
+    - name: Install Dependencies
+      run: |
+        echo "Installing dependencies..."
+        rustup toolchain install stable-gnu && rustup default stable-gnu
+        echo "Dependencies installed."
+
+    - name: Install MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msys2-root: 'C:\msys64'
+        install-dir: 'C:\msys64'
+    
+    - name: Install MSYS2 dependencies
+      run: |
+        echo "Installing MSYS2 packages..."
+        C:\msys64\usr\bin\bash.exe -lc "pacman -Syu --noconfirm"
+        C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-gtk4 mingw-w64-x86_64-gettext mingw-w64-x86_64-libxml2 mingw-w64-x86_64-librsvg mingw-w64-x86_64-pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-libadwaita mingw-w64-x86_64-lua"
+
+    - name: Build Napture
+      run: |
+        echo "Building Napture..."
+        $Env:Path += ';C:\msys64\mingw64\include;C:\msys64\mingw64\bin;C:\msys64\mingw64\lib'
+        cd napture
+        cargo build --release --verbose
+        echo "Napture built successfully."
+        
+    - name: Copy and Move DLLs
+      run: |
+        echo "Copying DLLs..."
+        mkdir -p napture/target/release/libs
+        cp C:/msys64/mingw64/bin/*.dll napture/target/release/libs
+        cp C:/msys64/mingw64/lib/*.dll napture/target/release/libs
+        echo "DLLs copied."
+        echo "Moving DLLs to exe directory..."
+        mv napture/target/release/libs/*.dll napture/target/release/
+        echo "DLLs moved."
+  
+    - name: Zip Napture files
+      run: |
+        echo "Zipping Napture files..."
+        cd napture/target/release
+        7z a -tzip napture-windows-nightly.zip webx.exe *.dll
+  
+    - name: Upload Napture
+      uses: actions/upload-artifact@v4
+      with:
+        name: napture-windows-nightly
+        path: napture/target/release/napture-windows-nightly.zip
+          
+  upload:
+   name: "Upload Release"
+   runs-on: ubuntu-24.04
+   needs:
+      - build
+      - build_win
+      - build_macos
+   steps:
+      - name: Download Ubuntu Artifact
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: napture-linux-nightly.AppImage
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: napture-windows-nightly
+      - name: Download macOS Artifact
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: napture-macos-nightly.dmg    
+      - name: Download Dependencies
+        run: |
+            sudo add-apt-repository universe
+            sudo apt install libfuse2
+      - name: Publish to Releases
+        uses: softprops/action-gh-release@v2.0.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          token: ${{ env.GITHUB_TOKEN }}
+          name: Nightly Build (${{ github.ref }})
+          tag_name: nightly
+          generate_release_notes: true
+          files: |
+            *.AppImage
+            *.zip
+            *.dmg
+          prerelease: true
