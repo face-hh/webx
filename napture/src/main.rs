@@ -130,6 +130,7 @@ fn main() -> glib::ExitCode {
     app.run_with_args(&[""])
 }
 
+// TODO: usages of handle_search_update should spawn a new thread
 fn handle_search_update(
     scroll: Rc<RefCell<gtk::ScrolledWindow>>,
     css_provider: Rc<RefCell<CssProvider>>,
