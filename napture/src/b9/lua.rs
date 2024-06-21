@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::marker::PhantomData;
@@ -96,7 +97,7 @@ pub(crate) fn clear_timeout(id: i32) -> LuaResult<()> {
 fn get(
     lua: &Lua,
     class: String,
-    tags: Rc<RefCell<Vec<Tag>>>,
+    tags: Arc<RefCell<Vec<Tag>>>,
     multi: bool
 ) -> LuaResult<LuaTable<>> {
     let global_table = lua.create_table()?;
@@ -107,18 +108,18 @@ fn get(
 
     for (i, tag) in tags_ref.iter().enumerate() {
         if tag.classes.contains(&class) {
-            let tags1 = Rc::clone(&tags);
-            let tags2 = Rc::clone(&tags);
-            let tags3 = Rc::clone(&tags);
-            let tags4 = Rc::clone(&tags);
-            let tags5 = Rc::clone(&tags);
-            let tags6 = Rc::clone(&tags);
-            let tags7 = Rc::clone(&tags);
-            let tags8 = Rc::clone(&tags);
-            let tags9 = Rc::clone(&tags);
-            let tags10 = Rc::clone(&tags);
-            let tags11 = Rc::clone(&tags);
-            let tags12 = Rc::clone(&tags);
+            let tags1 = Arc::clone(&tags);
+            let tags2 = Arc::clone(&tags);
+            let tags3 = Arc::clone(&tags);
+            let tags4 = Arc::clone(&tags);
+            let tags5 = Arc::clone(&tags);
+            let tags6 = Arc::clone(&tags);
+            let tags7 = Arc::clone(&tags);
+            let tags8 = Arc::clone(&tags);
+            let tags9 = Arc::clone(&tags);
+            let tags10 = Arc::clone(&tags);
+            let tags11 = Arc::clone(&tags);
+            let tags12 = Arc::clone(&tags);
 
             let table = lua.create_table()?;
 
@@ -248,7 +249,7 @@ fn print(_lua: &Lua, msg: LuaMultiValue) -> LuaResult<()> {
 }
 
 // todo: make this async if shit breaks
-pub(crate) async fn run(luacode: String, tags: Rc<RefCell<Vec<Tag>>>, taburl: String) -> LuaResult<()> {
+pub(crate) async fn run(luacode: String, tags: Arc<RefCell<Vec<Tag>>>, taburl: String) -> LuaResult<()> {
     let lua = Lua::new_with(
         /*StdLib::COROUTINE | StdLib::STRING |
         StdLib::TABLE | StdLib::MATH,*/
