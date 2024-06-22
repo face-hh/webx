@@ -139,7 +139,7 @@ Noted that? Now let's get to the styling features.
 | `gap`         | Any `px` value                                         | Sets the amount of space (in pixels) that will be created between all the elements that are inside of a `<div>`                                                                                                                                                 |
 | `direction`   | `row` or `column`                                      | The direction all the items inside of the `<div>` will follow. Default is `column`. Similar to CSS 3's flex display (_but no "display: flex;" required here_).                                                                                                  |
 | `wrap`        | `wrap` or `nowrap`                                     | If enabled, when there are too many elements inside of a parent container, they will be moved to the next line (they will be _wrapped_). If not, the elements will just overflow. Defaults to `nowrap`.                                                         |
-| `align_items` | Any of the following: `fill`, `start`, `end`, `center` | Defines if the items should be aligned to the center of the container, to the start, or to the end. If set to fill, the item will expand to fill all available horizontal space within its container instead of just moving to get aligned. Defaults to `fill`. |
+| `align-items` | Any of the following: `fill`, `start`, `end`, `center` | Defines if the items should be aligned to the center of the container, to the start, or to the end. If set to fill, the item will expand to fill all available horizontal space within its container instead of just moving to get aligned. Defaults to `fill`. |
 
 ### Text
 
@@ -184,31 +184,31 @@ Noted that? Now let's get to the styling features.
 | Property              |
 | --------------------- |
 | `direction`           |
-| `align_items`         |
+| `align-items`         |
 | `width`               |
 | `height`              |
-| `line_height`         |
+| `line-height`         |
 | `color`               |
 | `wrap`                |
-| `background_color`    |
-| `font_family`         |
-| `font_weight`         |
+| `background-color`    |
+| `font-family`         |
+| `font-weight`         |
 | `underline`           |
-| `underline_color`     |
+| `underline-color`     |
 | `overline`            |
-| `overline_color`      |
+| `overline-color`      |
 | `strikethrough`       |
-| `strikethrough_color` |
-| `margin_top`          |
-| `margin_bottom`       |
-| `margin_left`         |
-| `margin_right`        |
-| `border_style`        |
-| `border_color`        |
-| `border_width`        |
-| `border_radius`       |
+| `strikethrough-color` |
+| `margin-top`          |
+| `margin-bottom`       |
+| `margin-left`         |
+| `margin-right`        |
+| `border-style`        |
+| `border-color`        |
+| `border-width`        |
+| `border-radius`       |
 | `padding`             |
-| `font_size`           |
+| `font-size`           |
 | `gap`                 |
 | `opacity`             |
 
