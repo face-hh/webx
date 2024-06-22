@@ -217,7 +217,7 @@ local all_paragraphs = get("p", true)
 
 | Function          | x                                                                                                                 | Explanation                                                                                                                                                                                                        |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `set_contents(x)` | `x` should be a string.                                                                                           | Sets the text content of any item.                                                                                                                                                                                 |
+| `set_content(x)` | `x` should be a string.                                                                                           | Sets the text content of any item.                                                                                                                                                                                 |
 | `set_href(x)`     | `x` must be the URL you want to set the `href` property to. It should be a string.                                | Sets the `href` value of an anchor.                                                                                                                                                                                |
 | `set_source(x)`   | `x` must be the URL or base64 that you want to set the `src` property to. It should be a string.                  | Sets the `src` value of an image.                                                                                                                                                                                  |
 | `set_opacity(x)`  | `x` must be the value you want to set the `opacity` property to. It should be a float between 0 and 1.            | Sets the `opacity` value of any item.                                                                                                                                                                              |
@@ -234,11 +234,11 @@ local test = get("myclass")
 
 -- now, we set
 test.set_opacity(0.75)
-test.set_contents("This text will be set as the content of the element")
+test.set_content("This text will be set as the content of the element")
 
 -- example: get an anchor and set it's href to the Dingle search engine and its text content to "Search with Dingle"
 get("a").set_href("buss://dingle.it")
-get("a").set_contents("Search with Dingle")
+get("a").set_content("Search with Dingle")
 
 -- example: get a button and get a heading, and when it gets clicked, wait 5 seconds and then set the h1's text to "you waited :D"
 local h1 = get("myheading")
@@ -272,7 +272,7 @@ local test = get("mybutton")
 
 -- now, we do stuff when it gets clicked
 test.on_click(function()
-    test.set_contents("i was clicked!")
+    test.set_content("i was clicked!")
 end)
 
 -- a slightly more complex example:
@@ -281,7 +281,7 @@ local input = get("input") -- will get an <input> item
 local h1 = get("h1")
 
 input.on_submit(function()
-    h1.set_contents("your input was: " + input.get_contents())
+    h1.set_content("your input was: " + input.get_contents())
 )
 ```
 
