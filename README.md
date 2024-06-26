@@ -78,16 +78,23 @@ Welcome to Gaming OS 🙂
 ## MacOS (Apple Silicon)
 1. Install [Rust](https://www.rust-lang.org/tools/install)
 2. Install [Homebrew](https://brew.sh/)
-3. Install PKG_CONFIG_PATH and ensure it's set in your path
+3. Clone the Repo
+   
+```bash
+git clone https://github.com/face-hh/webx
+```
+
+
+4. Install PKG_CONFIG_PATH and ensure it's set in your path
 
 ```bash
 brew install pkg-config
 which pkg-config
 ```
 
-3.1. Should return something like `/opt/homebrew/bin/pkg-config`. If it doesn't, add it to your path.
+4.1. Should return something like `/opt/homebrew/bin/pkg-config`. If it doesn't, add it to your path.
 
-4. Install GTK and Necessary Libraries
+5. Install GTK and Necessary Libraries
 
 ```bash
 brew install glib
@@ -109,7 +116,7 @@ brew --prefix libadwaita
 brew --prefix lua@5.4
 ```
 
-4.1 Validate if the libraries are installed adequately and set in PKG_CONFIG_PATH, command below should return the path to the libraries without any errors.
+5.1 Validate if the libraries are installed adequately and set in PKG_CONFIG_PATH, command below should return the path to the libraries without any errors.
 
 ```bash
 pkg-config --libs --cflags glib-2.0
@@ -122,7 +129,7 @@ pkg-config --libs --cflags libadwaita-1
 pkg-config --libs --cflags lua-5.4
 ```
 
-5. Run `cargo run` in the `napture/` directory.
+6. Run `cargo run` in the `napture/` directory.
 
 ```bash
 cd napture
