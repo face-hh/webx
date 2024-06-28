@@ -46,7 +46,7 @@ Note that we use the same function to get items by their tag name or by their cl
 
 **Remember the end of the HTML++ page, where we told you to avoid setting a class name with the same name as a tag?** It's because of this, `get("a")` will get an anchor, so you should not give an item a class name of `class="a"`.
 
-> What about "`querySelectorAll()`?
+> What about "`querySelectorAll()`"?
 
 **Just add "true" to the `get` function to get all the elements of the same class / tag name.**
 
@@ -141,7 +141,7 @@ Remember, unlike the JS you're used to on the standard webs, arrays don't start 
 {% code title="javascript.js" overflow="wrap" lineNumbers="true" %}
 
 ```js
-// World Wide Web JS.
+// World Wide Web JS
 const firstp = document.getElemenyById("first-parragraph");
 const secondp = document.getElemenyById("second-parragraph");
 const thirdp = document.getElemenyById("third-parragraph");
@@ -157,7 +157,7 @@ thirdp.textContent = fruits[2]; // 'cherry'
 {% code title="script.lua" overflow="wrap" lineNumbers="true" %}
 
 ```lua
--- Bussin WebX Lua.
+-- Bussin WebX Lua
 local firstp = get("first-parragraph")
 local secondp = get("second-parragraph")
 local thirdp = get("third-parragraph")
@@ -178,7 +178,7 @@ thirdp.set_content(fruits[3]) -- 'cherry'
 All the `get_{x}`, `set_{x}` and `on_{x}` available functions.
 
 {% hint style="success" %}
-On every function, whenever `x` is expected to be a string or a number, it can always be passed both as a string/number directly or as a Lua variable.
+In every function, whenever `x` is expected to be a string or a number, you can always pass it directly as a string/number or as a Lua variable.
 {% endhint %}
 
 ### MAIN GET FUNCTION

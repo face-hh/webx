@@ -105,15 +105,15 @@ Currently, you can use the following HTML tags:
 * Divisions (`<div>`), basically containers where you can put your tags to organise your page.
 * Lists, which can be ordered (`<ol>`) or unordered (`<ul>`). Both can have list items (`<li>`) in them.
 * Horizontal rule (`<hr>`), which creates a horizontal line on the entire page.
-* Images (`<img>`), with a `src` property for the local path / HTTP URI of the image. They are unresizeable, so your image must already be of the desired size (use any image editing tool for that, e.g. [GIMP](https://www.gimp.org/)).
+* Images (`<img>`), with a `src` property for the local path / HTTP URI of the image. They are unresizeable, so your image must already be the desired size (use any image editing tool for that, e.g. [GIMP](https://www.gimp.org/)).
 
 {% hint style="warning" %}
-Additionally, **as of B9 v1.3.1** images are currently broken on _Windows_; and will only work if you follow the [Guide of Compilation for Napture - Windows.](https://github.com/face-hh/webx?tab=readme-ov-file#windows-1)
+Additionally, **as of B9 v1.3.1** images are currently broken on _MS Windows_ and will only work if you follow the [Guide of Compilation for Napture - Windows.](https://github.com/face-hh/webx?tab=readme-ov-file#windows-1)
 {% endhint %}
 
 * Inputs (`<input>`) are one-line text fields. You can interact with them with Web X's Lua API.
 * Textareas (`<textarea>`) are equivalent to inputs, but they are _multi-line_ text fields instead of _one-line_.
-* Dropdowns (`<select>`), which can have options in them (`<option>`).
+* Dropdowns (`<select>`), which can have options inside of them (`<option>`).
 
 {% hint style="warning" %}
 As of B9 1.3.1, dropdowns are purely decorative at the moment as they don't have a Lua API.
