@@ -45,9 +45,9 @@ Code link: https://github.com/face-hh/webx/tree/master/dns
 
 {% endhint %}
 
-## `GET` /domains`?amount={x}&page={y}`
+## `GET` /domains`?page_size={x}&page={y}`
 
-Being `amount` and `page` optional. `amount` for the amount of domains you want the response to have per page (defaults to 15), and `page` what page you want to view. _Allows you to get the list of all working domains from the network._
+Being `page_size` and `page` optional. `page_size` for the amount of domains you want the response to have per page (defaults to 15, max of 100), and `page` what page you want to view. _Allows you to get the list of all working domains from the network._
 
 {% hint style="info" %}
 
@@ -55,8 +55,8 @@ Being `amount` and `page` optional. `amount` for the amount of domains you want 
 
 {% endhint %}
 
-| REQUEST METHOD | TARGET URL                   |
-| -------------- | ---------------------------- |
+| REQUEST METHOD | TARGET URL                     |
+| -------------- | ------------------------------ |
 | `GET`          | <https://api.buss.lol/domains> |
 
 {% hint style="success" %}
