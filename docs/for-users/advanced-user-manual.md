@@ -12,10 +12,14 @@ This short page includes some additional things you might want to know about how
 
 Since Web X is an open-source network, there are different browsers available, like the following:
 
-| Provider       | Where to get it it                                                                                          | Maintainer                                            | Recommended                                                                                                                              |
-| -------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Bussin Napture | Go to the [releases tab of the official Web X repository](https://github.com/face-hh/webx/releases/latest). | :heavy\_check\_mark: **Official Web X service**       | YES                                                                                                                                      |
-| Bussinga       | Go to the [Bussinga repository](https://github.com/codingMASTER398/bussinga/releases/latest).               | [codingMASTER398](https://github.com/codingMASTER398) | YES if you are a Windows user. As of Napture 1.3.1, Bussinga 0.0.1 seems to work better on MS Windows. **Webview based**.                |
-| Fapture        | Go to the [Fapture repository](https://github.com/nojasm/fapture/)                                          | [nojasm](https://github.com/nojasm/)                  | Kind off. Compatible with both CSS 3.25 and standard CSS 3. Has no releases and needs to be compiled by the end user. **Webview based**. |
+| Browser | Where to get it it | Maintainer | Compatible |
+| ------- | ------------------ | ---------- | ---------- |
+| Bussin Napture | Go to the [releases tab of the official Web X repository](https://github.com/face-hh/webx/releases/latest). | :heavy\_check\_mark: **Official Web X service** | Windows+, Linux+++ |
+| Bussinga | Go to the [Bussinga repository](https://github.com/webx-plus/bussinga/releases/latest). | [WebX Plus organisation](https://github.com/WebX-Plus) | Windows++, Linux+++ |
+| Fapture | Go to the [Fapture repository](https://github.com/nojasm/fapture/) | [nojasm](https://github.com/nojasm/) | NodeJS & Compiled by user, in theory +++ on all platforms |
 
 **Something is wrong with this table? As 3rd party browsers get updated, this table can get outdated over time.** [**Make a PR to help keep it up to date.**](https://github.com/face-hh/webx/tree/master/docs) **Thanks in advance!**
+
+## Using other DNS
+
+Napture and other browsers also give you the ability to choose a different DNS. In Napture, you can change this by clicking the `CTRL` + `SHIFT` + `S` keybind to open settings and change the DNS to the URL of the DNS server you'd like to use. A good example of a different WebX DNS is the [WebX Plus DNS](https://dns-one.webxplus.org/).
