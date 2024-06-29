@@ -113,6 +113,7 @@ Additionally, **as of B9 v1.3.1** images are currently broken on _MS Windows_ an
 
 * Inputs (`<input>`) are one-line text fields. You can interact with them with Web X's Lua API.
 * Textareas (`<textarea>`) are equivalent to inputs, but they are _multi-line_ text fields instead of _one-line_.
+* Buttons (`<button>`), which can be clicked by the user to do something. You can detect clicks with Web X's Lua API.
 * Dropdowns (`<select>`), which can have options inside of them (`<option>`).
 
 {% hint style="warning" %}
