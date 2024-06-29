@@ -28,14 +28,44 @@ Now that you have your IP / GitHub URL, you just need to register a domain, prov
 
 Domains can be registered via our API (see [next page](api-reference.md#post-domain)). There are different providers, like these ones:
 
-{% hint style="danger" %}
+<table>
+    <thead>
+        <tr>
+            <th>
+                Provider
+            </th>
+            <th width="243">
+                Where to find it
+            </th>
+            <th width="149">
+                Administrator</th>
+            <th width="156">
+                Recommended
+            </th>
+            <th>
+                Notes
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Bussin Registrar</td>
+            <td>Go to <code>buss://register.it</code> on your Web X browser.</td>
+            <td><span data-gb-custom-inline data-tag="emoji" data-code="2714">✔️</span> <strong>Official Web X service</strong></td>
+            <td>YES</td>
+            <td>Open source</td>
+        </tr>
+        <tr>
+            <td>WebX Registry</td>
+            <td>Go to <a href="https://kitty.yachts/"><code>https://kitty.yachts/</code></a> on a WWW browser.</td>
+            <td>[tlochsta](https://discord.com/users/795039947656134728)</td>
+            <td>???</td>
+            <td><em>No notes.</em></td>
+        </tr>
+    </tbody>
+</table>
 
-### Outdated section
-
-This section contains content from contributors and 3rd parties. It has been marked as outdated. This alert will stay until the content below gets updated.
-{% endhint %}
-
-<table><thead><tr><th>Provider</th><th width="243">Where to find it</th><th width="149">Administrator</th><th width="156">Recommended</th><th>Notes</th></tr></thead><tbody><tr><td>Bussin Registrar</td><td>Go to <code>buss://register.it</code> on your Web X browser.</td><td><span data-gb-custom-inline data-tag="emoji" data-code="2714">✔️</span> <strong>Official Web X service</strong></td><td>YES</td><td>Open source</td></tr><tr><td>WebX Registry</td><td>Go to <a href="https://kitty.yachts/"><code>https://kitty.yachts/</code></a> on a WWW browser.</td><td>tlochsta</td><td>???</td><td><em>No notes.</em></td></tr></tbody></table>
+> **Note:** This does **not** include registrars for other DNS systems.
 
 Of course, we recommend using the official Bussin Registrar, which looks kinda like this:
 
