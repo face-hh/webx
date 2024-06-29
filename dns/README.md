@@ -21,15 +21,21 @@ Returns a simple message with the available endpoints and rate limits.
 
 **Response:**
 
-```
-Hello, world! The available endpoints are:
-GET /domains,
-GET /domain/{name}/{tld},
-POST /domain,
-PUT /domain/{key},
-DELETE /domain/{key},
-GET /tlds.
-Ratelimits are as follows: 10 requests per 60s.
+```txt
+webxDNS v0.3.0!
+
+The available endpoints are:
+
+ - [GET] /domains
+ - [GET] /domain/{name}/{tld}
+ - [POST] /domain
+ - [PUT] /domain/{key}
+ - [DELETE] /domain/{key}
+ - [GET] /tlds
+
+Ratelimits are as follows: 5 requests per 10 minutes on `[POST] /domain`.
+
+Code link: https://github.com/face-hh/webx/tree/master/dns
 ```
 
 ### POST /domain
@@ -43,25 +49,28 @@ Creates a new domain entry.
 - Headers:
   - `Content-Type: application/json`
 - Body:
+
   ```json
   {
-  	"tld": "example_tld",
-  	"ip": "example_ip",
-  	"name": "example_name"
+   "tld": "example_tld",
+   "ip": "example_ip",
+   "name": "example_name"
   }
   ```
 
 **Response:**
 
 - `200 OK` if the domain is successfully created.
+
   ```json
   {
-  	"tld": "example_tld",
-  	"ip": "example_ip",
-  	"name": "example_name",
-  	"secret_key": "generated_secret_key"
+   "tld": "example_tld",
+   "ip": "example_ip",
+   "name": "example_name",
+   "secret_key": "generated_secret_key"
   }
   ```
+
 - `400 Bad Request` if the request body is invalid, the TLD is non-existent, the name is too long (24 chars), or the domain is offensive.
 - `409 Conflict` if the domain already exists.
 
@@ -80,13 +89,15 @@ Fetches a domain entry by name and TLD.
 **Response:**
 
 - `200 OK` if the domain is found.
+
   ```json
   {
-  	"tld": "example_tld",
-  	"name": "example_name",
-  	"ip": "example_ip"
+   "tld": "example_tld",
+   "name": "example_name",
+   "ip": "example_ip"
   }
   ```
+
 - `404 Not Found` if the domain is not found.
 
 ### PUT /domain/:key
@@ -102,20 +113,23 @@ Updates the IP address of a domain entry using its secret key.
 - Headers:
   - `Content-Type: application/json`
 - Body:
+
   ```json
   {
-  	"ip": "new_ip_address"
+   "ip": "new_ip_address"
   }
   ```
 
 **Response:**
 
 - `200 OK` if the IP address is successfully updated.
+
   ```json
   {
-  	"ip": "new_ip_address"
+   "ip": "new_ip_address"
   }
   ```
+
 - `404 Not Found` if the domain is not found.
 
 ### DELETE /domain/:key
@@ -146,6 +160,7 @@ Fetches all domain entries.
 **Response:**
 
 - `200 OK` with a list of domains.
+
   ```json
   [
     {
@@ -169,6 +184,7 @@ Fetches the list of allowed top-level domains.
 **Response:**
 
 - `200 OK` with a list of TLDs.
+
   ```json
   ["example_tld1", "example_tld2", ...]
   ```

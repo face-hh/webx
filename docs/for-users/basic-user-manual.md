@@ -1,8 +1,8 @@
 # User manual
 
-## First thing first: Install Napture.
+## First thing first: Install Napture
 
-<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>Bussin Napture v1.2.2</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>Bussin Napture v1.3.1</p></figcaption></figure>
 
 This is the guide to install **Bussin Napture**, the official Web X browser.
 
@@ -10,9 +10,13 @@ This is the guide to install **Bussin Napture**, the official Web X browser.
 
 * Download [Rust](https://www.rust-lang.org/tools/install). Then, you just need to open `install-linux.sh` as an executable (if you can't execute it, first do `sudo chmod +x ./install-linux.sh`, then you should be able to install).
 
+> `install-linux.sh` is available in the `/napture` folder of the WebX repository. You'll need to download the entire folder from [here](https://github.com/face-hh/webx/tree/master/napture).
+
 ### macOS
 
 * Download [Rust](https://www.rust-lang.org/tools/install) and [Homebrew](https://brew.sh). Then, you just need to open `install-macos.sh` as an executable (if you can't execute it, first do `chmod +x ./install-macos.sh`, then you should be able to install).
+
+> `install-macos.sh` is available in the `/napture` folder of the WebX repository. You'll need to download the entire folder from [here](https://github.com/face-hh/webx/tree/master/napture).
 
 ### Windows
 
@@ -20,13 +24,13 @@ This is the guide to install **Bussin Napture**, the official Web X browser.
 
 ### Arch Linux
 
-Run **`yay -S napture`**. It's available on AUR.
+Run **`yay -S napture`**. Napture is available on AUR.
 
 ### Nix\[OS]
 
 **Flakes**: The repository provides a flake which exposes an overlay providing the webx package, so you could just add the input in your flake.nix file
 
-```nix{3}
+```nix
 {
     inputs = {
         webx.url = "github:face-hh/webx";
@@ -36,7 +40,7 @@ Run **`yay -S napture`**. It's available on AUR.
 
 Then add it to your overlays and install it
 
-```nix{3}
+```nix
 { inputs, ... }: {
     nixpkgs.overlays = [
         inputs.webx.overlays.x86_64-linux.default
@@ -48,7 +52,7 @@ Then add it to your overlays and install it
 
 Add it to either home.packages (home manager) or environment.systemPackages (global packages).
 
-```nix{2}
+```nix
 home.packages = with pkgs; [
     webx
 ];

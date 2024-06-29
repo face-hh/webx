@@ -2,11 +2,12 @@
 
 HTML++ looks similar to regular HTML5, but with some differences. Note that B9 is a new engine, not all classic HTML5 features are supported.
 
-## Basic structure.
+## Basic structure
 
 Same as regular HTML5, the `html` tag, with the `head` for metadata and `body` for your page's content.
 
 {% code title="index.html" overflow="wrap" lineNumbers="true" %}
+
 ```html
 <html>
   <head>
@@ -17,6 +18,7 @@ Same as regular HTML5, the `html` tag, with the `head` for metadata and `body` f
   </body>
 </html>
 ```
+
 {% endcode %}
 
 ## `<head>`: Metadata in HTML++
@@ -24,6 +26,7 @@ Same as regular HTML5, the `html` tag, with the `head` for metadata and `body` f
 A complete WebX head looks like this:
 
 {% code title="index.html" overflow="wrap" lineNumbers="true" %}
+
 ```html
 <head>
     <title>My cool web</title>
@@ -36,9 +39,10 @@ A complete WebX head looks like this:
     <script src="script.lua" />
 </head>
 ```
+
 {% endcode %}
 
-Let's explain everything. `<title>` and `<meta name="*">` are tags you know from classic HTML5. `<title>` will give a Title to your page, which will be displayed on both the browser's tab and the search results. `<meta name="description" content="*">` will give Dingle a description to show on the search results, and other meta tags may be used by websites that wish to embed Web X sites.
+Let's explain everything. `<title>` and `<meta name="*">` are tags you know from classic HTML5. `<title>` will give a Title to your page, which will be displayed on both the browser's tab and the search results, and `<meta name="description" content="*">` will give Dingle a description to show on the search results. Those are the HTML++ meta tags supported by Napture. **Note that other meta tags may be used by other websites that wish to embed Web X sites.**
 
 Now, let's go beyond the standard. You might wonder, why do links have no `rel` attribute? And why is the `script` tag self-closing? (which might even be rendered as an error by your IDE).
 
@@ -47,16 +51,15 @@ Now, let's go beyond the standard. You might wonder, why do links have no `rel` 
 You can link images (as much as you like), stylesheets and scripts (only 1 of each type).
 
 {% hint style="info" %}
-Audio and video support are being worked on, but as of B9 1.2.2 they are not supported. [See PR](https://github.com/face-hh/webx/pull/150).
+Audio and video support are being worked on, but as of B9 1.3.1 they are not supported. [See PR](https://github.com/face-hh/webx/pull/150).
 {% endhint %}
 
 The thing is, B9 does not use `rel` to define what to do with each thing. It uses the **order** of your tags, being the first tag of each kind the one that will be used for it's specific purpose. In other words: your first `<link>` has to href an image and will be your site's icon, your second `<link>` has to href a stylesheet and will be the source for the page's CSS, and your `<script>` tag should be the third one, and will be the source for the page's Luau script.
 
-{% hint style="warning" %}
-This isn't the standard web, **HTTPS is supported only by the \<script> tag**. Both (CSS & Lua) files must be available locally, in the same path as the `index.html`. As we told you before, the three files must be in the root. HTTP(S) is supported for the icon's link and for images. We recommend using Imgur.
-{% endhint %}
+HTTPS is supported for `src` and `href` attributes, if you want to link external Luau scripts, images, or stylesheets. Later on you'll also see that you can import Luau scripts from the script itself. Also, images have support for `base64` in both the `src` property of the HTML++ tag and on the Luau `set_content()` function (which you'll learn to use later).
 
 {% code title="index.html" overflow="wrap" lineNumbers="true" %}
+
 ```html
 <head>
     <title>My cool web</title>
@@ -79,6 +82,7 @@ This isn't the standard web, **HTTPS is supported only by the \<script> tag**. B
   <script src="script2.lua" />
 </body>
 ```
+
 {% endcode %}
 
 {% hint style="info" %}
@@ -101,18 +105,19 @@ Currently, you can use the following HTML tags:
 * Divisions (`<div>`), basically containers where you can put your tags to organise your page.
 * Lists, which can be ordered (`<ol>`) or unordered (`<ul>`). Both can have list items (`<li>`) in them.
 * Horizontal rule (`<hr>`), which creates a horizontal line on the entire page.
-* Images (`<img>`), with a `src` property for the local path / HTTP URI of the image. They are unresizeable, so your image must already be of the desired size (use any image editing tool for that, e.g. [GIMP](https://www.gimp.org/)).
+* Images (`<img>`), with a `src` property for the local path / HTTP URI of the image. They are unresizeable, so your image must already be the desired size (use any image editing tool for that, e.g. [GIMP](https://www.gimp.org/)).
 
 {% hint style="warning" %}
-Additionally, **as of B9 v1.2.2** images are currently broken on _Windows_; and will only work if you follow the [Guide of Compilation for Napture - Windows.](https://github.com/face-hh/webx?tab=readme-ov-file#windows-1)
+Additionally, **as of B9 v1.3.1** images are currently broken on _MS Windows_ and will only work if you follow the [Guide of Compilation for Napture - Windows.](https://github.com/face-hh/webx?tab=readme-ov-file#windows-1)
 {% endhint %}
 
 * Inputs (`<input>`) are one-line text fields. You can interact with them with Web X's Lua API.
 * Textareas (`<textarea>`) are equivalent to inputs, but they are _multi-line_ text fields instead of _one-line_.
-* Dropdowns (`<select>`), which can have options in them (`<option>`).
+* Buttons (`<button>`), which can be clicked by the user to do something. You can detect clicks with Web X's Lua API.
+* Dropdowns (`<select>`), which can have options inside of them (`<option>`).
 
 {% hint style="warning" %}
-As of B9 1.2.2, dropdowns are purely decorative at the moment as they don't have a Lua API.
+As of B9 1.3.1, dropdowns are purely decorative at the moment as they don't have a Lua API.
 {% endhint %}
 
 We're done with the HTML++, **but you must note one more thing**.
